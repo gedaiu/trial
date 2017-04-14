@@ -1,6 +1,7 @@
 module dtest.runner;
 
 import std.stdio;
+import std.algorithm;
 import std.datetime;
 
 import dtest.discovery;
@@ -11,6 +12,8 @@ struct SuiteRunner {
 
   private {
     TestCase[] tests;
+
+    ISuiteLifecycleListener[] suiteListeners;
   }
 
   this(string name, TestCase[string] testCases) {
@@ -22,16 +25,42 @@ struct SuiteRunner {
     }
   }
 
+  void addListener(ISuiteLifecycleListener listener) {
+    suiteListeners ~= listener;
+  }
+
+  private {
+    void notifyBegin() {
+      suiteListeners.each!(a => a.begin(result) );
+    }
+
+    void notifyEnd() {
+      suiteListeners.each!(a => a.end(result) );
+    }
+  }
+
   void start() {
     result.begin = Clock.currTime;
 
+    notifyBegin();
+
     foreach(size_t i, ref test; tests) {
       result.tests[i].begin = Clock.currTime;
-      result.tests[i].status = Test.Status.success;
+
+      try {
+        tests[i].func();
+        result.tests[i].status = Test.Status.success;
+      } catch(Throwable t) {
+        result.tests[i].status = Test.Status.failure;
+        result.tests[i].throwable = t;
+      }
+
       result.tests[i].end = Clock.currTime;
     }
 
     result.end = Clock.currTime;
+
+    notifyEnd();
   }
 }
 
