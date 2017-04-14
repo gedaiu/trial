@@ -3,64 +3,94 @@ module dtest.runner;
 import std.stdio;
 import std.algorithm;
 import std.datetime;
+import std.range;
 
 import dtest.discovery;
 import dtest.interfaces;
+
+struct LifeCycleListeners {
+  private {
+    ISuiteLifecycleListener[] suiteListeners;
+    ITestCaseLifecycleListener[] testListeners;
+  }
+
+  void add(ISuiteLifecycleListener listener) {
+    suiteListeners ~= listener;
+  }
+
+  void add(ITestCaseLifecycleListener listener) {
+    testListeners ~= listener;
+  }
+
+  void begin(ref Suite suite) {
+    suiteListeners.each!(a => a.begin(suite));
+  }
+
+  void end(ref Suite suite) {
+    suiteListeners.each!(a => a.end(suite));
+  }
+}
+
 
 struct SuiteRunner {
   Suite result;
 
   private {
     TestCase[] tests;
-
-    ISuiteLifecycleListener[] suiteListeners;
   }
+
+  LifeCycleListeners listeners;
 
   this(string name, TestCase[string] testCases) {
     result.name = name;
 
-    foreach(string key, testCase; testCases) {
-      tests ~= testCase;
-      result.tests ~= Test(testCase.name);
-    }
-  }
-
-  void addListener(ISuiteLifecycleListener listener) {
-    suiteListeners ~= listener;
-  }
-
-  private {
-    void notifyBegin() {
-      suiteListeners.each!(a => a.begin(result) );
-    }
-
-    void notifyEnd() {
-      suiteListeners.each!(a => a.end(result) );
-    }
+    tests = testCases.values;
+    result.tests = tests.map!(a => Test(a.name)).array;
   }
 
   void start() {
     result.begin = Clock.currTime;
 
-    notifyBegin();
+    listeners.begin(result);
 
-    foreach(size_t i, ref test; tests) {
-      result.tests[i].begin = Clock.currTime;
-
-      try {
-        tests[i].func();
-        result.tests[i].status = Test.Status.success;
-      } catch(Throwable t) {
-        result.tests[i].status = Test.Status.failure;
-        result.tests[i].throwable = t;
-      }
-
-      result.tests[i].end = Clock.currTime;
-    }
+    tests
+      .map!(a => TestRunner(a))
+      .map!(a => a.start)
+      .enumerate
+      .each!(a => result.tests[a[0]] = a[1]);
 
     result.end = Clock.currTime;
 
-    notifyEnd();
+    listeners.end(result);
+  }
+}
+
+struct TestRunner {
+
+  private {
+    const TestCase testCase;
+  }
+
+  this(const TestCase testCase) {
+    this.testCase = testCase;
+  }
+
+  Test start() {
+    Test test;
+
+    test.begin = Clock.currTime;
+
+    try {
+      testCase.func();
+      test.status = Test.Status.success;
+    } catch(Throwable t) {
+      test.status = Test.Status.failure;
+      test.throwable = t;
+    }
+
+    test.end = Clock.currTime;
+
+    return test;
   }
 }
 

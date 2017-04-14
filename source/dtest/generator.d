@@ -139,7 +139,7 @@ unittest {
   }
 
   SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
-  suiteRunner.addListener(new TestSuiteListener);
+  suiteRunner.listeners.add(new TestSuiteListener);
 
   suiteRunner.start();
 
