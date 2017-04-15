@@ -231,9 +231,7 @@ unittest
   LifeCycleListeners.instance = new LifeCycleListeners;
   LifeCycleListeners.instance.add(new StepListener);
 
-  auto runner = new TestRunner(test);
-
-  runner.start;
+  new TestRunner(test).start;
 
   order.should.equal(["begin some step",
                         "begin Step 0", "end Step 0",
