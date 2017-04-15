@@ -73,6 +73,7 @@ unittest {
 
 version(unittest) {
   import dtest.step;
+  import std.conv;
 
   bool executed;
 
@@ -85,11 +86,15 @@ version(unittest) {
     assert(false);
   }
 
-  void stepMock() @system {
-    Step("some step");
+  void stepFunction(int i) {
+    Step("Step " ~ i.to!string);
+  }
 
-    foreach(i; 0..3) {
-      Step("Step " ~ i.to!string);
+  void stepMock() @system {
+    auto a = Step("some step");
+
+    for(int i=0; i<3; i++) {
+      stepFunction(i);
     }
   }
 }
@@ -202,4 +207,6 @@ unittest
   result.steps[0].begin.should.be.greaterThan(beginTime);
   result.steps[0].end.should.be.greaterThan(beginTime);
 
+  result.steps[0].steps.length.should.equal(3);
+  result.steps[0].steps.each!(step => step.name.should.startWith("Step "));
 }

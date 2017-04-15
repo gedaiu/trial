@@ -82,27 +82,36 @@ struct TestRunner {
   private {
     const TestCase testCase;
     LifeCycleListeners listeners;
+
+    static {
+      StepResult[] stepStack;
+    }
   }
 
-  static StepResult currentStep;
 
   this(const TestCase testCase, LifeCycleListeners listeners) {
     this.testCase = testCase;
     this.listeners = listeners;
   }
 
-  static void beginStep(string name) {
-    auto step = new StepResult();
+  static {
+    void beginStep(string name) {
+      auto step = new StepResult();
 
-    step.name = name;
-    step.begin = Clock.currTime;
-    step.end = Clock.currTime;
+      step.name = name;
+      step.begin = Clock.currTime;
+      step.end = Clock.currTime;
 
-    currentStep.steps ~= step;
-  }
+      stepStack[0].steps ~= step;
+      stepStack = step ~ stepStack;
+    }
 
-  static void endStep() {
-    currentStep.steps[currentStep.steps.length - 1].end = Clock.currTime;
+    void endStep() {
+      const size_t last = stepStack[0].steps.length - 1;
+      stepStack[0].end = Clock.currTime;
+
+      stepStack = stepStack[1..$];
+    }
   }
 
   TestResult start() {
@@ -112,7 +121,7 @@ struct TestRunner {
     test.end = Clock.currTime;
     test.status = TestResult.Status.started;
 
-    currentStep = test;
+    stepStack = [ test ];
 
     listeners.begin(test);
     try {
