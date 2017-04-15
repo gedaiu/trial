@@ -87,6 +87,10 @@ version(unittest) {
 
   void stepMock() @system {
     Step("some step");
+
+    foreach(i; 0..3) {
+      Step("Step " ~ i.to!string);
+    }
   }
 }
 
