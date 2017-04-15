@@ -72,6 +72,8 @@ unittest {
 }
 
 version(unittest) {
+  import dtest.step;
+
   bool executed;
 
   void mock() @system {
@@ -81,6 +83,10 @@ version(unittest) {
   void failureMock() @system {
     executed = true;
     assert(false);
+  }
+
+  void stepMock() @system {
+    Step("some step");
   }
 }
 
@@ -99,7 +105,7 @@ unittest {
   suiteRunner.result.tests.length.should.equal(1);
   suiteRunner.result.tests[0].begin.should.be.between(begin, end);
   suiteRunner.result.tests[0].end.should.be.between(begin, end);
-  suiteRunner.result.tests[0].status.should.be.equal(Test.Status.success);
+  suiteRunner.result.tests[0].status.should.be.equal(TestResult.Status.success);
   executed.should.equal(true);
 }
 
@@ -118,7 +124,7 @@ unittest {
   suiteRunner.result.tests.length.should.equal(1);
   suiteRunner.result.tests[0].begin.should.be.between(begin, end);
   suiteRunner.result.tests[0].end.should.be.between(begin, end);
-  suiteRunner.result.tests[0].status.should.be.equal(Test.Status.failure);
+  suiteRunner.result.tests[0].status.should.be.equal(TestResult.Status.failure);
 
   executed.should.equal(true);
 }
@@ -130,38 +136,38 @@ unittest {
 
   string[] order = [];
   class TestSuiteListener: ISuiteLifecycleListener, ITestCaseLifecycleListener {
-    void begin(ref Suite suite) {
+    void begin(ref SuiteResult suite) {
       suite.name.should.equal("Suite name");
       suite.begin.should.be.greaterThan(beginTime);
       suite.end.should.be.greaterThan(beginTime);
-      suite.tests[0].status.should.equal(Test.Status.created);
+      suite.tests[0].status.should.equal(TestResult.Status.created);
 
       order ~= "beginSuite";
     }
 
-    void end(ref Suite suite) {
+    void end(ref SuiteResult suite) {
       suite.name.should.equal("Suite name");
       suite.begin.should.be.greaterThan(beginTime);
       suite.end.should.be.greaterThan(beginTime);
-      suite.tests[0].status.should.equal(Test.Status.success);
+      suite.tests[0].status.should.equal(TestResult.Status.success);
 
       order ~= "endSuite";
     }
 
-    void begin(ref Test test) {
+    void begin(ref TestResult test) {
       test.name.should.equal("someTestCase");
       test.begin.should.be.greaterThan(beginTime);
       test.end.should.be.greaterThan(beginTime);
-      test.status.should.equal(Test.Status.started);
+      test.status.should.equal(TestResult.Status.started);
 
       order ~= "beginTest";
     }
 
-    void end(ref Test test) {
+    void end(ref TestResult test) {
       test.name.should.equal("someTestCase");
       test.begin.should.be.greaterThan(beginTime);
       test.end.should.be.greaterThan(beginTime);
-      test.status.should.equal(Test.Status.success);
+      test.status.should.equal(TestResult.Status.success);
 
       order ~= "endTest";
     }
@@ -173,4 +179,23 @@ unittest {
   suiteRunner.start();
 
   order.should.equal(["beginSuite", "beginTest", "endTest", "endSuite"]);
+}
+
+
+@("A test runner should add the steps to the report")
+unittest
+{
+  auto beginTime = Clock.currTime - 1.msecs;
+  auto const test = TestCase("someTestCase", &stepMock);
+  LifeCycleListeners listeners;
+
+  auto runner = TestRunner(test, listeners);
+
+  auto result = runner.start;
+
+  result.steps.length.should.equal(1);
+  result.steps[0].name.should.equal("some step");
+  result.steps[0].begin.should.be.greaterThan(beginTime);
+  result.steps[0].end.should.be.greaterThan(beginTime);
+
 }

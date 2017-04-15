@@ -3,49 +3,47 @@ module dtest.interfaces;
 import std.datetime;
 
 interface IStepLifecycleListener {
-  void begin(ref Step);
-  void end(ref Step);
+  void begin(ref StepResult);
+  void end(ref StepResult);
 }
 
 interface ITestCaseLifecycleListener {
-  void begin(ref Test);
-  void end(ref Test);
+  void begin(ref TestResult);
+  void end(ref TestResult);
 }
 
 interface ISuiteLifecycleListener {
-  void begin(ref Suite);
-  void end(ref Suite);
+  void begin(ref SuiteResult);
+  void end(ref SuiteResult);
 }
 
-struct Suite {
+struct SuiteResult {
   string name;
 
   SysTime begin;
   SysTime end;
 
-  Test[] tests;
+  TestResult[] tests;
 }
 
-struct Step {
+class StepResult {
   string name;
 
   SysTime begin;
   SysTime end;
 
-  Step[] steps;
+  StepResult[] steps;
 }
 
-struct Test {
+class TestResult : StepResult {
   enum Status {
     created, failure, skip, started, success
   }
 
-  string name;
   Status status = Status.created;
   Throwable throwable;
 
-  SysTime begin;
-  SysTime end;
-
-  Step[] steps;
+  this(string name) {
+    this.name = name;
+  }
 }

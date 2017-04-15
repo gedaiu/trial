@@ -26,25 +26,25 @@ struct LifeCycleListeners {
     }
   }
 
-  void begin(ref Suite suite) {
+  void begin(ref SuiteResult suite) {
     suiteListeners.each!(a => a.begin(suite));
   }
 
-  void end(ref Suite suite) {
+  void end(ref SuiteResult suite) {
     suiteListeners.each!(a => a.end(suite));
   }
 
-  void begin(ref Test test) {
+  void begin(ref TestResult test) {
     testListeners.each!(a => a.begin(test));
   }
 
-  void end(ref Test test) {
+  void end(ref TestResult test) {
     testListeners.each!(a => a.end(test));
   }
 }
 
 struct SuiteRunner {
-  Suite result;
+  SuiteResult result;
 
   private {
     TestCase[] tests;
@@ -56,7 +56,7 @@ struct SuiteRunner {
     result.name = name;
 
     tests = testCases.values;
-    result.tests = tests.map!(a => Test(a.name)).array;
+    result.tests = tests.map!(a => new TestResult(a.name)).array;
   }
 
   void start() {
@@ -84,25 +84,42 @@ struct TestRunner {
     LifeCycleListeners listeners;
   }
 
+  static StepResult currentStep;
+
   this(const TestCase testCase, LifeCycleListeners listeners) {
     this.testCase = testCase;
     this.listeners = listeners;
   }
 
-  Test start() {
-    Test test;
+  static void beginStep(string name) {
+    auto step = new StepResult();
 
-    test.name = testCase.name;
+    step.name = name;
+    step.begin = Clock.currTime;
+    step.end = Clock.currTime;
+
+    currentStep.steps ~= step;
+  }
+
+  static void endStep() {
+    currentStep.steps[currentStep.steps.length - 1].end = Clock.currTime;
+  }
+
+  TestResult start() {
+    auto test = new TestResult(testCase.name);
+
     test.begin = Clock.currTime;
     test.end = Clock.currTime;
-    test.status = Test.Status.started;
+    test.status = TestResult.Status.started;
+
+    currentStep = test;
 
     listeners.begin(test);
     try {
       testCase.func();
-      test.status = Test.Status.success;
+      test.status = TestResult.Status.success;
     } catch(Throwable t) {
-      test.status = Test.Status.failure;
+      test.status = TestResult.Status.failure;
       test.throwable = t;
     }
 
