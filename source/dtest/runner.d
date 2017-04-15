@@ -9,10 +9,13 @@ import std.traits;
 import dtest.discovery;
 import dtest.interfaces;
 
-struct LifeCycleListeners {
+class LifeCycleListeners {
+  static LifeCycleListeners instance;
+
   private {
     ISuiteLifecycleListener[] suiteListeners;
     ITestCaseLifecycleListener[] testListeners;
+    IStepLifecycleListener[] stepListeners;
   }
 
   void add(T)(T listener) {
@@ -23,6 +26,10 @@ struct LifeCycleListeners {
 
     static if(!is(CommonType!(ITestCaseLifecycleListener, T) == void)) {
       testListeners ~= listener;
+    }
+
+    static if(!is(CommonType!(IStepLifecycleListener, T) == void)) {
+      stepListeners ~= listener;
     }
   }
 
@@ -41,6 +48,14 @@ struct LifeCycleListeners {
   void end(ref TestResult test) {
     testListeners.each!(a => a.end(test));
   }
+
+  void begin(ref StepResult step) {
+    stepListeners.each!(a => a.begin(step));
+  }
+
+  void end(ref StepResult step) {
+    stepListeners.each!(a => a.end(step));
+  }
 }
 
 struct SuiteRunner {
@@ -49,8 +64,6 @@ struct SuiteRunner {
   private {
     TestCase[] tests;
   }
-
-  LifeCycleListeners listeners;
 
   this(string name, TestCase[string] testCases) {
     result.name = name;
@@ -63,58 +76,58 @@ struct SuiteRunner {
     result.begin = Clock.currTime;
     result.end = Clock.currTime;
 
-    listeners.begin(result);
+    LifeCycleListeners.instance.begin(result);
 
     tests
-      .map!(a => TestRunner(a, listeners))
+      .map!(a => new TestRunner(a))
       .map!(a => a.start)
       .enumerate
       .each!(a => result.tests[a[0]] = a[1]);
 
     result.end = Clock.currTime;
 
-    listeners.end(result);
+    LifeCycleListeners.instance.end(result);
   }
 }
 
-struct TestRunner {
+class TestRunner {
+
+  static TestRunner instance;
 
   private {
     const TestCase testCase;
-    LifeCycleListeners listeners;
-
-    static {
-      StepResult[] stepStack;
-    }
+    StepResult[] stepStack;
   }
 
-
-  this(const TestCase testCase, LifeCycleListeners listeners) {
+  this(const TestCase testCase) {
     this.testCase = testCase;
-    this.listeners = listeners;
   }
 
-  static {
-    void beginStep(string name) {
-      auto step = new StepResult();
+  void beginStep(string name) {
+    auto step = new StepResult();
 
-      step.name = name;
-      step.begin = Clock.currTime;
-      step.end = Clock.currTime;
+    step.name = name;
+    step.begin = Clock.currTime;
+    step.end = Clock.currTime;
 
-      stepStack[0].steps ~= step;
-      stepStack = step ~ stepStack;
-    }
+    stepStack[0].steps ~= step;
+    stepStack = step ~ stepStack;
 
-    void endStep() {
-      const size_t last = stepStack[0].steps.length - 1;
-      stepStack[0].end = Clock.currTime;
+    LifeCycleListeners.instance.begin(step);
+  }
 
-      stepStack = stepStack[1..$];
-    }
+  void endStep() {
+    const size_t last = stepStack[0].steps.length - 1;
+    stepStack[0].end = Clock.currTime;
+    auto step = stepStack[0];
+
+    stepStack = stepStack[1..$];
+
+    LifeCycleListeners.instance.end(step);
   }
 
   TestResult start() {
+    instance = this;
     auto test = new TestResult(testCase.name);
 
     test.begin = Clock.currTime;
@@ -123,7 +136,7 @@ struct TestRunner {
 
     stepStack = [ test ];
 
-    listeners.begin(test);
+    LifeCycleListeners.instance.begin(test);
     try {
       testCase.func();
       test.status = TestResult.Status.success;
@@ -134,7 +147,8 @@ struct TestRunner {
 
     test.end = Clock.currTime;
 
-    listeners.end(test);
+    LifeCycleListeners.instance.end(test);
+
     return test;
   }
 }

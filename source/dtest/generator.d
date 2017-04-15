@@ -105,6 +105,7 @@ unittest {
 
   executed = false;
 
+  LifeCycleListeners.instance = new LifeCycleListeners;
   SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
 
   auto begin = Clock.currTime - 1.msecs;
@@ -183,22 +184,22 @@ unittest {
   }
 
   SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
-  suiteRunner.listeners.add(new TestSuiteListener);
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new TestSuiteListener);
 
   suiteRunner.start();
 
   order.should.equal(["beginSuite", "beginTest", "endTest", "endSuite"]);
 }
 
-
 @("A test runner should add the steps to the report")
 unittest
 {
   auto beginTime = Clock.currTime - 1.msecs;
   auto const test = TestCase("someTestCase", &stepMock);
-  LifeCycleListeners listeners;
 
-  auto runner = TestRunner(test, listeners);
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  auto runner = new TestRunner(test);
 
   auto result = runner.start;
 
@@ -209,4 +210,34 @@ unittest
 
   result.steps[0].steps.length.should.equal(3);
   result.steps[0].steps.each!(step => step.name.should.startWith("Step "));
+}
+
+@("A test runner should call the test listeners in the right order")
+unittest
+{
+  auto const test = TestCase("someTestCase", &stepMock);
+  string[] order = [];
+
+  class StepListener : IStepLifecycleListener {
+    void begin(ref StepResult step) {
+      order ~= "begin " ~ step.name;
+    }
+
+    void end(ref StepResult step) {
+      order ~= "end " ~ step.name;
+    }
+  }
+
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new StepListener);
+
+  auto runner = new TestRunner(test);
+
+  runner.start;
+
+  order.should.equal(["begin some step",
+                        "begin Step 0", "end Step 0",
+                        "begin Step 1", "end Step 1",
+                        "begin Step 2", "end Step 2",
+                      "end some step"]);
 }
