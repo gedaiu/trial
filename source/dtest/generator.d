@@ -125,16 +125,45 @@ unittest {
 
 @("A suite runner should call the suite lifecycle listener methods")
 unittest {
+  auto beginTime = Clock.currTime - 1.msecs;
   TestCase[string] tests = ["0": TestCase("someTestCase", &mock) ];
 
   string[] order = [];
-  class TestSuiteListener: ISuiteLifecycleListener {
-    void begin(ref Suite) {
-      order ~= "begin";
+  class TestSuiteListener: ISuiteLifecycleListener, ITestCaseLifecycleListener {
+    void begin(ref Suite suite) {
+      suite.name.should.equal("Suite name");
+      suite.begin.should.be.greaterThan(beginTime);
+      suite.end.should.be.greaterThan(beginTime);
+      suite.tests[0].status.should.equal(Test.Status.created);
+
+      order ~= "beginSuite";
     }
 
-    void end(ref Suite) {
-      order ~= "end";
+    void end(ref Suite suite) {
+      suite.name.should.equal("Suite name");
+      suite.begin.should.be.greaterThan(beginTime);
+      suite.end.should.be.greaterThan(beginTime);
+      suite.tests[0].status.should.equal(Test.Status.success);
+
+      order ~= "endSuite";
+    }
+
+    void begin(ref Test test) {
+      test.name.should.equal("someTestCase");
+      test.begin.should.be.greaterThan(beginTime);
+      test.end.should.be.greaterThan(beginTime);
+      test.status.should.equal(Test.Status.started);
+
+      order ~= "beginTest";
+    }
+
+    void end(ref Test test) {
+      test.name.should.equal("someTestCase");
+      test.begin.should.be.greaterThan(beginTime);
+      test.end.should.be.greaterThan(beginTime);
+      test.status.should.equal(Test.Status.success);
+
+      order ~= "endTest";
     }
   }
 
@@ -143,5 +172,5 @@ unittest {
 
   suiteRunner.start();
 
-  order.should.equal(["begin", "end"]);
+  order.should.equal(["beginSuite", "beginTest", "endTest", "endSuite"]);
 }

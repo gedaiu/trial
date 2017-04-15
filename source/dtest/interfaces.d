@@ -3,13 +3,13 @@ module dtest.interfaces;
 import std.datetime;
 
 interface IStepLifecycleListener {
-  void begin(ref Suite, ref Test, ref Step);
-  void end(ref Suite, ref Test, ref Step);
+  void begin(ref Step);
+  void end(ref Step);
 }
 
 interface ITestCaseLifecycleListener {
-  void begin(ref Suite, ref Test);
-  void end(ref Suite, ref Test);
+  void begin(ref Test);
+  void end(ref Test);
 }
 
 interface ISuiteLifecycleListener {

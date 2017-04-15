@@ -4,6 +4,7 @@ import std.stdio;
 import std.algorithm;
 import std.datetime;
 import std.range;
+import std.traits;
 
 import dtest.discovery;
 import dtest.interfaces;
@@ -14,12 +15,15 @@ struct LifeCycleListeners {
     ITestCaseLifecycleListener[] testListeners;
   }
 
-  void add(ISuiteLifecycleListener listener) {
-    suiteListeners ~= listener;
-  }
+  void add(T)(T listener) {
 
-  void add(ITestCaseLifecycleListener listener) {
-    testListeners ~= listener;
+    static if(!is(CommonType!(ISuiteLifecycleListener, T) == void)) {
+      suiteListeners ~= listener;
+    }
+
+    static if(!is(CommonType!(ITestCaseLifecycleListener, T) == void)) {
+      testListeners ~= listener;
+    }
   }
 
   void begin(ref Suite suite) {
@@ -29,8 +33,15 @@ struct LifeCycleListeners {
   void end(ref Suite suite) {
     suiteListeners.each!(a => a.end(suite));
   }
-}
 
+  void begin(ref Test test) {
+    testListeners.each!(a => a.begin(test));
+  }
+
+  void end(ref Test test) {
+    testListeners.each!(a => a.end(test));
+  }
+}
 
 struct SuiteRunner {
   Suite result;
@@ -50,11 +61,12 @@ struct SuiteRunner {
 
   void start() {
     result.begin = Clock.currTime;
+    result.end = Clock.currTime;
 
     listeners.begin(result);
 
     tests
-      .map!(a => TestRunner(a))
+      .map!(a => TestRunner(a, listeners))
       .map!(a => a.start)
       .enumerate
       .each!(a => result.tests[a[0]] = a[1]);
@@ -69,17 +81,23 @@ struct TestRunner {
 
   private {
     const TestCase testCase;
+    LifeCycleListeners listeners;
   }
 
-  this(const TestCase testCase) {
+  this(const TestCase testCase, LifeCycleListeners listeners) {
     this.testCase = testCase;
+    this.listeners = listeners;
   }
 
   Test start() {
     Test test;
 
+    test.name = testCase.name;
     test.begin = Clock.currTime;
+    test.end = Clock.currTime;
+    test.status = Test.Status.started;
 
+    listeners.begin(test);
     try {
       testCase.func();
       test.status = Test.Status.success;
@@ -90,6 +108,7 @@ struct TestRunner {
 
     test.end = Clock.currTime;
 
+    listeners.end(test);
     return test;
   }
 }
