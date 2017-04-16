@@ -111,16 +111,32 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
     }
 
     void reportTestsResult() {
-      string suiteText = suites == 1 ? "1 suite" : suites.to!string ~" suites";
+      string suiteText = suites == 1 ? "1 suite" : suites.to!string ~ " suites";
       auto timeDiff = Clock.currTime - beginTime;
       writer.write("Executed " ~ tests.to!string ~ " tests in " ~ suiteText ~ " in " ~ timeDiff.to!string ~ ".\n", ReportWriter.Context.info);
     }
 
     void reportExceptions() {
+      version(Have_fluent_asserts_core) {
+        import fluentasserts.core.base;
+      }
+
       foreach(size_t i, t; exceptions) {
         writer.writeln("");
         writer.writeln(i.to!string ~ ") " ~failedTestNames[i] ~ ":", ReportWriter.Context.danger);
-        writer.writeln(t.to!string);
+
+        version(Have_fluent_asserts_core) {
+          TestException e = cast(TestException) t;
+
+          if(e is null) {
+            writer.writeln(t.to!string);
+          } else {
+            e.source.print;
+          }
+        } else {
+          writer.writeln(t.to!string);
+        }
+
         writer.writeln("");
       }
     }
@@ -208,6 +224,6 @@ unittest {
   reporter.end(results[0]);
   reporter.end(results);
 
-  writer.buffer.should.contain("✖ The test failed in");
+  writer.buffer.should.contain("✖ The test dfailed in");
   writer.buffer.should.contain("0) some suite some test:\n");
 }
