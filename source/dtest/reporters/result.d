@@ -27,7 +27,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
   }
 
   this() {
-    writer = new ConsoleWriter;
+    writer = new ColorConsoleWriter;
   }
 
   this(ReportWriter writer) {
@@ -99,23 +99,23 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
       auto timeDiff = Clock.currTime - beginTime;
 
       if(failedTests > 0) {
-        writer.write("✖ The test failed in " ~ timeDiff.to!string ~":");
+        writer.write("✖ The test failed in " ~ timeDiff.to!string ~":", ReportWriter.Context.danger);
         return;
       }
 
-      writer.write("The test succeeded in " ~ timeDiff.to!string ~"!");
+      writer.write("The test succeeded in " ~ timeDiff.to!string ~"!", ReportWriter.Context.info);
     }
 
     void reportTestsResult() {
       string suiteText = suites == 1 ? "1 suite" : suites.to!string ~" suites";
       auto timeDiff = Clock.currTime - beginTime;
-      writer.write("Executed " ~ tests.to!string ~ " tests in " ~ suiteText ~ " in " ~ timeDiff.to!string ~ ".");
+      writer.write("Executed " ~ tests.to!string ~ " tests in " ~ suiteText ~ " in " ~ timeDiff.to!string ~ ".\n", ReportWriter.Context.info);
     }
 
     void reportExceptions() {
       foreach(size_t i, t; exceptions) {
         writer.writeln("");
-        writer.writeln(i.to!string ~ ") " ~failedTestNames[i] ~ ":");
+        writer.writeln(i.to!string ~ ") " ~failedTestNames[i] ~ ":", ReportWriter.Context.danger);
         writer.writeln(t.to!string);
         writer.writeln("");
       }

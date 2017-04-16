@@ -11,23 +11,21 @@ import dtest.generator;
 
 int runTests(string[] arguments, string path) {
 	auto cmd = ["dub", "test"] ~ arguments[1..$] ~ ["--main-file=generated.d"];
-	auto pipes = pipeProcess(cmd, Redirect.stdout | Redirect.stderr, null, Config.none, path);
-	scope(exit) wait(pipes.pid);
+
+	auto pid = spawnProcess(cmd, std.stdio.stdin, std.stdio.stdout, std.stdio.stderr, null, Config.none, path);
+	scope(exit) wait(pid);
 
 	bool running = true;
 	int status;
 
 	while(running) {
-		auto dub = tryWait(pipes.pid);
+		auto dub = tryWait(pid);
 
 		running = !dub.terminated;
 
 		if(dub.terminated) {
 			status = dub.status;
 		}
-
-		pipes.stdout.byLine.each!writeln;
-		pipes.stderr.byLine.each!writeln;
 	}
 
 	return status;

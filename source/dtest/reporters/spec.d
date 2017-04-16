@@ -13,8 +13,7 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
   private {
     int indents;
 
-    immutable wchar ok = '✓';
-    immutable wchar error = '✖';
+    immutable string ok = "✓";
 
     int tests;
     int failedTests = 0;
@@ -24,7 +23,7 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
   }
 
   this() {
-    writer = new ConsoleWriter;
+    writer = new ColorConsoleWriter;
   }
 
   this(ReportWriter writer) {
@@ -50,19 +49,18 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
   }
 
   void end(ref TestResult test) {
-    string message = indentation;
+    writer.write(indentation);
 
     if(test.status == TestResult.Status.success) {
-      message ~= ok;
+      writer.write(ok, ReportWriter.Context.success);
+      writer.writeln(" " ~ test.name, ReportWriter.Context.inactive);
     }
 
     if(test.status == TestResult.Status.failure) {
-      message ~= failedTests.to!string ~ ")";
+      writer.writeln(failedTests.to!string ~ ") " ~ test.name, ReportWriter.Context.danger);
       failedTests++;
     }
 
-    message ~= " " ~ test.name;
-    writer.writeln(message);
     indents--;
   }
 
