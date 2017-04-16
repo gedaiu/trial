@@ -16,6 +16,7 @@ class LifeCycleListeners {
     ISuiteLifecycleListener[] suiteListeners;
     ITestCaseLifecycleListener[] testListeners;
     IStepLifecycleListener[] stepListeners;
+    ILifecycleListener[] lifecycleListeners;
   }
 
   void add(T)(T listener) {
@@ -31,6 +32,18 @@ class LifeCycleListeners {
     static if(!is(CommonType!(IStepLifecycleListener, T) == void)) {
       stepListeners ~= listener;
     }
+
+    static if(!is(CommonType!(ILifecycleListener, T) == void)) {
+      lifecycleListeners ~= listener;
+    }
+  }
+
+  void begin() {
+    lifecycleListeners.each!(a => a.begin());
+  }
+
+  void end(SuiteResult[] result) {
+    lifecycleListeners.each!(a => a.end(result));
   }
 
   void begin(ref SuiteResult suite) {
@@ -154,18 +167,21 @@ class TestRunner {
 }
 
 void runTests(TestDiscovery testDiscovery) {
+  import dtest.reporters.spec;
+
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new SpecReporter);
+
+  LifeCycleListeners.instance.begin;
+
+  SuiteResult[] results = [];
 
   foreach(string moduleName, testCases; testDiscovery.testCases) {
-    moduleName.writeln;
+    auto suiteRunner = SuiteRunner(moduleName, testCases);
+    suiteRunner.start;
 
-    foreach(string key, testCase; testCases) {
-      testCase.name.writeln;
-
-      try {
-          testCase.func();
-      } catch(Throwable t) {
-          t.writeln;
-      }
-    }
+    results ~= suiteRunner.result;
   }
+
+  LifeCycleListeners.instance.end(results);
 }

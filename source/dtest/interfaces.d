@@ -2,6 +2,11 @@ module dtest.interfaces;
 
 import std.datetime;
 
+interface ILifecycleListener {
+  void begin();
+  void end(SuiteResult[]);
+}
+
 interface IStepLifecycleListener {
   void begin(ref StepResult);
   void end(ref StepResult);

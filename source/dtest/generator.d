@@ -6,7 +6,11 @@ import std.string;
 import std.stdio;
 
 string generateTestFile(string[] modules) {
-    enum d = import("discovery.d") ~ import("runner.d") ~ import("interfaces.d");
+    enum d = import("discovery.d") ~
+      import("runner.d") ~
+      import("interfaces.d") ~
+      import("reporters/writer.d") ~
+      import("reporters/spec.d");
 
     auto code = d.split("\n")
                   .filter!(a => !a.startsWith("module"))
@@ -22,8 +26,6 @@ string generateTestFile(string[] modules) {
     }
 
     code ~= `
-        writeln("Found ", testDiscovery.testCases.length, " test cases");
-
         runTests(testDiscovery);
     }
 

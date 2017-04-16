@@ -88,7 +88,7 @@ int main(string[] arguments) {
 
 	auto modules = root.findModules;
 
-	toFile(generateTestFile(modules), root ~ "/generated.d");
+	std.file.write(root ~ "/generated.d", generateTestFile(modules));
 
 	return arguments.runTests(root);
 }
