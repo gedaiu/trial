@@ -131,7 +131,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
           if(e is null) {
             writer.writeln(t.to!string);
           } else {
-            e.source.print;
+            e.print;
           }
         } else {
           writer.writeln(t.to!string);
@@ -224,6 +224,6 @@ unittest {
   reporter.end(results[0]);
   reporter.end(results);
 
-  writer.buffer.should.contain("✖ The test dfailed in");
+  writer.buffer.should.contain("✖ The test failed in");
   writer.buffer.should.contain("0) some suite some test:\n");
 }

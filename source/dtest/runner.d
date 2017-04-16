@@ -88,7 +88,7 @@ struct SuiteRunner {
   void start() {
     result.begin = Clock.currTime;
     result.end = Clock.currTime;
-
+ 
     LifeCycleListeners.instance.begin(result);
 
     tests

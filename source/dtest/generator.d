@@ -16,7 +16,8 @@ string generateTestFile(string[] modules) {
     auto code = d.split("\n")
                   .filter!(a => !a.startsWith("module"))
                   .filter!(a => a.indexOf("import") == -1 || a.indexOf("dtest.") == -1)
-                  .join("\n");
+                  .join("\n")
+                  .removeUnittests;
 
     code ~= `
     void main() {
@@ -46,6 +47,92 @@ version(unittest) {
   import dtest.discovery;
 
   import fluent.asserts;
+}
+
+string removeTest(string data) {
+  auto cnt = 0;
+
+  if(data[0] == ')') {
+    return "unittest" ~ data;
+  }
+
+  if(data[0] != '{') {
+    return data;
+  }
+
+  foreach(size_t i, ch; data) {
+    if(ch == '{') {
+      cnt++;
+    }
+
+    if(ch == '}') {
+      cnt--;
+    }
+
+    if(cnt == 0) {
+      return data[i+1..$];
+    }
+  }
+
+  return data;
+}
+
+string removeUnittests(string data) {
+  auto pieces = data.split("unittest");
+
+  return pieces
+          .map!(a => a.strip.removeTest)
+          .join("\n")
+          .split("version(\nunittest)")
+          .map!(a => a.strip.removeTest)
+          .join("\n")
+          .split("\n")
+          .map!(a => a.stripRight)
+          .join("\n");
+
+}
+
+@("It should remove unit tests")
+unittest{
+  `module test;
+
+  @("It should find this test")
+  unittest
+  {
+    import dtest.discovery;
+    {}{{}}
+  }
+
+  int main() {
+    return 0;
+  }`.removeUnittests.should.equal(`module test;
+
+  @("It should find this test")
+
+
+  int main() {
+    return 0;
+  }`);
+}
+
+@("It should remove unittest versions")
+unittest{
+  `module test;
+
+  version(    unittest  )
+  {
+    import dtest.discovery;
+    {}{{}}
+  }
+
+  int main() {
+    return 0;
+  }`.removeUnittests.should.equal(`module test;
+
+
+  int main() {
+    return 0;
+  }`);
 }
 
 @("It should find this test")

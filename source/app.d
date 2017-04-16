@@ -31,7 +31,7 @@ int runTests(string[] arguments, string path) {
 	return status;
 }
 
-string[] findModules(string path) {
+string[] findModules(string path, string subPackage) {
 	auto cmd = ["dub", "describe", "--root=" ~ path];
 	auto pipes = pipeProcess(cmd, Redirect.stdout | Redirect.stderr);
 	scope(exit) wait(pipes.pid);
@@ -54,7 +54,7 @@ string[] findModules(string path) {
 
 	auto describe = data.parseJsonString;
 
-	string rootPackage = describe["rootPackage"].to!string;
+	string rootPackage = describe["rootPackage"].to!string ~ subPackage;
 
 	return (cast(Json[]) describe["targets"])
 		.filter!(a => a["rootPackage"].to!string.canFind(rootPackage))
@@ -88,7 +88,9 @@ int main(string[] arguments) {
 		writeln("You can add `consoled` as a dependency to get coloured output");
 	}
 
-	auto modules = root.findModules;
+	auto subPackage = arguments.find!(a => a[0] == ':');
+
+	auto modules = root.findModules(subPackage.empty ? "" : subPackage.front);
 
 	std.file.write(root ~ "/generated.d", generateTestFile(modules));
 
