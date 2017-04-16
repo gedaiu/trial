@@ -168,6 +168,7 @@ class TestRunner {
 
 void runTests(TestDiscovery testDiscovery) {
   import dtest.reporters.spec;
+  import dtest.reporters.result;
 
   LifeCycleListeners.instance = new LifeCycleListeners;
 
