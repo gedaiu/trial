@@ -10,6 +10,7 @@ string generateTestFile(string[] modules) {
       import("runner.d") ~
       import("interfaces.d") ~
       import("reporters/writer.d") ~
+      import("reporters/result.d") ~
       import("reporters/spec.d");
 
     auto code = d.split("\n")

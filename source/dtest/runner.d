@@ -170,7 +170,9 @@ void runTests(TestDiscovery testDiscovery) {
   import dtest.reporters.spec;
 
   LifeCycleListeners.instance = new LifeCycleListeners;
+
   LifeCycleListeners.instance.add(new SpecReporter);
+  LifeCycleListeners.instance.add(new ResultReporter);
 
   LifeCycleListeners.instance.begin;
 
