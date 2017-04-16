@@ -23,7 +23,11 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
   }
 
   this() {
-    writer = new ColorConsoleWriter;
+    version(Have_consoled) {
+      writer = new ColorConsoleWriter;
+    } else {
+      writer = new ConsoleWriter;
+    }
   }
 
   this(ReportWriter writer) {

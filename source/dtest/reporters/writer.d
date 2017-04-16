@@ -26,56 +26,57 @@ class ConsoleWriter : ReportWriter {
   }
 }
 
-class ColorConsoleWriter : ReportWriter {
-  private {
-    void setColor(Context context) {
-      import consoled;
+version(Have_consoled) {
+  class ColorConsoleWriter : ReportWriter {
+    private {
+      void setColor(Context context) {
+        import consoled;
 
-      switch(context) {
-        case Context.inactive:
-          foreground = Color.lightGray;
-          break;
+        switch(context) {
+          case Context.inactive:
+            foreground = Color.lightGray;
+            break;
 
-        case Context.success:
-          foreground = Color.lightGreen;
-          break;
+          case Context.success:
+            foreground = Color.lightGreen;
+            break;
 
-        case Context.info:
-          foreground = Color.cyan;
-          break;
+          case Context.info:
+            foreground = Color.cyan;
+            break;
 
-        case Context.warning:
-          foreground = Color.yellow;
-          break;
+          case Context.warning:
+            foreground = Color.yellow;
+            break;
 
-        case Context.danger:
-          foreground = Color.red;
-          break;
+          case Context.danger:
+            foreground = Color.red;
+            break;
 
-        default:
-          foreground = Color.initial;
+          default:
+            foreground = Color.initial;
+        }
+      }
+
+      void resetColor() {
+        import consoled;
+        foreground = Color.initial;
       }
     }
 
-    void resetColor() {
-      import consoled;
-      foreground = Color.initial;
+    void write(string text, Context context) {
+      setColor(context);
+
+      std.stdio.write(text);
+
+      resetColor;
+    }
+
+    void writeln(string text, Context context) {
+      write(text ~ "\n", context);
     }
   }
-
-  void write(string text, Context context) {
-    setColor(context);
-
-    std.stdio.write(text);
-
-    resetColor;
-  }
-
-  void writeln(string text, Context context) {
-    write(text ~ "\n", context);
-  }
 }
-
 class BufferedWriter : ReportWriter {
   string buffer = "";
 

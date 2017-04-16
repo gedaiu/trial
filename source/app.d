@@ -84,6 +84,10 @@ int main(string[] arguments) {
 	string root = ".";
 	getopt(arguments, config.passThrough, "root",  &root);
 
+	version(Have_consoled) {} else {
+		writeln("You can add `consoled` as a dependency to get coloured output");
+	}
+
 	auto modules = root.findModules;
 
 	std.file.write(root ~ "/generated.d", generateTestFile(modules));
