@@ -6,20 +6,31 @@ import std.string;
 import std.stdio;
 
 string generateTestFile(string[] modules) {
-    enum d = import("discovery.d") ~
+    enum d =
+      import("discovery.d") ~
       import("runner.d") ~
       import("interfaces.d") ~
       import("reporters/writer.d") ~
       import("reporters/result.d") ~
       import("reporters/spec.d");
 
-    auto code = d.split("\n")
-                  .filter!(a => !a.startsWith("module"))
-                  .filter!(a => a.indexOf("import") == -1 || a.indexOf("trial.") == -1)
-                  .join("\n")
-                  .removeUnittests;
+    auto code = "version(Have_trial_lifecycle) {
 
-    code ~= `
+  import trial.discovery;
+  import trial.runner;
+  import trial.interfaces;
+  import trial.reporters.result;
+  import trial.reporters.spec;
+
+} else {
+" ~ d.split("\n")
+            .filter!(a => !a.startsWith("module"))
+            .filter!(a => !a.startsWith("@(\""))
+            .filter!(a => a.indexOf("import") == -1 || a.indexOf("trial.") == -1)
+            .join("\n")
+            .removeUnittests;
+
+    code ~= `}
     void main() {
         TestDiscovery testDiscovery;`;
 

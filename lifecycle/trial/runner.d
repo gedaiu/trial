@@ -88,7 +88,7 @@ struct SuiteRunner {
   void start() {
     result.begin = Clock.currTime;
     result.end = Clock.currTime;
- 
+
     LifeCycleListeners.instance.begin(result);
 
     tests
@@ -140,6 +140,9 @@ class TestRunner {
   }
 
   TestResult start() {
+    TestRunner oldInstance = instance;
+    scope(exit) instance = oldInstance;
+
     instance = this;
     auto test = new TestResult(testCase.name);
 

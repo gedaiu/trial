@@ -6,3 +6,8 @@ __dummy.html
 __test__*__
 generated.d
 dub.selections.json
+/libtrial_lifecycle.a
+/libtrial_runner.a
+/trial
+/trial-lifecycle-test-library
+/trial-runner-test-application
