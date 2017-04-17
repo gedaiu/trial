@@ -215,6 +215,7 @@ unittest {
 
   executed = false;
 
+  LifeCycleListeners.instance = new LifeCycleListeners;
   SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
 
   auto begin = Clock.currTime - 1.msecs;
