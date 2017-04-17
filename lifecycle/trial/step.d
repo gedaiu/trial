@@ -1,6 +1,6 @@
-module dtest.step;
+module trial.step;
 
-import dtest.runner: TestRunner;
+import trial.runner: TestRunner;
 import std.stdio;
 
 struct Step

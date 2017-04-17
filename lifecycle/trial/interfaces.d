@@ -1,169 +1,67 @@
-module dtest.generator;
+module trial.interfaces;
 
-import std.algorithm;
-import std.array;
-import std.string;
-import std.stdio;
+import std.datetime;
 
-string generateTestFile(string[] modules) {
-    enum d = import("discovery.d") ~
-      import("runner.d") ~
-      import("interfaces.d") ~
-      import("reporters/writer.d") ~
-      import("reporters/result.d") ~
-      import("reporters/spec.d");
-
-    auto code = d.split("\n")
-                  .filter!(a => !a.startsWith("module"))
-                  .filter!(a => a.indexOf("import") == -1 || a.indexOf("dtest.") == -1)
-                  .join("\n")
-                  .removeUnittests;
-
-    code ~= `
-    void main() {
-        TestDiscovery testDiscovery;`;
-
-    foreach(m; modules) {
-      code ~= `testDiscovery.addModule!"` ~ m ~ `";`;
-    }
-
-    code ~= `
-        runTests(testDiscovery);
-    }
-
-    version (unittest) shared static this()
-    {
-        import core.runtime;
-        Runtime.moduleUnitTester = () => true;
-    }`;
-
-    return code;
+interface ILifecycleListener {
+  void begin();
+  void end(SuiteResult[]);
 }
+
+interface IStepLifecycleListener {
+  void begin(ref StepResult);
+  void end(ref StepResult);
+}
+
+interface ITestCaseLifecycleListener {
+  void begin(ref TestResult);
+  void end(ref TestResult);
+}
+
+interface ISuiteLifecycleListener {
+  void begin(ref SuiteResult);
+  void end(ref SuiteResult);
+}
+
+struct SuiteResult {
+  string name;
+
+  SysTime begin;
+  SysTime end;
+
+  TestResult[] tests;
+}
+
+class StepResult {
+  string name;
+
+  SysTime begin;
+  SysTime end;
+
+  StepResult[] steps;
+}
+
+class TestResult : StepResult {
+  enum Status {
+    created, failure, skip, started, success
+  }
+
+  Status status = Status.created;
+  Throwable throwable;
+
+  this(string name) {
+    this.name = name;
+  }
+}
+
 
 version(unittest) {
-  import std.datetime;
-  import dtest.interfaces;
-  import dtest.runner;
-  import dtest.discovery;
-
-  import fluent.asserts;
-}
-
-string removeTest(string data) {
-  auto cnt = 0;
-
-  if(data[0] == ')') {
-    return "unittest" ~ data;
-  }
-
-  if(data[0] != '{') {
-    return data;
-  }
-
-  foreach(size_t i, ch; data) {
-    if(ch == '{') {
-      cnt++;
-    }
-
-    if(ch == '}') {
-      cnt--;
-    }
-
-    if(cnt == 0) {
-      return data[i+1..$];
-    }
-  }
-
-  return data;
-}
-
-string removeUnittests(string data) {
-  auto pieces = data.split("unittest");
-
-  return pieces
-          .map!(a => a.strip.removeTest)
-          .join("\n")
-          .split("version(\nunittest)")
-          .map!(a => a.strip.removeTest)
-          .join("\n")
-          .split("\n")
-          .map!(a => a.stripRight)
-          .join("\n");
-
-}
-
-@("It should remove unit tests")
-unittest{
-  `module test;
-
-  @("It should find this test")
-  unittest
-  {
-    import dtest.discovery;
-    {}{{}}
-  }
-
-  int main() {
-    return 0;
-  }`.removeUnittests.should.equal(`module test;
-
-  @("It should find this test")
-
-
-  int main() {
-    return 0;
-  }`);
-}
-
-@("It should remove unittest versions")
-unittest{
-  `module test;
-
-  version(    unittest  )
-  {
-    import dtest.discovery;
-    {}{{}}
-  }
-
-  int main() {
-    return 0;
-  }`.removeUnittests.should.equal(`module test;
-
-
-  int main() {
-    return 0;
-  }`);
-}
-
-@("It should find this test")
-unittest
-{
-  import dtest.discovery;
-
-	TestDiscovery testDiscovery;
-
-	testDiscovery.addModule!("dtest.discovery");
-}
-
-@("A suite runner should set the data to an empty suite runner")
-unittest {
-  TestCase[string] tests;
-
-  SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
-
-  auto begin = Clock.currTime - 1.msecs;
-  suiteRunner.start();
-  auto end = Clock.currTime + 1.msecs;
-
-  suiteRunner.result.name.should.equal("Suite name");
-  suiteRunner.result.tests.length.should.equal(0);
-  suiteRunner.result.begin.should.be.between(begin, end);
-  suiteRunner.result.end.should.be.between(begin, end);
-}
-
-version(unittest) {
-  import dtest.step;
   import std.conv;
+  import std.algorithm;
+
+  import trial.step;
+  import trial.discovery;
+  import trial.runner;
+  import fluent.asserts;
 
   bool executed;
 
@@ -329,4 +227,20 @@ unittest
                         "begin Step 1", "end Step 1",
                         "begin Step 2", "end Step 2",
                       "end some step"]);
+}
+
+@("A suite runner should set the data to an empty suite runner")
+unittest {
+  TestCase[string] tests;
+
+  SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
+
+  auto begin = Clock.currTime - 1.msecs;
+  suiteRunner.start();
+  auto end = Clock.currTime + 1.msecs;
+
+  suiteRunner.result.name.should.equal("Suite name");
+  suiteRunner.result.tests.length.should.equal(0);
+  suiteRunner.result.begin.should.be.between(begin, end);
+  suiteRunner.result.end.should.be.between(begin, end);
 }

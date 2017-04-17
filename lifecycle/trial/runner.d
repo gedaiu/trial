@@ -1,4 +1,4 @@
-module dtest.runner;
+module trial.runner;
 
 import std.stdio;
 import std.algorithm;
@@ -6,8 +6,8 @@ import std.datetime;
 import std.range;
 import std.traits;
 
-import dtest.discovery;
-import dtest.interfaces;
+import trial.discovery;
+import trial.interfaces;
 
 class LifeCycleListeners {
   static LifeCycleListeners instance;
@@ -167,8 +167,8 @@ class TestRunner {
 }
 
 void runTests(TestDiscovery testDiscovery) {
-  import dtest.reporters.spec;
-  import dtest.reporters.result;
+  import trial.reporters.spec;
+  import trial.reporters.result;
 
   LifeCycleListeners.instance = new LifeCycleListeners;
 

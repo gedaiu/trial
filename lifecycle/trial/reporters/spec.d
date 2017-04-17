@@ -1,12 +1,12 @@
-module dtest.reporters.spec;
+module trial.reporters.spec;
 
 import std.stdio;
 import std.array;
 import std.conv;
 import std.datetime;
 
-import dtest.interfaces;
-import dtest.reporters.writer;
+import trial.interfaces;
+import trial.reporters.writer;
 
 class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
 
@@ -14,6 +14,7 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
     int indents;
 
     immutable string ok = "✓";
+    immutable string current = "◉";
 
     int tests;
     int failedTests = 0;

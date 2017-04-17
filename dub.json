@@ -1,18 +1,43 @@
 {
-	"name": "dtest",
+	"name": "trial",
 	"authors": [
 		"Szabo Bogdan"
 	],
-	"description": "A minimal D application.",
+	"description": "DLang test runner",
 	"copyright": "Copyright © 2017, Szabo Bogdan",
 	"license": "MIT",
+
 	"dependencies": {
-		"vibe-d:data": "*",
-		"consoled": "~>1.0.4",
-		"fluent-asserts": {
-			"path": "../should"
-		}
+		"trial:lifecycle": "*"
 	},
 
-	"dflags": ["-Jsource/dtest"]
+	"subPackages": [
+		{
+			"name": "lifecycle",
+			"targetType": "library",
+			"sourcePaths": ["lifecycle"],
+			"importPaths": ["lifecycle"],
+			"dependencies": {
+				"fluent-asserts": {
+					"path": "../should"
+				}
+			}
+		},
+		{
+			"name": "runner",
+			"targetType": "executable",
+			"targetName": "trial",
+			"sourcePaths": ["runner"],
+			"importPaths": ["runner"],
+
+			"dependencies": {
+				"vibe-d:data": "*",
+				"fluent-asserts": {
+					"path": "../should"
+				}
+			},
+
+			"dflags": [ "-Jlifecycle/trial" ]
+		}
+	]
 }

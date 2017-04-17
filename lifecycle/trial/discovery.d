@@ -1,4 +1,4 @@
-module dtest.discovery;
+module trial.discovery;
 
 import std.stdio;
 import std.string;
@@ -127,4 +127,14 @@ private void testTempl(X...)()
 	} else {
 		auto x = X[0].stringof;
 	}
+}
+
+@("It should find this test")
+unittest
+{
+  import trial.discovery;
+
+	TestDiscovery testDiscovery;
+
+	testDiscovery.addModule!("trial.discovery");
 }

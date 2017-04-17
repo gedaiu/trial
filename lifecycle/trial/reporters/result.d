@@ -1,12 +1,12 @@
-module dtest.reporters.result;
+module trial.reporters.result;
 
 import std.stdio;
 import std.array;
 import std.conv;
 import std.datetime;
 
-import dtest.interfaces;
-import dtest.reporters.writer;
+import trial.interfaces;
+import trial.reporters.writer;
 
 class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
 

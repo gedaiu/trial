@@ -1,4 +1,4 @@
-module dtest.reporters.writer;
+module trial.reporters.writer;
 
 import std.stdio;
 
