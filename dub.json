@@ -18,6 +18,7 @@
 			"sourcePaths": ["lifecycle"],
 			"importPaths": ["lifecycle"],
 			"dependencies": {
+				"consoled": "~>1.0.4",
 				"fluent-asserts": {
 					"path": "../should"
 				}
