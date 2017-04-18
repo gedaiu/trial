@@ -135,7 +135,11 @@ Settings readSettings(string root) {
 version(unitttest) {} else {
 	int main(string[] arguments) {
 		string root = ".";
-		getopt(arguments, config.passThrough, "root",  &root);
+		string suite = "";
+
+		getopt(arguments, config.passThrough,
+			"root",  &root,
+			"suite|s", "the suite or package that you want to test", &suite);
 
 		version(Have_consoled) {} else {
 			writeln("You can add `consoled` as a dependency to get coloured output");
@@ -149,7 +153,7 @@ version(unitttest) {} else {
 		auto modules = describe.findModules(subPackage.empty ? "" : subPackage.front);
 		auto hasTrialDependency = describe.hasTrial(subPackage.empty ? "" : subPackage.front);
 
-		std.file.write(root ~ "/generated.d", generateTestFile(settings, hasTrialDependency, modules));
+		std.file.write(root ~ "/generated.d", generateTestFile(settings, hasTrialDependency, modules, suite));
 
 		return arguments.runTests(root);
 	}

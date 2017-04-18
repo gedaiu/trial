@@ -7,7 +7,7 @@ import std.stdio;
 
 import trial.settings;
 
-string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules) {
+string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules, string suite = "") {
     enum d =
       import("discovery.d") ~
       import("runner.d") ~
@@ -40,15 +40,14 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
               .removeUnittests;
     }
 
-
-
     code ~= `
     void main() {
         TestDiscovery testDiscovery;`;
 
-    foreach(m; modules) {
-      code ~= `        testDiscovery.addModule!"` ~ m ~ `";` ~ "\n";
-    }
+    code ~= modules
+      .filter!(a => a.indexOf(suite) != -1)
+      .map!(a => `        testDiscovery.addModule!"` ~ a ~ `";`)
+      .join("\n");
 
     code ~= `
         setupLifecycle(` ~ settings.toCode ~ `);
