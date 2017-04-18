@@ -93,12 +93,15 @@ unittest {
 
   executed = false;
 
+  auto old = LifeCycleListeners.instance;
   LifeCycleListeners.instance = new LifeCycleListeners;
-  SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
+
+  SuiteRunner suiteRunner = new SuiteRunner("Suite name1", tests);
 
   auto begin = Clock.currTime - 1.msecs;
   suiteRunner.start();
   auto end = Clock.currTime + 1.msecs;
+  LifeCycleListeners.instance = old;
 
   suiteRunner.result.tests.length.should.equal(1);
   suiteRunner.result.tests[0].begin.should.be.between(begin, end);
@@ -112,13 +115,14 @@ unittest {
   TestCase[string] tests = ["0": TestCase("someTestCase", &failureMock) ];
 
   executed = false;
-
+  auto old = LifeCycleListeners.instance;
   LifeCycleListeners.instance = new LifeCycleListeners;
-  SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
+  SuiteRunner suiteRunner = new SuiteRunner("Suite name2", tests);
 
   auto begin = Clock.currTime - 1.msecs;
   suiteRunner.start();
   auto end = Clock.currTime + 1.msecs;
+  LifeCycleListeners.instance = old;
 
   suiteRunner.result.tests.length.should.equal(1);
   suiteRunner.result.tests[0].begin.should.be.between(begin, end);
@@ -130,6 +134,9 @@ unittest {
 
 @("A suite runner should call the suite lifecycle listener methods")
 unittest {
+  auto old = LifeCycleListeners.instance;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+
   auto beginTime = Clock.currTime - 1.msecs;
   TestCase[string] tests = ["0": TestCase("someTestCase", &mock) ];
 
@@ -172,11 +179,14 @@ unittest {
     }
   }
 
-  SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
-  LifeCycleListeners.instance = new LifeCycleListeners;
+
+  SuiteRunner suiteRunner = new SuiteRunner("Suite name", tests);
+
+
   LifeCycleListeners.instance.add(new TestSuiteListener);
 
   suiteRunner.start();
+  LifeCycleListeners.instance = old;
 
   order.should.equal(["beginSuite", "beginTest", "endTest", "endSuite"]);
 }
@@ -187,10 +197,13 @@ unittest
   auto beginTime = Clock.currTime - 1.msecs;
   auto const test = TestCase("someTestCase", &stepMock);
 
+  auto old = LifeCycleListeners.instance;
   LifeCycleListeners.instance = new LifeCycleListeners;
   auto runner = new TestRunner(test);
 
   auto result = runner.start;
+
+  LifeCycleListeners.instance = old;
 
   result.steps.length.should.equal(1);
   result.steps[0].name.should.equal("some step");
@@ -217,10 +230,13 @@ unittest
     }
   }
 
+  auto old = LifeCycleListeners.instance;
   LifeCycleListeners.instance = new LifeCycleListeners;
   LifeCycleListeners.instance.add(new StepListener);
 
   new TestRunner(test).start;
+
+  LifeCycleListeners.instance = old;
 
   order.should.equal(["begin some step",
                         "begin Step 0", "end Step 0",
@@ -232,14 +248,17 @@ unittest
 @("A suite runner should set the data to an empty suite runner")
 unittest {
   TestCase[string] tests;
+  auto old = LifeCycleListeners.instance;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  SuiteRunner suiteRunner = new SuiteRunner("Suite name4", tests);
 
-  SuiteRunner suiteRunner = SuiteRunner("Suite name", tests);
 
   auto begin = Clock.currTime - 1.msecs;
   suiteRunner.start();
   auto end = Clock.currTime + 1.msecs;
+  LifeCycleListeners.instance = old;
 
-  suiteRunner.result.name.should.equal("Suite name");
+  suiteRunner.result.name.should.equal("Suite name4");
   suiteRunner.result.tests.length.should.equal(0);
   suiteRunner.result.begin.should.be.between(begin, end);
   suiteRunner.result.end.should.be.between(begin, end);

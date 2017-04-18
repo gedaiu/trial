@@ -73,7 +73,7 @@ class LifeCycleListeners {
   }
 }
 
-struct SuiteRunner {
+class SuiteRunner {
   SuiteResult result;
 
   private {
@@ -142,8 +142,12 @@ class TestRunner {
   }
 
   TestResult start() {
-    TestRunner oldInstance = instance;
-    scope(exit) instance = oldInstance;
+    auto oldRunnerInstance = instance;
+    auto oldListenersInstance = LifeCycleListeners.instance;
+    scope(exit) {
+      instance = oldRunnerInstance;
+      LifeCycleListeners.instance = oldListenersInstance;
+    }
 
     instance = this;
     auto test = new TestResult(testCase.name);
@@ -201,7 +205,7 @@ void runTests(TestDiscovery testDiscovery) {
   SuiteResult[] results = [];
 
   foreach(string moduleName, testCases; testDiscovery.testCases) {
-    auto suiteRunner = SuiteRunner(moduleName, testCases);
+    auto suiteRunner = new SuiteRunner(moduleName, testCases);
     suiteRunner.start;
 
     results ~= suiteRunner.result;

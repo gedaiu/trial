@@ -129,6 +129,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
           TestException e = cast(TestException) t;
 
           if(e is null) {
+
             writer.writeln(t.to!string);
           } else {
             e.print;
