@@ -20,11 +20,11 @@ string generateTestFile(bool hasTrialDependency, string[] modules) {
       writeln("We are using the project `trial:lifecicle` dependency.");
 
       code = "
-import trial.discovery;
-import trial.runner;
-import trial.interfaces;
-import trial.reporters.result;
-import trial.reporters.spec;\n";
+        import trial.discovery;
+        import trial.runner;
+        import trial.interfaces;
+        import trial.reporters.result;
+        import trial.reporters.spec;\n";
     } else {
       writeln("We will embed the `trial:lifecicle` code inside the project.");
 

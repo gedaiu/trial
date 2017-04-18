@@ -8,6 +8,15 @@ import vibe.data.json;
 
 import trial.generator;
 
+struct Settings {
+/*
+	bool colors;
+	bool sort;
+	bool bail;*/
+
+	string[] reporters = [ "spec", "result" ];
+}
+
 int runTests(string[] arguments, string path) {
 	auto cmd = ["dub", "test"] ~ arguments[1..$] ~ ["--main-file=generated.d"];
 
@@ -120,6 +129,17 @@ bool hasTrial(Json describe, string subPackage) {
 		return !hasVersion;
 }
 
+Settings readSettings(string root) {
+	if(!"trial.json".exists) {
+		Settings def;
+		std.file.write(root ~ "/trial.json", def.serializetoJson.toPrettyString);
+	}
+
+	Settings settings;
+
+	return settings;
+}
+
 version(unitttest) {} else {
 	int main(string[] arguments) {
 		string root = ".";
@@ -128,6 +148,8 @@ version(unitttest) {} else {
 		version(Have_consoled) {} else {
 			writeln("You can add `consoled` as a dependency to get coloured output");
 		}
+
+		Settings settings = readSettings(root);
 
 		auto subPackage = arguments.find!(a => a[0] == ':');
 
