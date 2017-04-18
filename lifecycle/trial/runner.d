@@ -80,10 +80,10 @@ class SuiteRunner {
     TestCase[] tests;
   }
 
-  this(string name, TestCase[string] testCases) {
+  this(string name, TestCase[] testCases) {
     result.name = name;
 
-    tests = testCases.values;
+    tests = testCases;
     result.tests = tests.map!(a => new TestResult(a.name)).array;
   }
 
@@ -199,16 +199,20 @@ void addReporter(string name) {
     }
 }
 
-void runTests(TestDiscovery testDiscovery) {
+void runTests(TestDiscovery testDiscovery, string testName = "") {
   LifeCycleListeners.instance.begin;
 
   SuiteResult[] results = [];
 
   foreach(string moduleName, testCases; testDiscovery.testCases) {
-    auto suiteRunner = new SuiteRunner(moduleName, testCases);
-    suiteRunner.start;
+    auto tests = testCases.values.filter!(a => a.name.indexOf(testName) != -1).array;
 
-    results ~= suiteRunner.result;
+    if(tests.length > 0) {
+      auto suiteRunner = new SuiteRunner(moduleName, tests);
+      suiteRunner.start;
+
+      results ~= suiteRunner.result;
+    }
   }
 
   LifeCycleListeners.instance.end(results);

@@ -7,7 +7,16 @@ import std.stdio;
 
 import trial.settings;
 
-string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules, string suite = "") {
+string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules, string suite = "", string testName = "") {
+  if(suite != "") {
+    writeln("Selecting suites conaining `" ~ suite ~ "`.");
+  }
+
+  testName = testName.replace(`"`, `\"`);
+  if(testName != "") {
+    writeln("Selecting tests conaining `" ~ testName ~ "`.");
+  }
+
     enum d =
       import("discovery.d") ~
       import("runner.d") ~
@@ -51,7 +60,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
 
     code ~= `
         setupLifecycle(` ~ settings.toCode ~ `);
-        runTests(testDiscovery);
+        runTests(testDiscovery, "` ~ testName ~ `");
     }
 
     version (unittest) shared static this()
