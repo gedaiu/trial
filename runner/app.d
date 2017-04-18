@@ -7,15 +7,7 @@ import std.array;
 import vibe.data.json;
 
 import trial.generator;
-
-struct Settings {
-/*
-	bool colors;
-	bool sort;
-	bool bail;*/
-
-	string[] reporters = [ "spec", "result" ];
-}
+import trial.settings;
 
 int runTests(string[] arguments, string path) {
 	auto cmd = ["dub", "test"] ~ arguments[1..$] ~ ["--main-file=generated.d"];
@@ -132,10 +124,10 @@ bool hasTrial(Json describe, string subPackage) {
 Settings readSettings(string root) {
 	if(!"trial.json".exists) {
 		Settings def;
-		std.file.write(root ~ "/trial.json", def.serializetoJson.toPrettyString);
+		std.file.write(root ~ "/trial.json", def.serializeToJson.toPrettyString);
 	}
 
-	Settings settings;
+	Settings settings = readText(root ~ "/trial.json").deserializeJson!Settings;
 
 	return settings;
 }
@@ -157,7 +149,7 @@ version(unitttest) {} else {
 		auto modules = describe.findModules(subPackage.empty ? "" : subPackage.front);
 		auto hasTrialDependency = describe.hasTrial(subPackage.empty ? "" : subPackage.front);
 
-		std.file.write(root ~ "/generated.d", generateTestFile(hasTrialDependency, modules));
+		std.file.write(root ~ "/generated.d", generateTestFile(settings, hasTrialDependency, modules));
 
 		return arguments.runTests(root);
 	}

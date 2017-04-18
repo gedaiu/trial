@@ -32,6 +32,7 @@
 			"importPaths": ["runner"],
 
 			"dependencies": {
+				"trial:lifecycle": "*",
 				"vibe-d:data": "*",
 				"fluent-asserts": {
 					"path": "../should"

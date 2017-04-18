@@ -5,9 +5,11 @@ import std.algorithm;
 import std.datetime;
 import std.range;
 import std.traits;
+import std.string;
 
 import trial.discovery;
 import trial.interfaces;
+import trial.settings;
 
 class LifeCycleListeners {
   static LifeCycleListeners instance;
@@ -169,15 +171,31 @@ class TestRunner {
   }
 }
 
-void runTests(TestDiscovery testDiscovery) {
-  import trial.reporters.spec;
-  import trial.reporters.result;
-
+void setupLifecycle(Settings settings) {
   LifeCycleListeners.instance = new LifeCycleListeners;
 
-  LifeCycleListeners.instance.add(new SpecReporter);
-  LifeCycleListeners.instance.add(new ResultReporter);
+  settings.reporters.map!(a => a.toLower).each!addReporter;
+}
 
+void addReporter(string name) {
+    import trial.reporters.spec;
+    import trial.reporters.result;
+
+    switch(name) {
+      case "spec":
+        LifeCycleListeners.instance.add(new SpecReporter);
+        break;
+
+      case "result":
+        LifeCycleListeners.instance.add(new ResultReporter);
+        break;
+
+      default:
+        writeln("There is no `" ~ name ~"` reporter");
+    }
+}
+
+void runTests(TestDiscovery testDiscovery) {
   LifeCycleListeners.instance.begin;
 
   SuiteResult[] results = [];

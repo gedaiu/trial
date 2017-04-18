@@ -5,11 +5,14 @@ import std.array;
 import std.string;
 import std.stdio;
 
-string generateTestFile(bool hasTrialDependency, string[] modules) {
+import trial.settings;
+
+string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules) {
     enum d =
       import("discovery.d") ~
       import("runner.d") ~
       import("interfaces.d") ~
+      import("settings.d") ~
       import("reporters/writer.d") ~
       import("reporters/result.d") ~
       import("reporters/spec.d");
@@ -23,6 +26,7 @@ string generateTestFile(bool hasTrialDependency, string[] modules) {
         import trial.discovery;
         import trial.runner;
         import trial.interfaces;
+        import trial.settings;
         import trial.reporters.result;
         import trial.reporters.spec;\n";
     } else {
@@ -47,6 +51,7 @@ string generateTestFile(bool hasTrialDependency, string[] modules) {
     }
 
     code ~= `
+        setupLifecycle(` ~ settings.toCode ~ `);
         runTests(testDiscovery);
     }
 

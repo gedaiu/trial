@@ -1,0 +1,6 @@
+{
+	"reporters": [
+		"spec",
+		"result"
+	]
+}
