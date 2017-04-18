@@ -3,6 +3,7 @@ module trial.discovery;
 import std.stdio;
 import std.string;
 import std.traits;
+import std.conv;
 
 alias testCaseFunction = void function() @system;
 
@@ -22,7 +23,7 @@ struct TestDiscovery {
 
 	private {
 		string testName(alias test)() {
-			string name = "unknown";
+			string name = test.stringof.to!string;
 
 			foreach (att; __traits(getAttributes, test)) {
 				static if (is(typeof(att) == string)) {
@@ -129,6 +130,10 @@ private void testTempl(X...)()
 	}
 }
 
+version(unittest) {
+	import fluent.asserts;
+}
+
 @("It should find this test")
 unittest
 {
@@ -137,4 +142,7 @@ unittest
 	TestDiscovery testDiscovery;
 
 	testDiscovery.addModule!("trial.discovery");
+
+	testDiscovery.testCases.keys.should.contain("trial.discovery");
+	testDiscovery.testCases["trial.discovery"].keys.length.should.equal(1);
 }

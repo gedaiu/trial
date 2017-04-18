@@ -30,7 +30,7 @@ int runTests(string[] arguments, string path) {
 	return status;
 }
 
-string[] findModules(string path, string subPackage) {
+Json dubDescribe(string path, string subPackage) {
 	auto cmd = ["dub", "describe", subPackage];
 
 	if(path != ".") {
@@ -56,8 +56,18 @@ string[] findModules(string path, string subPackage) {
 		pipes.stdout.byLine.each!(a => data ~= a);
 	}
 
-	auto describe = data.parseJsonString;
+	try {
+		Json describe = data.parseJsonString;
 
+		return describe;
+	} catch(Exception e) {
+		data.writeln("\n\n");
+
+		throw e;
+	}
+}
+
+string[] findModules(Json describe, string subPackage) {
 	string rootPackage = describe["rootPackage"].to!string;
 
 	writeln("Looking for files inside `", rootPackage,"`");
@@ -91,6 +101,25 @@ string getModuleName(string fileName) {
 	return moduleLine.front.split(' ')[1].split(";")[0];
 }
 
+bool hasTrial(Json describe, string subPackage) {
+	string rootPackage = describe["rootPackage"].to!string;
+
+	auto neededPackage = (cast(Json[]) describe["targets"])
+		.filter!(a => a["rootPackage"].to!string.canFind(rootPackage))
+		.filter!(a => a["rootPackage"].to!string.canFind(subPackage));
+
+		if(neededPackage.empty) {
+			return false;
+		}
+
+		Json[] versions = (cast(Json[]) neededPackage.front["buildSettings"]["versions"]);
+		auto hasVersion = versions
+			.map!(a => a.to!string)
+			.filter!(a => a == "Have_trial_lifecycle").empty;
+
+		return !hasVersion;
+}
+
 version(unitttest) {} else {
 	int main(string[] arguments) {
 		string root = ".";
@@ -102,9 +131,11 @@ version(unitttest) {} else {
 
 		auto subPackage = arguments.find!(a => a[0] == ':');
 
-		auto modules = root.findModules(subPackage.empty ? "" : subPackage.front);
+		auto describe = root.dubDescribe(subPackage.empty ? "" : subPackage.front);
+		auto modules = describe.findModules(subPackage.empty ? "" : subPackage.front);
+		auto hasTrialDependency = describe.hasTrial(subPackage.empty ? "" : subPackage.front);
 
-		std.file.write(root ~ "/generated.d", generateTestFile(modules));
+		std.file.write(root ~ "/generated.d", generateTestFile(hasTrialDependency, modules));
 
 		return arguments.runTests(root);
 	}
