@@ -41,7 +41,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
     } else {
       writeln("We will embed the `trial:lifecicle` code inside the project.");
 
-      code = d.split("\n")
+      code = "version = is_trial_embeded;\n" ~ d.split("\n")
               .filter!(a => !a.startsWith("module"))
               .filter!(a => !a.startsWith("@(\""))
               .filter!(a => a.indexOf("import") == -1 || a.indexOf("trial.") == -1)

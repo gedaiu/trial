@@ -10,6 +10,7 @@ import std.string;
 import trial.discovery;
 import trial.interfaces;
 import trial.settings;
+import trial.stackresult;
 
 class LifeCycleListeners {
   static LifeCycleListeners instance;
@@ -164,7 +165,7 @@ class TestRunner {
       test.status = TestResult.Status.success;
     } catch(Throwable t) {
       test.status = TestResult.Status.failure;
-      test.throwable = t;
+      test.throwable = toTestException(t);
     }
 
     test.end = Clock.currTime;
@@ -216,4 +217,10 @@ void runTests(TestDiscovery testDiscovery, string testName = "") {
   }
 
   LifeCycleListeners.instance.end(results);
+}
+
+version(is_trial_embeded) {
+  auto toTestException(Throwable t) {
+    return t;
+  }
 }

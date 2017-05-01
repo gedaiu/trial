@@ -130,13 +130,11 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
 
           if(e is null) {
             writer.writeln(t.to!string);
-            writer.writeln(t.info.to!string);
           } else {
             e.print;
           }
         } else {
           writer.writeln(t.to!string);
-          writer.writeln(t.info.to!string);
         }
 
         writer.writeln("");

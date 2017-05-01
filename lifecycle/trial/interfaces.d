@@ -89,7 +89,7 @@ version(unittest) {
 
 @("A suite runner should run a success test case and add it to the result")
 unittest {
-  TestCase[string] tests = ["0": TestCase("someTestCase", &mock) ];
+  TestCase[] tests = [ TestCase("someTestCase", &mock) ];
 
   executed = false;
 
@@ -112,7 +112,7 @@ unittest {
 
 @("A suite runner should run a failing test case and add it to the result")
 unittest {
-  TestCase[string] tests = ["0": TestCase("someTestCase", &failureMock) ];
+  TestCase[] tests = [ TestCase("someTestCase", &failureMock) ];
 
   executed = false;
   auto old = LifeCycleListeners.instance;
@@ -138,7 +138,7 @@ unittest {
   LifeCycleListeners.instance = new LifeCycleListeners;
 
   auto beginTime = Clock.currTime - 1.msecs;
-  TestCase[string] tests = ["0": TestCase("someTestCase", &mock) ];
+  TestCase[] tests = [ TestCase("someTestCase", &mock) ];
 
   string[] order = [];
   class TestSuiteListener: ISuiteLifecycleListener, ITestCaseLifecycleListener {
@@ -247,7 +247,7 @@ unittest
 
 @("A suite runner should set the data to an empty suite runner")
 unittest {
-  TestCase[string] tests;
+  TestCase[] tests;
   auto old = LifeCycleListeners.instance;
   LifeCycleListeners.instance = new LifeCycleListeners;
   SuiteRunner suiteRunner = new SuiteRunner("Suite name4", tests);
