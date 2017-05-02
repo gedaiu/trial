@@ -4,10 +4,11 @@ import std.algorithm;
 import std.array;
 import std.string;
 import std.stdio;
+import std.conv;
 
 import trial.settings;
 
-string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules, string suite = "", string testName = "") {
+string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules, string[] externalModules, string suite = "", string testName = "") {
   if(suite != "") {
     writeln("Selecting suites conaining `" ~ suite ~ "`.");
   }
@@ -17,59 +18,68 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
     writeln("Selecting tests conaining `" ~ testName ~ "`.");
   }
 
-    enum d =
-      import("discovery.d") ~
-      import("runner.d") ~
-      import("interfaces.d") ~
-      import("settings.d") ~
-      import("reporters/writer.d") ~
-      import("reporters/result.d") ~
-      import("reporters/spec.d");
+  enum d =
+    import("discovery.d") ~
+    import("runner.d") ~
+    import("interfaces.d") ~
+    import("settings.d") ~
+    import("reporters/writer.d") ~
+    import("reporters/result.d") ~
+    import("reporters/spec.d");
 
-    string code;
+  string code;
 
-    if(hasTrialDependency) {
-      writeln("We are using the project `trial:lifecicle` dependency.");
+  if(hasTrialDependency) {
+    writeln("We are using the project `trial:lifecicle` dependency.");
 
-      code = "
-        import trial.discovery;
-        import trial.runner;
-        import trial.interfaces;
-        import trial.settings;
-        import trial.reporters.result;
-        import trial.reporters.spec;\n";
-    } else {
-      writeln("We will embed the `trial:lifecicle` code inside the project.");
+    code = "
+      import trial.discovery;
+      import trial.runner;
+      import trial.interfaces;
+      import trial.settings;
+      import trial.stackresult;
+      import trial.reporters.result;
+      import trial.reporters.spec;\n";
+  } else {
+    writeln("We will embed the `trial:lifecicle` code inside the project.");
 
-      code = "version = is_trial_embeded;\n" ~ d.split("\n")
-              .filter!(a => !a.startsWith("module"))
-              .filter!(a => !a.startsWith("@(\""))
-              .filter!(a => a.indexOf("import") == -1 || a.indexOf("trial.") == -1)
-              .join("\n")
-              .removeUnittests;
-    }
+    code = "version = is_trial_embeded;\n" ~ d.split("\n")
+            .filter!(a => !a.startsWith("module"))
+            .filter!(a => !a.startsWith("@(\""))
+            .filter!(a => a.indexOf("import") == -1 || a.indexOf("trial.") == -1)
+            .join("\n")
+            .removeUnittests;
+  }
 
-    code ~= `
-    void main() {
-        TestDiscovery testDiscovery;`;
+  code ~= `
+  void main() {
+      TestDiscovery testDiscovery;` ~ "\n\n";
 
-    code ~= modules
-      .filter!(a => a.indexOf(suite) != -1)
-      .map!(a => `        testDiscovery.addModule!"` ~ a ~ `";`)
-      .join("\n");
+  if(hasTrialDependency) {
+    externalModules ~= [ "std.", "core." ];
 
-    code ~= `
-        setupLifecycle(` ~ settings.toCode ~ `);
-        runTests(testDiscovery, "` ~ testName ~ `");
-    }
+    code~= `
+      StackResult.externalModules = ` ~ externalModules.to!string ~ `;
+    `;
+  }
 
-    version (unittest) shared static this()
-    {
-        import core.runtime;
-        Runtime.moduleUnitTester = () => true;
-    }`;
+  code ~= modules
+    .filter!(a => a.indexOf(suite) != -1)
+    .map!(a => `        testDiscovery.addModule!"` ~ a ~ `";`)
+    .join("\n");
 
-    return code;
+  code ~= `
+      setupLifecycle(` ~ settings.toCode ~ `);
+      runTests(testDiscovery, "` ~ testName ~ `");
+  }
+
+  version (unittest) shared static this()
+  {
+      import core.runtime;
+      Runtime.moduleUnitTester = () => true;
+  }`;
+
+  return code;
 }
 
 version(unittest) {
@@ -117,7 +127,6 @@ string removeUnittests(string data) {
           .split("\n")
           .map!(a => a.stripRight)
           .join("\n");
-
 }
 
 @("It should remove unit tests")

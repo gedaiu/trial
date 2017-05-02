@@ -88,6 +88,25 @@ string[] findModules(Json describe, string subPackage) {
 			.array;
 }
 
+string[] findExternalModules(Json describe) {
+	string rootPackage = describe["rootPackage"].to!string;
+
+	auto neededPackages = (cast(Json[]) describe["targets"])
+		.filter!(a => !a["rootPackage"].to!string.canFind(rootPackage));
+
+	if(neededPackages.empty) {
+		return [];
+	}
+
+	Json[] files = cast(Json[])reduce!((a, b) => a ~ b)(Json.emptyArray, neededPackages.map!(a => a["buildSettings"]["sourceFiles"]));
+
+	return files
+		.map!(a => a.to!string)
+		.map!(a => getModuleName(a))
+		.filter!(a => a != "")
+			.array;
+}
+
 string getModuleName(string fileName) {
 	auto file = File(fileName);
 
@@ -153,9 +172,10 @@ version(unitttest) {} else {
 
 		auto describe = root.dubDescribe(subPackage.empty ? "" : subPackage.front);
 		auto modules = describe.findModules(subPackage.empty ? "" : subPackage.front);
+		auto externalModules = describe.findExternalModules;
 		auto hasTrialDependency = describe.hasTrial(subPackage.empty ? "" : subPackage.front);
 
-		std.file.write(root ~ "/generated.d", generateTestFile(settings, hasTrialDependency, modules, suite, testName));
+		std.file.write(root ~ "/generated.d", generateTestFile(settings, hasTrialDependency, modules, externalModules, suite, testName));
 
 		return arguments.runTests(root);
 	}

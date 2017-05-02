@@ -16,14 +16,15 @@ TestException toTestException(Throwable t) {
   auto exception = cast(TestException) t;
 
   if(exception is null) {
-
     IResult[] results = [ cast(IResult) new MessageResult(t.classinfo.name ~ ": " ~ t.msg) ];
 
     if(t.file.indexOf("../") == -1) {
       results ~= cast(IResult) new SourceResult(t.file, t.line);
     }
 
-    results ~= cast(IResult) new StackResult(t.info);
+    if(t !is null && t.info !is null) {
+      results ~= cast(IResult) new StackResult(t.info);
+    }
 
     exception = new TestException(results, t.file, t.line, t);
   }
@@ -51,7 +52,77 @@ unittest {
   testException.toString.should.not.contain("lifecycle/trial/runner.d");
 }
 
+struct ExternalValidator {
+  string[] externalModules;
+
+  bool isExternal(const string name) {
+    auto reversed = name.dup;
+    reverse(reversed);
+
+    string substring = name;
+    int sum = 0;
+    int index = 0;
+    foreach(ch; reversed) {
+      if(ch == ')') {
+        sum++;
+      }
+
+      if(ch == '(') {
+        sum--;
+      }
+
+      if(sum == 0) {
+        break;
+      }
+      index++;
+    }
+
+    auto tmpSubstring = reversed[index..$];
+    reverse(tmpSubstring);
+    substring = tmpSubstring.to!string;
+
+    auto wordEnd = substring.lastIndexOf(' ') + 1;
+    auto chainEnd = substring.lastIndexOf(").") + 1;
+
+    if(chainEnd > wordEnd) {
+      return isExternal(name[0..chainEnd]);
+    }
+
+    auto functionName = substring[wordEnd..$];
+
+    return !externalModules
+              .filter!(a => functionName.indexOf(a) == 0)
+                .empty;
+  }
+}
+
+@("It should detect external functions")
+unittest
+{
+  auto validator = ExternalValidator(["selenium.api", "selenium.session"]);
+
+  validator.isExternal(
+    "selenium.api.SeleniumApiConnector selenium.api.SeleniumApiConnector.__ctor()")
+    .should.equal(true);
+
+  validator.isExternal(
+    "void selenium.api.SeleniumApiConnector.__ctor()")
+    .should.equal(true);
+
+  validator.isExternal(
+    "pure @safe bool selenium.api.enforce!(Exception, bool).enforce(bool, lazy const(char)[], immutable(char)[], ulong)")
+    .should.equal(true);
+
+  validator.isExternal(
+    "immutable(immutable(selenium.session.SeleniumSession) function(immutable(char)[], selenium.api.Capabilities, selenium.api.Capabilities, selenium.api.Capabilities)) selenium.session.SeleniumSession.__ctor")
+    .should.equal(true);
+}
+
 class StackResult: IResult {
+  static {
+    string[] externalModules;
+  }
+
   Frame[] frames;
 
   this(Throwable.TraceInfo t) {
@@ -88,14 +159,30 @@ class StackResult: IResult {
       version(Have_consoled) {
         import consoled;
 
+        int colorIndex=0;
         writeln("Stack trace:\n-------------------\n...\n");
 
+        auto validator = ExternalValidator(externalModules);
+
         foreach(frame; getFrames) {
-          foreground = Color.blue;
+          if(validator.isExternal(frame.name)) {
+            foreground = Color.blue;
+          } else {
+            foreground = Color.red;
+          }
+
           write(leftJustifier(frame.index.to!string, 4));
           write(frame.address ~ " ");
-          resetColors();
+
+          if(validator.isExternal(frame.name)) {
+            foreground = Color.cyan;
+          } else {
+            foreground = Color.lightCyan;
+          }
+
           writeln(frame.name);
+
+          resetColors();
         }
         writeln("...");
       } else {
@@ -131,7 +218,6 @@ struct Frame {
   string file;
   int line = -1;
 }
-
 
 immutable static {
   string index       = `(?P<index>[0-9]+)`;
