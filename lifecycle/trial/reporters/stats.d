@@ -1,6 +1,9 @@
 module trial.reporters.stats;
 
 import std.algorithm;
+import std.string;
+import std.conv;
+
 import trial.interfaces;
 
 class StatsReporter : ILifecycleListener {
@@ -25,8 +28,6 @@ long[string] toDurationList(T)(const T[] results) pure {
       auto childs = result.steps.toDurationList;
     }
 
-
-    pragma(msg, typeof(childs));
     foreach(string name, long value; childs) {
       list[result.name ~ "." ~ name] = value;
     }
@@ -41,7 +42,7 @@ version(unittest) {
   import std.stdio;
 }
 
-@("it should be able to convert a suite result to string arrays")
+@("it should be able to convert a suite result to a string hashmap")
 unittest {
   auto begin = Clock.currTime;
   auto end = begin + 2.seconds;
@@ -66,4 +67,34 @@ unittest {
   resultList["suite"].should.equal(2_000_000_000);
   resultList["suite.test"].should.equal(2_000_000_000);
   resultList["suite.test.step"].should.equal(2_000_000_000);
+}
+
+string[string] toResultList(const SuiteResult[] results) pure {
+  string[string] list;
+
+  foreach(result; results) {
+    foreach(test; result.tests) {
+      list[result.name ~ "." ~ test.name] = test.status.to!string;
+    }
+  }
+
+  return list;
+}
+
+@("it should be able to convert tests results to a string hashmap")
+unittest {
+  auto begin = Clock.currTime;
+  auto end = begin + 2.seconds;
+
+  auto testResult = new TestResult("test");
+  testResult.begin = begin;
+  testResult.end = end;
+
+  auto suiteResult = SuiteResult("suite", begin, end, [ testResult ]);
+  SuiteResult[] result = [ suiteResult ];
+
+  auto resultList = result.toResultList;
+
+  resultList.length.should.equal(1);
+  resultList["suite.test"].should.equal("created");
 }
