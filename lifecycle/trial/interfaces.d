@@ -25,8 +25,8 @@ interface ISuiteLifecycleListener {
 struct SuiteResult {
   string name;
 
-  SysTime begin;
-  SysTime end;
+  SysTime begin = SysTime.min;
+  SysTime end = SysTime.min;
 
   TestResult[] tests;
 }
@@ -34,8 +34,8 @@ struct SuiteResult {
 class StepResult {
   string name;
 
-  SysTime begin;
-  SysTime end;
+  SysTime begin = SysTime.min;
+  SysTime end = SysTime.min;
 
   StepResult[] steps;
 }

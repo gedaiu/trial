@@ -56,7 +56,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
       TestDiscovery testDiscovery;` ~ "\n\n";
 
   if(hasTrialDependency) {
-    externalModules ~= [ "std.", "core." ];
+    externalModules ~= [ "_d_assert", "std.", "core." ];
 
     code~= `
       StackResult.externalModules = ` ~ externalModules.to!string ~ `;
