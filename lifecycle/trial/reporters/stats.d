@@ -8,37 +8,64 @@ import std.array;
 
 import trial.interfaces;
 
-class StatsReporter : ILifecycleListener {
-
-  void begin() {
-  }
-
-  void end(SuiteResult[] result) {
-
-  }
+struct Stat {
+  string name;
+  SysTime begin;
+  SysTime end;
+  TestResult.Status status = TestResult.Status.unknown;
 }
 
-string[string] toDurationList(T)(const T[] results) {
-  string[string] list;
+class StatStorage {
+  Stat[] values;
+}
 
-  foreach(result; results) {
-    list[result.name] = result.begin.toISOExtString ~ "," ~ result.end.toISOExtString;
+class StatsReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
+  private {
+    StatStorage storage;
+    string[] path;
+  }
 
-    static if(is(T == SuiteResult)) {
-      auto childs = result.tests.toDurationList;
-    } else {
-      auto childs = result.steps.toDurationList;
-    }
+  this(StatStorage storage) {
+    this.storage = storage;
+  }
 
-    foreach(string name, string value; childs) {
-      list[result.name ~ "." ~ name] = value;
+  private {
+    auto lastItem() {
+      enforce(path.length > 0, "There is no defined path");
+      return path[path.length - 1];
     }
   }
 
-  return list;
+  void begin(ref SuiteResult suite) {
+    path ~= suite.name;
+  }
+
+  void end(ref SuiteResult suite) {
+    enforce(lastItem == suite.name, "Invalid suite name");
+    storage.values ~= Stat(path.join('.'), suite.begin, Clock.currTime);
+    path = path[0..$-1];
+  }
+
+  void begin(ref TestResult test) {
+    path ~= test.name;
+  }
+
+  void end(ref TestResult test) {
+    enforce(lastItem == test.name, "Invalid test name");
+    storage.values ~= Stat(path.join('.'), test.begin, Clock.currTime, test.status);
+    path = path[0..$-1];
+  }
+
+  void begin(ref StepResult step) {
+    path ~= step.name;
+  }
+
+  void end(ref StepResult step) {
+    enforce(lastItem == step.name, "Invalid step name");
+    storage.values ~= Stat(path.join('.'), step.begin, Clock.currTime);
+    path = path[0..$-1];
+  }
 }
-
-
 
 version(unittest) {
   import fluent.asserts;
@@ -46,59 +73,86 @@ version(unittest) {
   import std.stdio;
 }
 
-@("it should be able to convert a suite result to a string hashmap")
+@("it should add suite to the storage")
 unittest {
-  auto begin = Clock.currTime;
-  auto end = begin + 2.seconds;
+  auto storage = new StatStorage;
+  auto stats = new StatsReporter(storage);
 
-  auto testResult = new TestResult("test");
-  testResult.begin = begin;
-  testResult.end = end;
+  SuiteResult suite;
+  suite.name = "suite1";
 
-  auto stepResult = new StepResult;
-  stepResult.name = "step";
-  stepResult.begin = begin;
-  stepResult.end = end;
+  stats.begin(suite);
+  stats.end(suite);
 
-  testResult.steps = [ stepResult ];
+  storage.values.length.should.equal(1);
 
-  auto suiteResult = SuiteResult("suite", begin, end, [ testResult ]);
-  SuiteResult[] result = [ suiteResult ];
+  suite.name = "suite2";
+  stats.begin(suite);
+  stats.end(suite);
 
-  auto resultList = result.toDurationList;
-
-  resultList.length.should.equal(3);
-  resultList["suite"].should.equal(begin.toISOExtString ~ "," ~ end.toISOExtString);
-  resultList["suite.test"].should.equal(begin.toISOExtString ~ "," ~ end.toISOExtString);
-  resultList["suite.test.step"].should.equal(begin.toISOExtString ~ "," ~ end.toISOExtString);
+  storage.values.length.should.equal(2);
+  storage.values.map!(a => a.name).array.should.equal([ "suite1", "suite2" ]);
+  storage.values.map!(a => a.status).array.should.equal([ TestResult.Status.unknown, TestResult.Status.unknown ]);
+  storage.values.map!(a => a.begin).array.should.equal([ suite.begin, suite.begin ]);
+  storage.values.map!(a => a.end > a.begin).array.should.equal([ true, true ]);
 }
 
-string[string] toResultList(const SuiteResult[] results) pure {
-  string[string] list;
+@("it should add tests to the storage")
+unittest {
+  auto storage = new StatStorage;
+  auto stats = new StatsReporter(storage);
 
-  foreach(result; results) {
-    foreach(test; result.tests) {
-      list[result.name ~ "." ~ test.name] = test.status.to!string;
-    }
-  }
+  SuiteResult suite;
+  suite.name = "suite";
 
-  return list;
+  auto test = new TestResult("test1");
+  test.status = TestResult.Status.success;
+
+  stats.begin(suite);
+  stats.begin(test);
+  stats.end(test);
+
+  storage.values.length.should.equal(1);
+
+  test.name = "test2";
+  test.status = TestResult.Status.failure;
+  stats.begin(test);
+  stats.end(test);
+
+  storage.values.length.should.equal(2);
+  storage.values.map!(a => a.name).array.should.equal([ "suite.test1", "suite.test2" ]);
+  storage.values.map!(a => a.status).array.should.equal([ TestResult.Status.success, TestResult.Status.failure ]);
+  storage.values.map!(a => a.begin).array.should.equal([ test.begin, test.begin ]);
+  storage.values.map!(a => a.end > a.begin).array.should.equal([ true, true ]);
 }
 
-@("it should be able to convert tests results to a string hashmap")
+@("it should add steps to the storage")
 unittest {
-  auto begin = Clock.currTime;
-  auto end = begin + 2.seconds;
+  auto storage = new StatStorage;
+  auto stats = new StatsReporter(storage);
 
-  auto testResult = new TestResult("test");
-  testResult.begin = begin;
-  testResult.end = end;
+  SuiteResult suite;
+  suite.name = "suite";
 
-  auto suiteResult = SuiteResult("suite", begin, end, [ testResult ]);
-  SuiteResult[] result = [ suiteResult ];
+  auto test = new TestResult("test");
+  auto step = new StepResult;
+  step.name = "step1";
+  step.begin = Clock.currTime;
 
-  auto resultList = result.toResultList;
+  stats.begin(suite);
+  stats.begin(test);
+  stats.begin(step);
+  stats.end(step);
 
-  resultList.length.should.equal(1);
-  resultList["suite.test"].should.equal("created");
+  storage.values.length.should.equal(1);
+
+  step.name = "step2";
+  stats.begin(step);
+  stats.end(step);
+
+  storage.values.length.should.equal(2);
+  storage.values.map!(a => a.name).array.should.equal([ "suite.test.step1", "suite.test.step2" ]);
+  storage.values.map!(a => a.status).array.should.equal([ TestResult.Status.unknown, TestResult.Status.unknown ]);
+  storage.values.map!(a => a.begin).array.should.equal([ step.begin, step.begin ]);
+  storage.values.map!(a => a.end > a.begin).array.should.equal([ true, true ]);
 }

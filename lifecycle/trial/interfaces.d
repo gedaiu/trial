@@ -42,7 +42,7 @@ class StepResult {
 
 class TestResult : StepResult {
   enum Status {
-    created, failure, skip, started, success
+    created, failure, skip, started, success, unknown
   }
 
   Status status = Status.created;
