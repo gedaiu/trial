@@ -156,3 +156,51 @@ unittest {
   storage.values.map!(a => a.begin).array.should.equal([ step.begin, step.begin ]);
   storage.values.map!(a => a.end > a.begin).array.should.equal([ true, true ]);
 }
+
+string toCsv(StatStorage storage) {
+  return storage.values
+    .map!(a => [ a.name, a.begin.toISOExtString, a.end.toISOExtString, a.status.to!string ])
+    .map!(a => a.join(','))
+    .join('\n');
+}
+
+@("it should convert stat storage to csv")
+unittest {
+  auto stats = new StatStorage;
+  stats.values = [ Stat("1", SysTime.min, SysTime.max), Stat("2", SysTime.min, SysTime.max) ];
+
+  stats.toCsv.should.equal("1,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown\n" ~
+                           "2,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown");
+}
+
+
+StatStorage toStatStorage(string data) {
+  auto stat = new StatStorage;
+
+  stat.values = data
+    .split('\n')
+    .map!(a => a.split(','))
+    .map!(a => Stat(a[0], SysTime.fromISOExtString(a[1]), SysTime.fromISOExtString(a[2]), a[3].to!(TestResult.Status)))
+    .array;
+
+  return stat;
+}
+
+@("it should create stat storage from csv")
+unittest
+{
+  auto storage = ("1,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,success\n" ~
+                 "2,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown")
+                 .toStatStorage;
+
+  storage.values.length.should.equal(2);
+  storage.values[0].name.should.equal("1");
+  storage.values[0].begin.should.equal(SysTime.min);
+  storage.values[0].end.should.equal(SysTime.max);
+  storage.values[0].status.should.equal(TestResult.Status.success);
+
+  storage.values[1].name.should.equal("2");
+  storage.values[1].begin.should.equal(SysTime.min);
+  storage.values[1].end.should.equal(SysTime.max);
+  storage.values[1].status.should.equal(TestResult.Status.unknown);
+}
