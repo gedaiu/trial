@@ -5,6 +5,8 @@ import std.string;
 import std.conv;
 import std.exception;
 import std.array;
+import std.datetime;
+import std.file;
 
 import trial.interfaces;
 
@@ -19,7 +21,7 @@ class StatStorage {
   Stat[] values;
 }
 
-class StatsReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
+class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
   private {
     StatStorage storage;
     string[] path;
@@ -27,6 +29,10 @@ class StatsReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStep
 
   this(StatStorage storage) {
     this.storage = storage;
+  }
+
+  this() {
+    this.storage = new StatStorage;
   }
 
   private {
@@ -64,6 +70,11 @@ class StatsReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStep
     enforce(lastItem == step.name, "Invalid step name");
     storage.values ~= Stat(path.join('.'), step.begin, Clock.currTime);
     path = path[0..$-1];
+  }
+
+  void begin() {}
+  void end(SuiteResult[]) {
+    std.file.write("trial-stats.csv", storage.toCsv);
   }
 }
 
@@ -157,7 +168,7 @@ unittest {
   storage.values.map!(a => a.end > a.begin).array.should.equal([ true, true ]);
 }
 
-string toCsv(StatStorage storage) {
+string toCsv(const(StatStorage) storage) {
   return storage.values
     .map!(a => [ a.name, a.begin.toISOExtString, a.end.toISOExtString, a.status.to!string ])
     .map!(a => a.join(','))
@@ -174,7 +185,7 @@ unittest {
 }
 
 
-StatStorage toStatStorage(string data) {
+StatStorage toStatStorage(const(string) data) {
   auto stat = new StatStorage;
 
   stat.values = data
@@ -190,8 +201,8 @@ StatStorage toStatStorage(string data) {
 unittest
 {
   auto storage = ("1,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,success\n" ~
-                 "2,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown")
-                 .toStatStorage;
+                  "2,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown")
+                  .toStatStorage;
 
   storage.values.length.should.equal(2);
   storage.values[0].name.should.equal("1");

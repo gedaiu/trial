@@ -1,6 +1,7 @@
 {
 	"reporters": [
 		"spec",
-		"result"
+		"result",
+		"stats"
 	]
 }

@@ -25,6 +25,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
     import("settings.d") ~
     import("reporters/writer.d") ~
     import("reporters/result.d") ~
+    import("reporters/stats.d") ~
     import("reporters/spec.d");
 
   string code;
@@ -39,6 +40,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
       import trial.settings;
       import trial.stackresult;
       import trial.reporters.result;
+      import trial.reporters.stats;
       import trial.reporters.spec;\n";
   } else {
     writeln("We will embed the `trial:lifecicle` code inside the project.");

@@ -11,3 +11,4 @@ dub.selections.json
 /trial
 /trial-lifecycle-test-library
 /trial-runner-test-application
+trial-stats.csv

@@ -11,6 +11,7 @@ import trial.discovery;
 import trial.interfaces;
 import trial.settings;
 import trial.stackresult;
+import trial.reporters.stats;
 
 class LifeCycleListeners {
   static LifeCycleListeners instance;
@@ -193,6 +194,10 @@ void addReporter(string name) {
 
       case "result":
         LifeCycleListeners.instance.add(new ResultReporter);
+        break;
+
+      case "stats":
+        LifeCycleListeners.instance.add(new StatsReporter);
         break;
 
       default:
