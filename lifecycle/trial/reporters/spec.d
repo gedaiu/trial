@@ -9,15 +9,19 @@ import trial.interfaces;
 import trial.reporters.writer;
 
 class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
+  enum Type {
+    none,
+    success,
+    step,
+    failure,
+    testBegin,
+    testEnd,
+    emptyLine
+  }
 
-  private {
+  protected {
     int indents;
     int stepIndents;
-
-    immutable string ok = "✓";
-    immutable string current = "┌";
-    immutable string line = "│";
-    immutable string result = "└";
 
     int tests;
     int failedTests = 0;
@@ -27,6 +31,13 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
 
     SysTime beginTime;
     ReportWriter writer;
+  }
+
+  private {
+    immutable string ok = "✓";
+    immutable string current = "┌";
+    immutable string line = "│";
+    immutable string result = "└";
   }
 
   this() {
@@ -51,9 +62,49 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
     }
   }
 
+  void write(Type t)(string text = "") {
+    switch(t) {
+      case Type.emptyLine:
+        writer.writeln("");
+        break;
+
+      case Type.success:
+        writer.write(ok, ReportWriter.Context.success);
+        writer.write(" " ~ text, ReportWriter.Context.inactive);
+        break;
+
+      case Type.failure:
+        writer.write(failedTests.to!string ~ ") " ~ text, ReportWriter.Context.danger);
+        break;
+
+      case Type.testBegin:
+          writer.write(indentation);
+          writer.write(current, ReportWriter.Context.info);
+          writer.write(" " ~ text, ReportWriter.Context.inactive);
+        break;
+
+      case Type.testEnd:
+        writer.write(indentation);
+        writer.write(result ~ " " ~ text, ReportWriter.Context.info);
+        break;
+
+      case Type.step:
+        writer.write(indentation);
+        writer.write(line, ReportWriter.Context.info);
+        writer.write(indentation(stepIndents));
+        writer.write(" " ~ text, ReportWriter.Context.inactive);
+        break;
+
+      default:
+        writer.write(indentation ~ text);
+    }
+  }
+
   void begin(ref SuiteResult suite) {
     indents++;
-    writer.writeln("\n" ~ indentation ~ suite.name);
+    write!(Type.emptyLine);
+    write!(Type.none)(suite.name);
+    write!(Type.emptyLine);
   }
 
   void end(ref SuiteResult suite) {
@@ -69,48 +120,43 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
   }
 
   void end(ref TestResult test) {
-    writer.write(indentation);
-
     if(currentStep == 0) {
+      writer.write(indentation);
+
       if(test.status == TestResult.Status.success) {
-        writer.write(ok, ReportWriter.Context.success);
-        writer.writeln(" " ~ test.name, ReportWriter.Context.inactive);
+        write!(Type.success)(test.name);
       }
 
       if(test.status == TestResult.Status.failure) {
-        writer.writeln(failedTests.to!string ~ ") " ~ test.name, ReportWriter.Context.danger);
+        write!(Type.failure)(test.name);
         failedTests++;
       }
     } else {
-      writer.write(result ~ " ", ReportWriter.Context.info);
+      write!(Type.testEnd)();
 
       if(test.status == TestResult.Status.success) {
-        writer.write(ok, ReportWriter.Context.success);
-        writer.writeln(" Success");
+        write!(Type.success)("Success");
       }
 
       if(test.status == TestResult.Status.failure) {
-        writer.writeln(failedTests.to!string ~ ") Failure", ReportWriter.Context.danger);
+        write!(Type.failure)("Failure");
         failedTests++;
       }
     }
+    write!(Type.emptyLine);
 
     indents--;
   }
 
   void begin(ref StepResult step) {
     if(currentStep == 0) {
-      writer.write(indentation);
-      writer.write(current, ReportWriter.Context.info);
-      writer.writeln(" " ~ currentTestName, ReportWriter.Context.inactive);
+      write!(Type.testBegin)(currentTestName);
+      write!(Type.emptyLine);
     }
 
     stepIndents++;
-
-    writer.write(indentation);
-    writer.write(line, ReportWriter.Context.info);
-    writer.write(indentation(stepIndents));
-    writer.writeln(" " ~ step.name, ReportWriter.Context.inactive);
+    write!(Type.step)(step.name);
+    write!(Type.emptyLine);
     currentStep++;
   }
 

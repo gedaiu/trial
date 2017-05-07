@@ -21,6 +21,16 @@ class StatStorage {
   Stat[] values;
 }
 
+Stat find(StatStorage storage, const(string) name) {
+  auto res = storage.values.filter!(a => a.name == name);
+
+  if(res.empty) {
+    return Stat("", SysTime.min, SysTime.min);
+  }
+
+  return res.front;
+}
+
 class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
   private {
     StatStorage storage;

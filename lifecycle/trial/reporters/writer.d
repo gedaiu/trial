@@ -1,6 +1,8 @@
 module trial.reporters.writer;
 
 import std.stdio;
+import std.algorithm;
+import std.string;
 
 interface ReportWriter {
   enum Context {
@@ -12,11 +14,14 @@ interface ReportWriter {
     danger
   }
 
+  void goTo(string);
   void write(string, Context = Context.active);
   void writeln(string, Context = Context.active);
 }
 
 class ConsoleWriter : ReportWriter {
+  void goTo(string) {}
+
   void write(string text, Context) {
     std.stdio.write(text);
   }
@@ -64,6 +69,9 @@ version(Have_consoled) {
       }
     }
 
+    void goTo(string cue) {
+    }
+
     void write(string text, Context context) {
       setColor(context);
 
@@ -80,11 +88,44 @@ version(Have_consoled) {
 class BufferedWriter : ReportWriter {
   string buffer = "";
 
-  void write(string text, Context) {
-    buffer ~= text;
+  private {
+    long[string] cues;
+    long line = 0;
+    long charPos = 0;
+
+    string[] screen;
   }
 
-  void writeln(string text, Context) {
-    buffer ~= text ~ "\n";
+  void goTo(string cue) {
+    std.stdio.writeln("go to ", cue);
+
+    if(cue !in cues) {
+      cues[cue] = line;
+    }
+
+    line = cues[cue];
+    screen[line] = "";
+  }
+
+  void write(string text, Context) {
+    auto lines = text.count!(a => a == '\n');
+    auto pieces = buffer.split("\n");
+
+    std.stdio.writeln("1.", screen);
+    if(screen.length == 0) {
+      screen = [ text ];
+    } else {
+      screen[line] ~= text;
+    }
+
+    line += lines;
+
+    buffer = screen.join("\n");
+    screen = buffer.split("\n");
+    std.stdio.writeln("2.", screen);
+  }
+
+  void writeln(string text, Context c) {
+    write(text ~ '\n', c);
   }
 }
