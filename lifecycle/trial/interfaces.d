@@ -4,6 +4,7 @@ import std.datetime;
 
 interface ILifecycleListener {
   void begin();
+  void update();
   void end(SuiteResult[]);
 }
 

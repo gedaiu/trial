@@ -156,38 +156,35 @@ class StackResult: IResult {
     }
 
     void print() {
-      version(Have_consoled) {
-        import consoled;
+      import trial.reporters.writer;
 
-        int colorIndex=0;
-        writeln("Stack trace:\n-------------------\n...\n");
+      int colorIndex=0;
+      writeln("Stack trace:\n-------------------\n...\n");
 
-        auto validator = ExternalValidator(externalModules);
+      auto validator = ExternalValidator(externalModules);
 
-        foreach(frame; getFrames) {
-          if(validator.isExternal(frame.name)) {
-            foreground = Color.blue;
-          } else {
-            foreground = Color.red;
-          }
+      foreach(frame; getFrames) {
+        ReportWriter.Context context;
 
-          write(leftJustifier(frame.index.to!string, 4));
-          write(frame.address ~ " ");
-
-          if(validator.isExternal(frame.name)) {
-            foreground = Color.cyan;
-          } else {
-            foreground = Color.lightCyan;
-          }
-
-          writeln(frame.name);
-
-          resetColors();
+        if(validator.isExternal(frame.name)) {
+          context = ReportWriter.Context.inactive;
+        } else {
+          context = ReportWriter.Context.active;
         }
-        writeln("...");
-      } else {
-        writeln(toString);
+
+        defaultWriter.write(leftJustifier(frame.index.to!string, 4).to!string, context);
+        defaultWriter.write(frame.address ~ " ", context);
+
+        if(validator.isExternal(frame.name)) {
+          context = ReportWriter.Context.info;
+        } else {
+          context = ReportWriter.Context.danger;
+        }
+
+        defaultWriter.writeln(frame.name, context);
       }
+
+      defaultWriter.writeln("...");
     }
   }
 }

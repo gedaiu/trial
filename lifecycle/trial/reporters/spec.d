@@ -41,11 +41,7 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
   }
 
   this() {
-    version(Have_consoled) {
-      writer = new ColorConsoleWriter;
-    } else {
-      writer = new ConsoleWriter;
-    }
+    writer = defaultWriter;
   }
 
   this(ReportWriter writer) {
@@ -53,16 +49,12 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
   }
 
   private {
-    string indentation() {
-      return "  ".replicate(indents);
-    }
-
-    string indentation(int cnt) {
+    string indentation(int cnt) pure {
       return "  ".replicate(cnt);
     }
   }
 
-  void write(Type t)(string text = "") {
+  void write(Type t)(string text = "", int spaces = 0) {
     switch(t) {
       case Type.emptyLine:
         writer.writeln("");
@@ -78,32 +70,32 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
         break;
 
       case Type.testBegin:
-          writer.write(indentation);
+          writer.write(indentation(spaces));
           writer.write(current, ReportWriter.Context.info);
           writer.write(" " ~ text, ReportWriter.Context.inactive);
         break;
 
       case Type.testEnd:
-        writer.write(indentation);
+        writer.write(indentation(spaces));
         writer.write(result ~ " " ~ text, ReportWriter.Context.info);
         break;
 
       case Type.step:
-        writer.write(indentation);
+        writer.write(indentation(spaces));
         writer.write(line, ReportWriter.Context.info);
         writer.write(indentation(stepIndents));
         writer.write(" " ~ text, ReportWriter.Context.inactive);
         break;
 
       default:
-        writer.write(indentation ~ text);
+        writer.write(indentation(spaces) ~ text);
     }
   }
 
   void begin(ref SuiteResult suite) {
     indents++;
     write!(Type.emptyLine);
-    write!(Type.none)(suite.name);
+    write!(Type.none)(suite.name, indents);
     write!(Type.emptyLine);
   }
 
@@ -121,18 +113,18 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
 
   void end(ref TestResult test) {
     if(currentStep == 0) {
-      writer.write(indentation);
+      writer.write(indentation(indents));
 
       if(test.status == TestResult.Status.success) {
-        write!(Type.success)(test.name);
+        write!(Type.success)(test.name, indents);
       }
 
       if(test.status == TestResult.Status.failure) {
-        write!(Type.failure)(test.name);
+        write!(Type.failure)(test.name, indents);
         failedTests++;
       }
     } else {
-      write!(Type.testEnd)();
+      write!(Type.testEnd)("", indents);
 
       if(test.status == TestResult.Status.success) {
         write!(Type.success)("Success");
@@ -150,12 +142,12 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
 
   void begin(ref StepResult step) {
     if(currentStep == 0) {
-      write!(Type.testBegin)(currentTestName);
+      write!(Type.testBegin)(currentTestName, indents);
       write!(Type.emptyLine);
     }
 
     stepIndents++;
-    write!(Type.step)(step.name);
+    write!(Type.step)(step.name, indents);
     write!(Type.emptyLine);
     currentStep++;
   }

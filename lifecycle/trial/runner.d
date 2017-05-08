@@ -11,7 +11,6 @@ import trial.discovery;
 import trial.interfaces;
 import trial.settings;
 import trial.stackresult;
-import trial.reporters.stats;
 
 class LifeCycleListeners {
   static LifeCycleListeners instance;
@@ -185,11 +184,18 @@ void setupLifecycle(Settings settings) {
 
 void addReporter(string name) {
     import trial.reporters.spec;
+    import trial.reporters.specprogress;
+    import trial.reporters.stats;
     import trial.reporters.result;
 
     switch(name) {
       case "spec":
         LifeCycleListeners.instance.add(new SpecReporter);
+        break;
+
+      case "spec-progress":
+        auto storage = statsFromFile("trial-stats.csv");
+        LifeCycleListeners.instance.add(new SpecProgressReporter(storage));
         break;
 
       case "result":

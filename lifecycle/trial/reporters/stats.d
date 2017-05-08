@@ -52,6 +52,8 @@ class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifec
     }
   }
 
+  void update() {}
+
   void begin(ref SuiteResult suite) {
     path ~= suite.name;
   }
@@ -224,4 +226,8 @@ unittest
   storage.values[1].begin.should.equal(SysTime.min);
   storage.values[1].end.should.equal(SysTime.max);
   storage.values[1].status.should.equal(TestResult.Status.unknown);
+}
+
+StatStorage statsFromFile(string fileName) {
+  return fileName.readText.toStatStorage;
 }

@@ -27,11 +27,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
   }
 
   this() {
-    version(Have_consoled) {
-      writer = new ColorConsoleWriter;
-    } else {
-      writer = new ConsoleWriter;
-    }
+    writer = defaultWriter;
   }
 
   this(ReportWriter writer) {
@@ -45,6 +41,8 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
 
   void end(ref SuiteResult suite) {
   }
+
+  void update() {}
 
   void begin(ref TestResult test) {
     tests++;

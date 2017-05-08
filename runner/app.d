@@ -162,8 +162,8 @@ version(unitttest) {} else {
 			"suite|s", "the suite or package that you want to test", &suite,
 			"test|t", "the suite or package that you want to test", &testName);
 
-		version(Have_consoled) {} else {
-			writeln("You can add `consoled` as a dependency to get coloured output");
+		version(Have_arsd_official_terminal) {} else {
+			writeln("You can add `arsd-official:terminal` as a dependency to get coloured output");
 		}
 
 		Settings settings = readSettings(root);

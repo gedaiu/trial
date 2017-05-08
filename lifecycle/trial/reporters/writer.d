@@ -4,6 +4,8 @@ import std.stdio;
 import std.algorithm;
 import std.string;
 
+ReportWriter defaultWriter;
+
 interface ReportWriter {
   enum Context {
     active,
@@ -11,16 +13,19 @@ interface ReportWriter {
     success,
     info,
     warning,
-    danger
+    danger,
+    _default
   }
 
   void goTo(string);
+  void resetLine();
   void write(string, Context = Context.active);
   void writeln(string, Context = Context.active);
 }
 
 class ConsoleWriter : ReportWriter {
   void goTo(string) {}
+  void resetLine() {}
 
   void write(string text, Context) {
     std.stdio.write(text);
@@ -31,60 +36,92 @@ class ConsoleWriter : ReportWriter {
   }
 }
 
-version(Have_consoled) {
+version(Have_arsd_official_terminal) {
+  import terminal;
+
+  shared static this() {
+    defaultWriter = new ColorConsoleWriter;
+  }
+
   class ColorConsoleWriter : ReportWriter {
     private {
-      void setColor(Context context) {
-        import consoled;
+      int[string] cues;
+      Terminal terminal;
+      int lines = 0;
 
+      void setColor(Context context) {
         switch(context) {
           case Context.inactive:
-            foreground = Color.lightGray;
+            terminal.color(Color.white | ~Bright, 255);
             break;
 
           case Context.success:
-            foreground = Color.lightGreen;
+            terminal.color(Color.green | Bright, 255);
             break;
 
           case Context.info:
-            foreground = Color.cyan;
+            terminal.color(Color.cyan, 255);
             break;
 
           case Context.warning:
-            foreground = Color.yellow;
+            terminal.color(Color.yellow, 255);
             break;
 
           case Context.danger:
-            foreground = Color.red;
+            terminal.color(Color.red, 255);
             break;
 
           default:
-            foreground = Color.initial;
+            terminal.reset();
         }
       }
 
       void resetColor() {
-        import consoled;
-        foreground = Color.initial;
+        setColor(Context._default);
       }
     }
 
+    this() {
+      this.terminal = Terminal(ConsoleOutputType.cellular);
+      this.terminal._suppressDestruction = true;
+
+      lines = this.terminal.cursorY;
+    }
+
+    void resetLine() {
+      //this.terminal.write("*");
+      terminal.moveTo(0, lines);
+      //this.terminal.write("#");
+    }
+
     void goTo(string cue) {
+      if(cue !in cues) {
+        cues[cue] = terminal.cursorY;
+      }
+
+      terminal.moveTo(0, cues[cue]);
     }
 
     void write(string text, Context context) {
+      lines += text.count!(a => a == '\n');
+
       setColor(context);
 
-      std.stdio.write(text);
-
+      terminal.write(text);
       resetColor;
+      terminal.flush;
     }
 
     void writeln(string text, Context context) {
       write(text ~ "\n", context);
     }
   }
+} else {
+  shared static this() {
+    defaultWriter = new ConsoleWriter;
+  }
 }
+
 class BufferedWriter : ReportWriter {
   string buffer = "";
 
@@ -97,8 +134,6 @@ class BufferedWriter : ReportWriter {
   }
 
   void goTo(string cue) {
-    std.stdio.writeln("go to ", cue);
-
     if(cue !in cues) {
       cues[cue] = line;
     }
@@ -107,11 +142,18 @@ class BufferedWriter : ReportWriter {
     screen[line] = "";
   }
 
+  void resetLine() {
+    if(screen.length == 0) {
+      return;
+    }
+
+    screen[line] = "";
+  }
+
   void write(string text, Context) {
     auto lines = text.count!(a => a == '\n');
     auto pieces = buffer.split("\n");
 
-    std.stdio.writeln("1.", screen);
     if(screen.length == 0) {
       screen = [ text ];
     } else {
@@ -122,7 +164,6 @@ class BufferedWriter : ReportWriter {
 
     buffer = screen.join("\n");
     screen = buffer.split("\n");
-    std.stdio.writeln("2.", screen);
   }
 
   void writeln(string text, Context c) {
