@@ -20,6 +20,7 @@ class LifeCycleListeners {
     ITestCaseLifecycleListener[] testListeners;
     IStepLifecycleListener[] stepListeners;
     ILifecycleListener[] lifecycleListeners;
+    ITestExecutor executor = new DefaultExecutor;
   }
 
   void add(T)(T listener) {
@@ -38,6 +39,10 @@ class LifeCycleListeners {
 
     static if(!is(CommonType!(ILifecycleListener, T) == void)) {
       lifecycleListeners ~= listener;
+    }
+
+    static if(!is(CommonType!(ITestExecutor, T) == void)) {
+      executor = listener;
     }
   }
 
@@ -71,6 +76,16 @@ class LifeCycleListeners {
 
   void end(ref StepResult step) {
     stepListeners.each!(a => a.end(step));
+  }
+
+  void execute(TestCaseFunction func) {
+    executor.execute(func);
+  }
+}
+
+class DefaultExecutor : ITestExecutor {
+  void execute(TestCaseFunction func) {
+    func();
   }
 }
 
@@ -111,11 +126,11 @@ class TestRunner {
   static TestRunner instance;
 
   private {
-    const TestCase testCase;
+    TestCase testCase;
     StepResult[] stepStack;
   }
 
-  this(const TestCase testCase) {
+  this(TestCase testCase) {
     this.testCase = testCase;
   }
 
@@ -161,7 +176,7 @@ class TestRunner {
 
     LifeCycleListeners.instance.begin(test);
     try {
-      testCase.func();
+      LifeCycleListeners.instance.execute(testCase.func);
       test.status = TestResult.Status.success;
     } catch(Throwable t) {
       test.status = TestResult.Status.failure;

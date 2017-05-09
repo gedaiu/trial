@@ -2,6 +2,8 @@ module trial.interfaces;
 
 import std.datetime;
 
+import trial.discovery;
+
 interface ILifecycleListener {
   void begin();
   void update();
@@ -21,6 +23,10 @@ interface ITestCaseLifecycleListener {
 interface ISuiteLifecycleListener {
   void begin(ref SuiteResult);
   void end(ref SuiteResult);
+}
+
+interface ITestExecutor {
+  void execute(TestCaseFunction);
 }
 
 struct SuiteResult {
@@ -95,6 +101,8 @@ unittest {
   executed = false;
 
   auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+
   LifeCycleListeners.instance = new LifeCycleListeners;
 
   SuiteRunner suiteRunner = new SuiteRunner("Suite name1", tests);
@@ -102,7 +110,6 @@ unittest {
   auto begin = Clock.currTime - 1.msecs;
   suiteRunner.start();
   auto end = Clock.currTime + 1.msecs;
-  LifeCycleListeners.instance = old;
 
   suiteRunner.result.tests.length.should.equal(1);
   suiteRunner.result.tests[0].begin.should.be.between(begin, end);
@@ -117,13 +124,14 @@ unittest {
 
   executed = false;
   auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+
   LifeCycleListeners.instance = new LifeCycleListeners;
   SuiteRunner suiteRunner = new SuiteRunner("Suite name2", tests);
 
   auto begin = Clock.currTime - 1.msecs;
   suiteRunner.start();
   auto end = Clock.currTime + 1.msecs;
-  LifeCycleListeners.instance = old;
 
   suiteRunner.result.tests.length.should.equal(1);
   suiteRunner.result.tests[0].begin.should.be.between(begin, end);
@@ -137,6 +145,7 @@ unittest {
 unittest {
   auto old = LifeCycleListeners.instance;
   LifeCycleListeners.instance = new LifeCycleListeners;
+  scope(exit) LifeCycleListeners.instance = old;
 
   auto beginTime = Clock.currTime - 1.msecs;
   TestCase[] tests = [ TestCase("someTestCase", &mock) ];
@@ -183,11 +192,9 @@ unittest {
 
   SuiteRunner suiteRunner = new SuiteRunner("Suite name", tests);
 
-
   LifeCycleListeners.instance.add(new TestSuiteListener);
 
   suiteRunner.start();
-  LifeCycleListeners.instance = old;
 
   order.should.equal(["beginSuite", "beginTest", "endTest", "endSuite"]);
 }
@@ -199,12 +206,11 @@ unittest
   auto const test = TestCase("someTestCase", &stepMock);
 
   auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
   LifeCycleListeners.instance = new LifeCycleListeners;
   auto runner = new TestRunner(test);
 
   auto result = runner.start;
-
-  LifeCycleListeners.instance = old;
 
   result.steps.length.should.equal(1);
   result.steps[0].name.should.equal("some step");
@@ -232,12 +238,12 @@ unittest
   }
 
   auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+
   LifeCycleListeners.instance = new LifeCycleListeners;
   LifeCycleListeners.instance.add(new StepListener);
 
   new TestRunner(test).start;
-
-  LifeCycleListeners.instance = old;
 
   order.should.equal(["begin some step",
                         "begin Step 0", "end Step 0",
@@ -250,17 +256,47 @@ unittest
 unittest {
   TestCase[] tests;
   auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+
   LifeCycleListeners.instance = new LifeCycleListeners;
   SuiteRunner suiteRunner = new SuiteRunner("Suite name4", tests);
-
 
   auto begin = Clock.currTime - 1.msecs;
   suiteRunner.start();
   auto end = Clock.currTime + 1.msecs;
-  LifeCycleListeners.instance = old;
 
   suiteRunner.result.name.should.equal("Suite name4");
   suiteRunner.result.tests.length.should.equal(0);
   suiteRunner.result.begin.should.be.between(begin, end);
   suiteRunner.result.end.should.be.between(begin, end);
+}
+
+@("A suite runner should call a custom executor listener if is present")
+unittest
+{
+  auto customExecuted = false;
+  executed = false;
+
+  class MockTestExecutor : ITestExecutor {
+    void execute(TestCaseFunction func) {
+      customExecuted = true;
+      func();
+    }
+  }
+
+  TestCase[] tests = [TestCase("someTestCase", &mock)];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+
+  LifeCycleListeners.instance = new LifeCycleListeners;
+
+  LifeCycleListeners.instance.add(new MockTestExecutor);
+
+  SuiteRunner suiteRunner = new SuiteRunner("Suite name4", tests);
+
+  suiteRunner.start();
+
+  executed.should.equal(true);
+  customExecuted.should.equal(true);
 }

@@ -5,11 +5,11 @@ import std.string;
 import std.traits;
 import std.conv;
 
-alias testCaseFunction = void function() @system;
+alias TestCaseFunction = void function() @system;
 
 struct TestCase {
 	string name;
-	testCaseFunction func;
+	TestCaseFunction func;
 }
 
 struct TestDiscovery {
