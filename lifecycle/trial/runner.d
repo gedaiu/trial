@@ -11,6 +11,7 @@ import trial.discovery;
 import trial.interfaces;
 import trial.settings;
 import trial.stackresult;
+import trial.parallel;
 
 class LifeCycleListeners {
   static LifeCycleListeners instance;
@@ -78,46 +79,18 @@ class LifeCycleListeners {
     stepListeners.each!(a => a.end(step));
   }
 
-  void execute(TestCaseFunction func) {
-    executor.execute(func);
+  SuiteResult[] execute(TestCase func) {
+    return executor.execute(func);
   }
 }
 
 class DefaultExecutor : ITestExecutor {
-  void execute(TestCaseFunction func) {
-    func();
-  }
-}
+  SuiteResult[] execute(TestCase testCase) {
+    SuiteResult[] result;
 
-class SuiteRunner {
-  SuiteResult result;
+    testCase.func();
 
-  private {
-    TestCase[] tests;
-  }
-
-  this(string name, TestCase[] testCases) {
-    result.name = name;
-
-    tests = testCases;
-    result.tests = tests.map!(a => new TestResult(a.name)).array;
-  }
-
-  void start() {
-    result.begin = Clock.currTime;
-    result.end = Clock.currTime;
-
-    LifeCycleListeners.instance.begin(result);
-
-    tests
-      .map!(a => new TestRunner(a))
-      .map!(a => a.start)
-      .enumerate
-      .each!(a => result.tests[a[0]] = a[1]);
-
-    result.end = Clock.currTime;
-
-    LifeCycleListeners.instance.end(result);
+    return result;
   }
 }
 
@@ -176,7 +149,7 @@ class TestRunner {
 
     LifeCycleListeners.instance.begin(test);
     try {
-      LifeCycleListeners.instance.execute(testCase.func);
+      testCase.func();
       test.status = TestResult.Status.success;
     } catch(Throwable t) {
       test.status = TestResult.Status.failure;
@@ -226,23 +199,23 @@ void addReporter(string name) {
     }
 }
 
-void runTests(TestDiscovery testDiscovery, string testName = "") {
+auto runTests(T)(T tests, string testName = "") {
   LifeCycleListeners.instance.begin;
 
-  SuiteResult[] results = [];
-
-  foreach(string moduleName, testCases; testDiscovery.testCases) {
-    auto tests = testCases.values.filter!(a => a.name.indexOf(testName) != -1).array;
-
-    if(tests.length > 0) {
-      auto suiteRunner = new SuiteRunner(moduleName, tests);
-      suiteRunner.start;
-
-      results ~= suiteRunner.result;
-    }
-  }
+  SuiteResult[] results =
+    tests
+      .filter!(a => a.name.indexOf(testName) != -1)
+      .map!(a => LifeCycleListeners.instance.execute(a))
+      .joiner
+      .array;
 
   LifeCycleListeners.instance.end(results);
+
+  return results;
+}
+
+auto runTests(TestDiscovery testDiscovery, string testName = "") {
+  return runTests(testDiscovery.testCases.values.map!(a => a.values).joiner, testName);
 }
 
 version(is_trial_embeded) {

@@ -5,12 +5,7 @@ import std.string;
 import std.traits;
 import std.conv;
 
-alias TestCaseFunction = void function() @system;
-
-struct TestCase {
-	string name;
-	TestCaseFunction func;
-}
+import trial.interfaces;
 
 struct TestDiscovery {
 	TestCase[string][string] testCases;
@@ -37,7 +32,7 @@ struct TestDiscovery {
 		auto addTestCases(alias moduleName, composite...)() if (composite.length == 1 && isUnitTestContainer!(composite))
 		{
 			foreach (test; __traits(getUnitTests, composite)) {
-				testCases[moduleName][test.mangleof] = TestCase(testName!test, {
+				testCases[moduleName][test.mangleof] = TestCase(moduleName, testName!test, {
 					test();
 				});
 			}
