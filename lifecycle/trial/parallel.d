@@ -15,6 +15,14 @@ class ParallelExecutor : ITestExecutor {
 
     return result;
   }
+
+  SuiteResult[] beginExecution() {
+    return [];
+  }
+
+  SuiteResult[] endExecution() {
+    return [];
+  }
 }
 
 version(unittest) {

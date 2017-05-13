@@ -26,7 +26,9 @@ interface ISuiteLifecycleListener {
 }
 
 interface ITestExecutor {
+  SuiteResult[] beginExecution();
   SuiteResult[] execute(TestCase);
+  SuiteResult[] endExecution();
 }
 
 struct TestCase {
@@ -34,7 +36,6 @@ struct TestCase {
 	string name;
 	TestCaseFunction func;
 }
-
 
 struct SuiteResult {
   string name;
@@ -68,6 +69,7 @@ class TestResult : StepResult {
 }
 
 version(unittest) {
+  import std.stdio;
   import std.conv;
   import std.algorithm;
   import core.thread;
@@ -76,6 +78,7 @@ version(unittest) {
   import trial.discovery;
   import trial.runner;
   import fluent.asserts;
+  import trial.single;
 
   __gshared bool executed;
 
@@ -112,6 +115,7 @@ unittest {
   scope(exit) LifeCycleListeners.instance = old;
 
   LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new DefaultExecutor);
 
   auto begin = Clock.currTime - 1.msecs;
   auto result = tests.runTests;
@@ -134,6 +138,7 @@ unittest {
   scope(exit) LifeCycleListeners.instance = old;
 
   LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new DefaultExecutor);
 
   auto begin = Clock.currTime - 1.msecs;
   auto result = tests.runTests;
@@ -152,6 +157,7 @@ unittest {
 unittest {
   auto old = LifeCycleListeners.instance;
   LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new DefaultExecutor);
   scope(exit) LifeCycleListeners.instance = old;
 
   auto beginTime = Clock.currTime - 1.msecs;
@@ -163,7 +169,8 @@ unittest {
       suite.name.should.equal("Suite name");
       suite.begin.should.be.greaterThan(beginTime);
       suite.end.should.be.greaterThan(beginTime);
-      suite.tests[0].status.should.equal(TestResult.Status.created);
+
+      suite.tests.length.should.equal(0);
 
       order ~= "beginSuite";
     }
@@ -212,6 +219,7 @@ unittest
   auto old = LifeCycleListeners.instance;
   scope(exit) LifeCycleListeners.instance = old;
   LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new DefaultExecutor);
 
   auto result = [test].runTests;
 
@@ -244,9 +252,10 @@ unittest
   scope(exit) LifeCycleListeners.instance = old;
 
   LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new DefaultExecutor);
   LifeCycleListeners.instance.add(new StepListener);
 
-  new TestRunner(test).start;
+  auto result = [test].runTests;
 
   order.should.equal(["begin some step",
                         "begin Step 0", "end Step 0",
@@ -262,6 +271,7 @@ unittest {
   scope(exit) LifeCycleListeners.instance = old;
 
   LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new DefaultExecutor);
 
   auto begin = Clock.currTime - 1.msecs;
   auto result = tests.runTests();

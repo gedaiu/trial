@@ -1,28 +1,29 @@
 module trial.step;
 
-import trial.runner: TestRunner;
-import std.stdio;
+import trial.runner;
+import trial.interfaces;
+import std.datetime;
 
 struct Step
 {
   @disable
   this();
 
-  this(string name) {
-    if(TestRunner.instance is null) {
-      writeln("Warning: The TestRunner instance is null.");
-      return;
-    }
+  private {
+    StepResult step;
+  }
 
-    TestRunner.instance.beginStep(name);
+  this(string name) {
+    step = new StepResult;
+    step.name = name;
+    step.begin = Clock.currTime;
+    step.end = Clock.currTime;
+
+    LifeCycleListeners.instance.begin(step);
   }
 
   ~this() {
-    if(TestRunner.instance is null) {
-      writeln("Warning: The TestRunner instance is null.");
-      return;
-    }
-
-    TestRunner.instance.endStep();
+    step.end = Clock.currTime;
+    LifeCycleListeners.instance.end(step);
   }
 }

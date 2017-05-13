@@ -10,8 +10,7 @@ import std.string;
 import trial.discovery;
 import trial.interfaces;
 import trial.settings;
-import trial.stackresult;
-import trial.parallel;
+import trial.single;
 
 class LifeCycleListeners {
   static LifeCycleListeners instance;
@@ -82,91 +81,18 @@ class LifeCycleListeners {
   SuiteResult[] execute(TestCase func) {
     return executor.execute(func);
   }
-}
 
-class DefaultExecutor : ITestExecutor {
-  SuiteResult[] execute(TestCase testCase) {
-    SuiteResult[] result;
-
-    testCase.func();
-
-    return result;
-  }
-}
-
-class TestRunner {
-
-  static TestRunner instance;
-
-  private {
-    TestCase testCase;
-    StepResult[] stepStack;
+  SuiteResult[] beginExecution() {
+    return executor.beginExecution();
   }
 
-  this(TestCase testCase) {
-    this.testCase = testCase;
-  }
-
-  void beginStep(string name) {
-    auto step = new StepResult();
-
-    step.name = name;
-    step.begin = Clock.currTime;
-    step.end = Clock.currTime;
-
-    stepStack[0].steps ~= step;
-    stepStack = step ~ stepStack;
-
-    LifeCycleListeners.instance.begin(step);
-  }
-
-  void endStep() {
-    const size_t last = stepStack[0].steps.length - 1;
-    stepStack[0].end = Clock.currTime;
-    auto step = stepStack[0];
-
-    stepStack = stepStack[1..$];
-
-    LifeCycleListeners.instance.end(step);
-  }
-
-  TestResult start() {
-    auto oldRunnerInstance = instance;
-    auto oldListenersInstance = LifeCycleListeners.instance;
-    scope(exit) {
-      instance = oldRunnerInstance;
-      LifeCycleListeners.instance = oldListenersInstance;
-    }
-
-    instance = this;
-    auto test = new TestResult(testCase.name);
-
-    test.begin = Clock.currTime;
-    test.end = Clock.currTime;
-    test.status = TestResult.Status.started;
-
-    stepStack = [ test ];
-
-    LifeCycleListeners.instance.begin(test);
-    try {
-      testCase.func();
-      test.status = TestResult.Status.success;
-    } catch(Throwable t) {
-      test.status = TestResult.Status.failure;
-      test.throwable = toTestException(t);
-    }
-
-    test.end = Clock.currTime;
-
-    LifeCycleListeners.instance.end(test);
-
-    return test;
+  SuiteResult[] endExecution() {
+    return executor.endExecution();
   }
 }
 
 void setupLifecycle(Settings settings) {
   LifeCycleListeners.instance = new LifeCycleListeners;
-
   settings.reporters.map!(a => a.toLower).each!addReporter;
 }
 
@@ -202,13 +128,13 @@ void addReporter(string name) {
 auto runTests(T)(T tests, string testName = "") {
   LifeCycleListeners.instance.begin;
 
-  SuiteResult[] results =
-    tests
-      .filter!(a => a.name.indexOf(testName) != -1)
-      .map!(a => LifeCycleListeners.instance.execute(a))
-      .joiner
-      .array;
+  SuiteResult[] results = LifeCycleListeners.instance.beginExecution;
 
+  foreach(test; tests) {
+    results ~= LifeCycleListeners.instance.execute(test);
+  }
+
+  results ~= LifeCycleListeners.instance.endExecution;
   LifeCycleListeners.instance.end(results);
 
   return results;
@@ -216,10 +142,4 @@ auto runTests(T)(T tests, string testName = "") {
 
 auto runTests(TestDiscovery testDiscovery, string testName = "") {
   return runTests(testDiscovery.testCases.values.map!(a => a.values).joiner, testName);
-}
-
-version(is_trial_embeded) {
-  auto toTestException(Throwable t) {
-    return t;
-  }
 }
