@@ -8,10 +8,13 @@ struct Settings {
 	bool bail;*/
 
 	string[] reporters = [ "spec", "result" ];
+
+	bool runInParallel = false;
+	uint maxThreads = 0;
 }
 
 string toCode(Settings settings) {
-  return "Settings(" ~ settings.reporters.to!string ~ ")";
+  return "Settings(" ~ settings.reporters.to!string ~ ", " ~ settings.runInParallel.to!string ~ ", " ~ settings.maxThreads.to!string ~ ")";
 }
 
 version(unittest) {
@@ -23,5 +26,5 @@ unittest
 {
   Settings settings;
 
-  settings.toCode.should.equal(`Settings(["spec", "result"])`);
+  settings.toCode.should.equal(`Settings(["spec", "result"], false, 0)`);
 }

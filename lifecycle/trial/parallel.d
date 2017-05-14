@@ -7,6 +7,7 @@ import std.datetime;
 import std.exception;
 import std.algorithm;
 import std.array;
+import core.thread;
 
 class ThreadLifeCycleListener : LifeCycleListeners {
   static string currentTest = "unknown";
@@ -357,7 +358,6 @@ class ParallelExecutor : ITestExecutor {
 
 version(unittest) {
   import fluent.asserts;
-  import core.thread;
   import trial.step;
 
   void failMock() @system {

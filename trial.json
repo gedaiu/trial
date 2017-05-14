@@ -3,5 +3,8 @@
 		"spec",
 		"result",
 		"stats"
-	]
+	],
+
+	"runInParallel": true,
+	"maxThreads": 0
 }

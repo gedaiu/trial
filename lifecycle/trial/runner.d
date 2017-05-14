@@ -11,6 +11,7 @@ import trial.discovery;
 import trial.interfaces;
 import trial.settings;
 import trial.single;
+import trial.parallel;
 
 class LifeCycleListeners {
   static LifeCycleListeners instance;
@@ -98,6 +99,10 @@ class LifeCycleListeners {
 void setupLifecycle(Settings settings) {
   LifeCycleListeners.instance = new LifeCycleListeners;
   settings.reporters.map!(a => a.toLower).each!addReporter;
+
+  if(settings.runInParallel) {
+    LifeCycleListeners.instance.add(new ParallelExecutor(settings.maxThreads));
+  }
 }
 
 void addReporter(string name) {

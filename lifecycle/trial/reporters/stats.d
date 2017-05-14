@@ -34,7 +34,7 @@ Stat find(StatStorage storage, const(string) name) {
 class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
   private {
     StatStorage storage;
-    string[] path;
+    string[][string] path;
   }
 
   this(StatStorage storage) {
@@ -46,45 +46,42 @@ class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifec
   }
 
   private {
-    auto lastItem() {
-      enforce(path.length > 0, "There is no defined path");
-      return path[path.length - 1];
+    auto lastItem(string key) {
+      enforce(path[key].length > 0, "There is no defined path");
+      return path[key][path.length - 1];
     }
   }
 
   void update() {}
 
-  void begin(ref SuiteResult suite) {
-    path ~= suite.name;
-  }
+  void begin(ref SuiteResult suite) {}
 
   void end(ref SuiteResult suite) {
-    enforce(lastItem == suite.name, "Invalid suite name");
-    storage.values ~= Stat(path.join('.'), suite.begin, Clock.currTime);
-    path = path[0..$-1];
+    storage.values ~= Stat(suite.name, suite.begin, Clock.currTime);
   }
 
-  void begin(string suite, ref TestResult test) {
-    path ~= test.name;
-  }
+  void begin(string suite, ref TestResult test) {}
 
   void end(string suite, ref TestResult test) {
-    enforce(lastItem == test.name, "Invalid test name");
-    storage.values ~= Stat(path.join('.'), test.begin, Clock.currTime, test.status);
-    path = path[0..$-1];
+    storage.values ~= Stat(suite ~ "." ~ test.name, test.begin, Clock.currTime, test.status);
   }
 
   void begin(string suite, string test, ref StepResult step) {
-    path ~= step.name;
+    string key = suite ~ "." ~ test;
+    path[key] ~= step.name;
   }
 
   void end(string suite, string test, ref StepResult step) {
-    enforce(lastItem == step.name, "Invalid step name");
-    storage.values ~= Stat(path.join('.'), step.begin, Clock.currTime);
-    path = path[0..$-1];
+    string key = suite ~ "." ~ test;
+
+    enforce(lastItem(key) == step.name, "Invalid step name");
+
+    storage.values ~= Stat(key ~ "." ~ path[key].join('.'), step.begin, Clock.currTime);
+    path[key] = path[key][0..$-1];
   }
 
   void begin() {}
+
   void end(SuiteResult[]) {
     std.file.write("trial-stats.csv", storage.toCsv);
   }
