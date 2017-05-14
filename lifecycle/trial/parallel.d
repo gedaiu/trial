@@ -158,7 +158,6 @@ private {
   }
 }
 
-
 void testThreadSetup(string testName) {
   ThreadLifeCycleListener.currentTest = testName;
   LifeCycleListeners.instance = new ThreadLifeCycleListener;
@@ -174,8 +173,18 @@ class ParallelExecutor : ITestExecutor {
     bool isDone;
   }
 
+  this(uint maxTestCount = 0) {
+    this.maxTestCount = maxTestCount;
+
+    if(this.maxTestCount <= 0) {
+      import core.cpuid : threadsPerCPU;
+      this.maxTestCount = threadsPerCPU;
+    }
+  }
+
   private {
     ulong testCount;
+    uint maxTestCount;
 
     SuiteStats[string] suiteStats;
     TestCase[string] testCases;
@@ -250,37 +259,43 @@ class ParallelExecutor : ITestExecutor {
       LifeCycleListeners.instance.end(testCases[key].suiteName, testCases[key].name, step);
     }
 
+    auto processEvents() {
+      LifeCycleListeners.instance.update;
+
+      auto status = ThreadProxy.instance.getStatus;
+
+      foreach(beginKey; status.begin) {
+        addTestResult(beginKey);
+      }
+
+      foreach(step; status.steps) {
+        if(step.type == StepAction.Type.begin) {
+          addStep(step.test, step.name, step.time);
+        }
+
+        if(step.type == StepAction.Type.end) {
+          endStep(step.test, step.name, step.time);
+        }
+      }
+
+      foreach(endKey; status.end) {
+        Throwable failure = null;
+
+        if(endKey in status.failures) {
+          failure = cast() status.failures[endKey];
+        }
+
+        endTestResult(endKey, failure);
+      }
+
+      return status.testCount;
+    }
+
     void wait() {
       ulong executedTestCount;
 
       do {
-        auto status = ThreadProxy.instance.getStatus;
-        executedTestCount = status.testCount;
-
-        foreach(beginKey; status.begin) {
-          addTestResult(beginKey);
-        }
-
-        foreach(step; status.steps) {
-          if(step.type == StepAction.Type.begin) {
-            addStep(step.test, step.name, step.time);
-          }
-
-          if(step.type == StepAction.Type.end) {
-            endStep(step.test, step.name, step.time);
-          }
-        }
-
-        foreach(endKey; status.end) {
-          Throwable failure = null;
-
-          if(endKey in status.failures) {
-            failure = cast() status.failures[endKey];
-          }
-
-          endTestResult(endKey, failure);
-        }
-
+        executedTestCount = processEvents;
         Thread.sleep(1.msecs);
       } while(executedTestCount < testCount);
     }
@@ -305,6 +320,13 @@ class ParallelExecutor : ITestExecutor {
         ThreadProxy.instance.setFailure(key, cast(shared)t);
       }
     }).executeInNewThread();
+
+    auto runningTests = testCount - ThreadProxy.instance.getTestCount;
+
+    while(maxTestCount <= runningTests && runningTests > 0) {
+      processEvents;
+      runningTests = testCount - ThreadProxy.instance.getTestCount;
+    }
 
     return result;
   }
@@ -409,6 +431,69 @@ unittest
   result[0].tests.length.should.equal(1);
   result[0].tests[0].status.should.equal(TestResult.Status.failure);
   (result[0].tests[0].throwable !is null).should.equal(true);
+}
+
+@("it should call update() many times")
+unittest
+{
+  ulong updated = 0;
+
+  class MockListener : ILifecycleListener {
+    void begin() {}
+    void update() { updated++; }
+    void end(SuiteResult[]) {}
+  }
+
+  TestCase[] tests = [ TestCase("suite2", "test1", &stepMock1) ];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+
+  LifeCycleListeners.instance.add(new MockListener);
+  LifeCycleListeners.instance.add(new ParallelExecutor);
+
+  auto results = tests.runTests;
+
+  updated.should.be.greaterThan(50);
+}
+
+@("it should run the tests in parallel")
+unittest
+{
+  TestCase[] tests = [ TestCase("suite2", "test1", &stepMock1), TestCase("suite2", "test3", &stepMock1), TestCase("suite2", "test2", &stepMock1) ];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+
+  LifeCycleListeners.instance.add(new ParallelExecutor);
+
+  auto results = tests.runTests;
+
+  results.length.should.equal(1);
+  results[0].tests.length.should.equal(3);
+
+  (results[0].end - results[0].begin).should.be.between(100.msecs, 120.msecs);
+}
+
+@("it should be able to limit the parallel tests number")
+unittest
+{
+  TestCase[] tests = [ TestCase("suite2", "test1", &stepMock1), TestCase("suite2", "test3", &stepMock1), TestCase("suite2", "test2", &stepMock1) ];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+
+  LifeCycleListeners.instance.add(new ParallelExecutor(2));
+
+  auto results = tests.runTests;
+
+  results.length.should.equal(1);
+  results[0].tests.length.should.equal(3);
+
+  (results[0].end - results[0].begin).should.be.between(200.msecs, 220.msecs);
 }
 
 @("A parallel executor should call the events in the right order")

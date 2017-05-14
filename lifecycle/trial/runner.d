@@ -46,6 +46,10 @@ class LifeCycleListeners {
     }
   }
 
+  void update() {
+    lifecycleListeners.each!(a => a.update());
+  }
+
   void begin() {
     lifecycleListeners.each!(a => a.begin());
   }
