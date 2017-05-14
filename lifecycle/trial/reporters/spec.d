@@ -103,7 +103,7 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
     indents--;
   }
 
-  void begin(ref TestResult test) {
+  void begin(string suite, ref TestResult test) {
     indents++;
     tests++;
     currentStep = 0;
@@ -111,7 +111,7 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
     currentTestName = test.name;
   }
 
-  void end(ref TestResult test) {
+  void end(string suite, ref TestResult test) {
     if(currentStep == 0) {
       writer.write(indentation(indents));
 
@@ -140,7 +140,7 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
     indents--;
   }
 
-  void begin(ref StepResult step) {
+  void begin(string suite, string test, ref StepResult step) {
     if(currentStep == 0) {
       write!(Type.testBegin)(currentTestName, indents);
       write!(Type.emptyLine);
@@ -152,7 +152,7 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
     currentStep++;
   }
 
-  void end(ref StepResult test) {
+  void end(string suite, string test, ref StepResult step) {
     stepIndents--;
   }
 }
@@ -172,8 +172,8 @@ unittest {
 
   reporter.begin(suite);
 
-  reporter.begin(test);
-  reporter.end(test);
+  reporter.begin("some suite", test);
+  reporter.end("some suite", test);
 
   reporter.end(suite);
 
@@ -195,11 +195,11 @@ unittest {
 
   reporter.begin(suite);
 
-  reporter.begin(test1);
-  reporter.end(test1);
+  reporter.begin("some suite", test1);
+  reporter.end("some suite", test1);
 
-  reporter.begin(test2);
-  reporter.end(test2);
+  reporter.begin("some suite", test2);
+  reporter.end("some suite", test2);
 
   reporter.end(suite);
 
@@ -220,8 +220,8 @@ unittest {
   test.throwable = new Exception("Random failure");
 
   reporter.begin(suite);
-  reporter.begin(test);
-  reporter.end(test);
+  reporter.begin("some suite", test);
+  reporter.end("some suite", test);
   reporter.end(suite);
 
   writer.buffer.should.contain("\n  some suite\n");
@@ -241,19 +241,19 @@ unittest {
   step.name = "some step";
 
   reporter.begin(suite);
-  reporter.begin(test);
+  reporter.begin("some suite", test);
 
-  reporter.begin(step);
-  reporter.begin(step);
-  reporter.end(step);
-  reporter.end(step);
-  reporter.begin(step);
-  reporter.end(step);
+  reporter.begin("some suite", "some test", step);
+  reporter.begin("some suite", "some test", step);
+  reporter.end("some suite", "some test", step);
+  reporter.end("some suite", "some test", step);
+  reporter.begin("some suite", "some test", step);
+  reporter.end("some suite", "some test", step);
 
-  reporter.end(test);
+  reporter.end("some suite", test);
 
-  reporter.begin(test);
-  reporter.end(test);
+  reporter.begin("some suite", test);
+  reporter.end("some suite", test);
 
   reporter.end(suite);
 
@@ -281,19 +281,19 @@ unittest {
   step.name = "some step";
 
   reporter.begin(suite);
-  reporter.begin(test);
+  reporter.begin("some suite", test);
 
-  reporter.begin(step);
-  reporter.begin(step);
-  reporter.end(step);
-  reporter.end(step);
-  reporter.begin(step);
-  reporter.end(step);
+  reporter.begin("some suite", "some test", step);
+  reporter.begin("some suite", "some test", step);
+  reporter.end("some suite", "some test", step);
+  reporter.end("some suite", "some test", step);
+  reporter.begin("some suite", "some test", step);
+  reporter.end("some suite", "some test", step);
 
-  reporter.end(test);
+  reporter.end("some suite", test);
 
-  reporter.begin(test);
-  reporter.end(test);
+  reporter.begin("some suite", test);
+  reporter.end("some suite", test);
 
   reporter.end(suite);
 

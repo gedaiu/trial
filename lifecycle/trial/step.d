@@ -3,9 +3,15 @@ module trial.step;
 import trial.runner;
 import trial.interfaces;
 import std.datetime;
+import std.stdio;
 
 struct Step
 {
+  static {
+    string suite;
+    string test;
+  }
+
   @disable
   this();
 
@@ -19,11 +25,21 @@ struct Step
     step.begin = Clock.currTime;
     step.end = Clock.currTime;
 
-    LifeCycleListeners.instance.begin(step);
+    if(LifeCycleListeners.instance is null) {
+      writeln("Warning! Can not set steps if the LifeCycleListeners.instance is not set.");
+      return;
+    }
+
+    LifeCycleListeners.instance.begin(suite, test, step);
   }
 
   ~this() {
+    if(LifeCycleListeners.instance is null) {
+      writeln("Warning! Can not set steps if the LifeCycleListeners.instance is not set.");
+      return;
+    }
+
     step.end = Clock.currTime;
-    LifeCycleListeners.instance.end(step);
+    LifeCycleListeners.instance.end(suite, test, step);
   }
 }

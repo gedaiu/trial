@@ -4,6 +4,7 @@ import trial.interfaces;
 import trial.runner;
 import std.datetime;
 import trial.stackresult;
+import trial.step;
 
 class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
   private {
@@ -12,12 +13,12 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
     StepResult[] stepStack;
   }
 
-  void begin(ref StepResult step) {
+  void begin(string suite, string test, ref StepResult step) {
     stepStack[stepStack.length - 1].steps ~= step;
     stepStack ~= step;
   }
 
-  void end(ref StepResult step) {
+  void end(string suite, string test, ref StepResult step) {
     stepStack = stepStack[0..$-1];
   }
 
@@ -42,7 +43,10 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
       testResult.status = TestResult.Status.started;
       stepStack = [ testResult ];
 
-      LifeCycleListeners.instance.begin(testResult);
+      Step.suite = testCase.suiteName;
+      Step.test = testCase.name;
+
+      LifeCycleListeners.instance.begin(testCase.suiteName, testResult);
 
       try {
         testCase.func();
@@ -53,7 +57,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
       }
 
       testResult.end = Clock.currTime;
-      LifeCycleListeners.instance.end(testResult);
+      LifeCycleListeners.instance.end(testCase.suiteName, testResult);
     }
   }
 

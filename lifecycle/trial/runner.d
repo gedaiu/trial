@@ -62,20 +62,20 @@ class LifeCycleListeners {
     suiteListeners.each!(a => a.end(suite));
   }
 
-  void begin(ref TestResult test) {
-    testListeners.each!(a => a.begin(test));
+  void begin(string suite, ref TestResult test) {
+    testListeners.each!(a => a.begin(suite, test));
   }
 
-  void end(ref TestResult test) {
-    testListeners.each!(a => a.end(test));
+  void end(string suite, ref TestResult test) {
+    testListeners.each!(a => a.end(suite, test));
   }
 
-  void begin(ref StepResult step) {
-    stepListeners.each!(a => a.begin(step));
+  void begin(string suite, string test, ref StepResult step) {
+    stepListeners.each!(a => a.begin(suite, test, step));
   }
 
-  void end(ref StepResult step) {
-    stepListeners.each!(a => a.end(step));
+  void end(string suite, string test, ref StepResult step) {
+    stepListeners.each!(a => a.end(suite, test, step));
   }
 
   SuiteResult[] execute(TestCase func) {

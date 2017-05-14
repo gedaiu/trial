@@ -11,13 +11,13 @@ interface ILifecycleListener {
 }
 
 interface IStepLifecycleListener {
-  void begin(ref StepResult);
-  void end(ref StepResult);
+  void begin(string suite, string test, ref StepResult);
+  void end(string suite, string test, ref StepResult);
 }
 
 interface ITestCaseLifecycleListener {
-  void begin(ref TestResult);
-  void end(ref TestResult);
+  void begin(string suite, ref TestResult);
+  void end(string suite, ref TestResult);
 }
 
 interface ISuiteLifecycleListener {
@@ -184,7 +184,7 @@ unittest {
       order ~= "endSuite";
     }
 
-    void begin(ref TestResult test) {
+    void begin(string suite, ref TestResult test) {
       test.name.should.equal("someTestCase");
       test.begin.should.be.greaterThan(beginTime);
       test.end.should.be.greaterThan(beginTime);
@@ -193,7 +193,7 @@ unittest {
       order ~= "beginTest";
     }
 
-    void end(ref TestResult test) {
+    void end(string suite, ref TestResult test) {
       test.name.should.equal("someTestCase");
       test.begin.should.be.greaterThan(beginTime);
       test.end.should.be.greaterThan(beginTime);
@@ -239,11 +239,11 @@ unittest
   string[] order = [];
 
   class StepListener : IStepLifecycleListener {
-    void begin(ref StepResult step) {
+    void begin(string suite, string test, ref StepResult step) {
       order ~= "begin " ~ step.name;
     }
 
-    void end(ref StepResult step) {
+    void end(string suite, string test, ref StepResult step) {
       order ~= "end " ~ step.name;
     }
   }

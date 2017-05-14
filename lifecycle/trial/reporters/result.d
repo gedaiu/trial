@@ -44,11 +44,11 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
 
   void update() {}
 
-  void begin(ref TestResult test) {
+  void begin(string suite, ref TestResult test) {
     tests++;
   }
 
-  void end(ref TestResult test) {
+  void end(string suite, ref TestResult test) {
     if(test.status != TestResult.Status.failure) {
       return;
     }
@@ -59,10 +59,10 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
     failedTests++;
   }
 
-  void begin(ref StepResult step) {
+  void begin(string suite, string test, ref StepResult step) {
   }
 
-  void end(ref StepResult test) {
+  void end(string suite, string test, ref StepResult step) {
   }
 
   void begin() {
@@ -169,8 +169,8 @@ unittest {
   reporter.begin;
   reporter.begin(results[0]);
 
-  reporter.begin(results[0].tests[0]);
-  reporter.end(results[0].tests[0]);
+  reporter.begin("some suite", results[0].tests[0]);
+  reporter.end("some suite", results[0].tests[0]);
 
   reporter.end(results[0]);
   reporter.end(results);
@@ -191,11 +191,11 @@ unittest {
   reporter.begin;
   reporter.begin(results[0]);
 
-  reporter.begin(results[0].tests[0]);
-  reporter.end(results[0].tests[0]);
+  reporter.begin("some suite", results[0].tests[0]);
+  reporter.end("some suite", results[0].tests[0]);
 
-  reporter.begin(results[0].tests[1]);
-  reporter.end(results[0].tests[1]);
+  reporter.begin("some suite", results[0].tests[1]);
+  reporter.end("some suite", results[0].tests[1]);
 
   reporter.end(results[0]);
   reporter.end(results);
@@ -216,8 +216,8 @@ unittest {
   reporter.begin;
   reporter.begin(results[0]);
 
-  reporter.begin(results[0].tests[0]);
-  reporter.end(results[0].tests[0]);
+  reporter.begin("some suite", results[0].tests[0]);
+  reporter.end("some suite", results[0].tests[0]);
 
   reporter.end(results[0]);
   reporter.end(results);

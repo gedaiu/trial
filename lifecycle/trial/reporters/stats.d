@@ -64,21 +64,21 @@ class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifec
     path = path[0..$-1];
   }
 
-  void begin(ref TestResult test) {
+  void begin(string suite, ref TestResult test) {
     path ~= test.name;
   }
 
-  void end(ref TestResult test) {
+  void end(string suite, ref TestResult test) {
     enforce(lastItem == test.name, "Invalid test name");
     storage.values ~= Stat(path.join('.'), test.begin, Clock.currTime, test.status);
     path = path[0..$-1];
   }
 
-  void begin(ref StepResult step) {
+  void begin(string suite, string test, ref StepResult step) {
     path ~= step.name;
   }
 
-  void end(ref StepResult step) {
+  void end(string suite, string test, ref StepResult step) {
     enforce(lastItem == step.name, "Invalid step name");
     storage.values ~= Stat(path.join('.'), step.begin, Clock.currTime);
     path = path[0..$-1];
@@ -132,15 +132,15 @@ unittest {
   test.status = TestResult.Status.success;
 
   stats.begin(suite);
-  stats.begin(test);
-  stats.end(test);
+  stats.begin("suite", test);
+  stats.end("suite", test);
 
   storage.values.length.should.equal(1);
 
   test.name = "test2";
   test.status = TestResult.Status.failure;
-  stats.begin(test);
-  stats.end(test);
+  stats.begin("suite", test);
+  stats.end("suite", test);
 
   storage.values.length.should.equal(2);
   storage.values.map!(a => a.name).array.should.equal([ "suite.test1", "suite.test2" ]);
@@ -163,15 +163,15 @@ unittest {
   step.begin = Clock.currTime;
 
   stats.begin(suite);
-  stats.begin(test);
-  stats.begin(step);
-  stats.end(step);
+  stats.begin("suite", test);
+  stats.begin("suite", "test", step);
+  stats.end("suite", "test", step);
 
   storage.values.length.should.equal(1);
 
   step.name = "step2";
-  stats.begin(step);
-  stats.end(step);
+  stats.begin("suite", "test", step);
+  stats.end("suite", "test", step);
 
   storage.values.length.should.equal(2);
   storage.values.map!(a => a.name).array.should.equal([ "suite.test.step1", "suite.test.step2" ]);

@@ -76,8 +76,8 @@ class SpecProgressReporter : SpecReporter {
       removeCue(cue);
     }
 
-    void begin(ref TestResult test) {
-      super.begin(test);
+    void begin(string suite, ref TestResult test) {
+      super.begin(suite, test);
 
       path ~= test.name;
       auto cue = path.join('.');
@@ -89,17 +89,17 @@ class SpecProgressReporter : SpecReporter {
       update;
     }
 
-    void end(ref TestResult test) {
+    void end(string suite, ref TestResult test) {
       writer.resetLine;
-      super.end(test);
+      super.end(suite, test);
       auto cue = path.join('.');
       path = path[0..$-1];
 
       removeCue(cue);
     }
 
-    void begin(ref StepResult step) {}
-    void end(ref StepResult test) {}
+    void begin(string suite, string test, ref StepResult step) {}
+    void end(string suite, string test, ref StepResult step) {}
   }
 }
 
@@ -124,7 +124,7 @@ unittest {
   test.status = TestResult.Status.success;
 
   reporter.begin(suite);
-  reporter.begin(test);
+  reporter.begin("some suite", test);
 
   writer.buffer.should.contain("\n  some suite\n*[10s]some suite *[10s]some test");
 
@@ -133,7 +133,7 @@ unittest {
 
   writer.buffer.should.contain("\n  some suite\n*[9s]some suite *[9s]some test");
 
-  reporter.end(test);
+  reporter.end("some suite", test);
   reporter.end(suite);
 
   writer.buffer.should.contain("\n  some suite\n    ✓ some test");
@@ -163,21 +163,21 @@ unittest {
   test2.status = TestResult.Status.success;
 
   reporter.begin(suite);
-  reporter.begin(test1);
-  reporter.end(test1);
+  reporter.begin("some suite", test1);
+  reporter.end("some suite", test1);
 
-  reporter.begin(test2);
+  reporter.begin("some suite", test2);
   writer.buffer.should.contain("\n  some suite\n    ✓ test1\n*[0s]test2");
 
   reporter.update();
   writer.buffer.should.contain("\n  some suite\n    ✓ test1\n*[0s]test2");
 
-  reporter.end(test2);
+  reporter.end("some suite", test2);
   reporter.end(suite);
 
   suite.name = "suite2";
   reporter.begin(suite);
-  reporter.begin(test1);
+  reporter.begin("some suite", test1);
 
   writer.buffer.should.contain("\n  some suite\n    ✓ test1\n    ✓ test2\n\n  suite2\n*[0s]suite2 *[0s]test1");
 }
