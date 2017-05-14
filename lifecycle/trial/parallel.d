@@ -5,6 +5,8 @@ import trial.discovery;
 import trial.runner;
 import std.datetime;
 import std.exception;
+import std.algorithm;
+import std.array;
 
 class ThreadLifeCycleListener : LifeCycleListeners {
   static string currentTest = "unknown";
@@ -89,6 +91,7 @@ private {
         string beginTests[];
         string endTests[];
         StepAction steps[];
+        Throwable[string] failures;
         ulong testCount;
       }
 
@@ -96,6 +99,17 @@ private {
         shared(ThreadProxy) instance() {
           return _instance;
         }
+      }
+
+      void reset() {
+        beginTests = [];
+        endTests = [];
+        steps = [];
+
+        failures.clear;
+        failures.rehash;
+
+        testCount = 0;
       }
 
       void begin(string name) {
@@ -119,15 +133,20 @@ private {
         steps ~= StepAction(testName, stepName, end, StepAction.Type.end);
       }
 
+      void setFailure(string key, shared(Throwable) t) {
+        failures[key] = t;
+      }
+
       auto getStatus() {
         struct Status {
           string[] begin;
           StepAction[] steps;
           string[] end;
+          Throwable[string] failures;
           ulong testCount;
         }
 
-        auto status = shared Status(beginTests.dup, steps.dup, endTests.dup, testCount);
+        auto status = shared Status(beginTests.dup, steps.dup, endTests.dup, failures, testCount);
 
         beginTests = [];
         steps = [];
@@ -191,14 +210,18 @@ class ParallelExecutor : ITestExecutor {
       testResult.end = Clock.currTime;
       testResult.status = TestResult.Status.started;
 
+      suiteStats[testCase.suiteName].result.tests ~= testResult;
+
       LifeCycleListeners.instance.begin(testCase.suiteName, testResult);
       testResults[key] = testResult;
       stepStack[key] = [ testResult ];
     }
 
-    void endTestResult(string key) {
+    void endTestResult(string key, Throwable t) {
       auto testResult = testResults[key];
       testResult.end = Clock.currTime;
+      testResult.status = t is null ? TestResult.Status.success : TestResult.Status.failure;
+      testResult.throwable = t;
 
       LifeCycleListeners.instance.end(testCases[key].suiteName, testResult);
       testResults.remove(key);
@@ -249,7 +272,13 @@ class ParallelExecutor : ITestExecutor {
         }
 
         foreach(endKey; status.end) {
-          endTestResult(endKey);
+          Throwable failure = null;
+
+          if(endKey in status.failures) {
+            failure = cast() status.failures[endKey];
+          }
+
+          endTestResult(endKey, failure);
         }
 
         Thread.sleep(1.msecs);
@@ -273,6 +302,7 @@ class ParallelExecutor : ITestExecutor {
       try {
         testCase.func();
       } catch(Throwable t) {
+        ThreadProxy.instance.setFailure(key, cast(shared)t);
       }
     }).executeInNewThread();
 
@@ -280,19 +310,26 @@ class ParallelExecutor : ITestExecutor {
   }
 
   SuiteResult[] beginExecution() {
+    ThreadProxy.instance.reset();
     return [];
   }
 
   SuiteResult[] endExecution() {
     wait;
 
-    foreach(stat; suiteStats.byValue) {
+    foreach(stat; suiteStats.values) {
       if(!stat.isDone) {
         endSuiteResult(stat.result.name);
       }
     }
 
-    return [];
+    SuiteResult[] results;
+
+    foreach(stat; suiteStats) {
+      results ~= stat.result;
+    }
+
+    return results;
   }
 }
 
@@ -300,6 +337,10 @@ version(unittest) {
   import fluent.asserts;
   import core.thread;
   import trial.step;
+
+  void failMock() @system {
+    assert(false);
+  }
 
   void stepMock1() @system {
     Thread.sleep(100.msecs);
@@ -324,6 +365,50 @@ version(unittest) {
       Thread.sleep(120.msecs);
     }
   }
+}
+
+@("A parallel executor should get the result of a success test")
+unittest
+{
+  TestCase[] tests = [ TestCase("suite1", "test1", &stepMock1)];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new ParallelExecutor);
+
+  auto begin = Clock.currTime;
+  auto result = tests.runTests;
+
+  result.length.should.equal(1);
+  result[0].name.should.equal("suite1");
+
+  result[0].tests.length.should.equal(1);
+  result[0].tests.length.should.equal(1);
+  result[0].tests[0].status.should.equal(TestResult.Status.success);
+  (result[0].tests[0].throwable is null).should.equal(true);
+}
+
+@("A parallel executor should get the result of a failing test")
+unittest
+{
+  TestCase[] tests = [ TestCase("suite1", "test1", &failMock)];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new ParallelExecutor);
+
+  auto begin = Clock.currTime;
+  auto result = tests.runTests;
+
+  result.length.should.equal(1);
+  result[0].name.should.equal("suite1");
+
+  result[0].tests.length.should.equal(1);
+  result[0].tests.length.should.equal(1);
+  result[0].tests[0].status.should.equal(TestResult.Status.failure);
+  (result[0].tests[0].throwable !is null).should.equal(true);
 }
 
 @("A parallel executor should call the events in the right order")
@@ -359,7 +444,7 @@ unittest
       }
   }
 
-  TestCase[] tests = [ TestCase("suite1", "test1", &stepMock1), TestCase("suite1","test2", &stepMock2) ];
+  TestCase[] tests = [ TestCase("suite2", "test1", &stepMock1), TestCase("suite2","test2", &stepMock2) ];
 
   auto old = LifeCycleListeners.instance;
   scope(exit) LifeCycleListeners.instance = old;
@@ -368,20 +453,22 @@ unittest
   LifeCycleListeners.instance.add(new MockListener);
   LifeCycleListeners.instance.add(new ParallelExecutor);
 
-  tests.runTests;
+  auto results = tests.runTests;
+
+  Thread.sleep(3.seconds); //just for test
 
   executed.should.equal(true);
-  steps.should.equal(["begin suite1",
-  "suite1.testBegin test1",
-  "suite1.testBegin test2",
+  steps.should.equal(["begin suite2",
+  "suite2.testBegin test1",
+  "suite2.testBegin test2",
 
-  "suite1.test1.stepBegin some step",
-  "suite1.test1.stepEnd some step",
-  "suite1.testEnd test1",
+  "suite2.test1.stepBegin some step",
+  "suite2.test1.stepEnd some step",
+  "suite2.testEnd test1",
 
-  "suite1.test2.stepBegin some step",
-  "suite1.test2.stepEnd some step",
-  "suite1.testEnd test2",
+  "suite2.test2.stepBegin some step",
+  "suite2.test2.stepEnd some step",
+  "suite2.testEnd test2",
 
-  "end suite1"]);
+  "end suite2"]);
 }
