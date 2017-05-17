@@ -139,7 +139,7 @@ auto runTests(T)(T tests, string testName = "") {
 
   SuiteResult[] results = LifeCycleListeners.instance.beginExecution;
 
-  foreach(test; tests) {
+  foreach(test; tests.filter!(a => a.name.indexOf(testName) != -1)) {
     results ~= LifeCycleListeners.instance.execute(test);
   }
 

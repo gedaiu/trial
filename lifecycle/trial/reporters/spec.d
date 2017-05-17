@@ -4,11 +4,13 @@ import std.stdio;
 import std.array;
 import std.conv;
 import std.datetime;
+import std.string;
+import std.algorithm;
 
 import trial.interfaces;
 import trial.reporters.writer;
 
-class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
+class SpecReporter : ITestCaseLifecycleListener {
   enum Type {
     none,
     success,
@@ -20,16 +22,9 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
   }
 
   protected {
-    int indents;
-    int stepIndents;
-
-    int tests;
     int failedTests = 0;
-    int currentStep = 0;
+    string lastSuiteName;
 
-    string currentTestName;
-
-    SysTime beginTime;
     ReportWriter writer;
   }
 
@@ -49,12 +44,14 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
   }
 
   private {
-    string indentation(int cnt) pure {
+    string indentation(ulong cnt) pure {
       return "  ".replicate(cnt);
     }
   }
 
-  void write(Type t)(string text = "", int spaces = 0) {
+  void write(Type t)(string text = "", ulong spaces = 0) {
+    writer.write(indentation(spaces));
+
     switch(t) {
       case Type.emptyLine:
         writer.writeln("");
@@ -69,91 +66,48 @@ class SpecReporter : ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepL
         writer.write(failedTests.to!string ~ ") " ~ text, ReportWriter.Context.danger);
         break;
 
-      case Type.testBegin:
-          writer.write(indentation(spaces));
-          writer.write(current, ReportWriter.Context.info);
-          writer.write(" " ~ text, ReportWriter.Context.inactive);
-        break;
-
-      case Type.testEnd:
-        writer.write(indentation(spaces));
-        writer.write(result ~ " " ~ text, ReportWriter.Context.info);
-        break;
-
-      case Type.step:
-        writer.write(indentation(spaces));
-        writer.write(line, ReportWriter.Context.info);
-        writer.write(indentation(stepIndents));
-        writer.write(" " ~ text, ReportWriter.Context.inactive);
-        break;
-
       default:
-        writer.write(indentation(spaces) ~ text);
+        writer.write(text);
     }
   }
 
-  void begin(ref SuiteResult suite) {
-    indents++;
-    write!(Type.emptyLine);
-    write!(Type.none)(suite.name, indents);
-    write!(Type.emptyLine);
-  }
-
-  void end(ref SuiteResult suite) {
-    indents--;
-  }
-
-  void begin(string suite, ref TestResult test) {
-    indents++;
-    tests++;
-    currentStep = 0;
-    stepIndents = 0;
-    currentTestName = test.name;
-  }
+  void begin(string suite, ref TestResult test) { }
 
   void end(string suite, ref TestResult test) {
-    if(currentStep == 0) {
-      writer.write(indentation(indents));
+    ulong indents = 1;
 
-      if(test.status == TestResult.Status.success) {
-        write!(Type.success)(test.name, indents);
+    if(suite != lastSuiteName) {
+      auto oldPieces = lastSuiteName.split(".");
+      auto pieces = suite.split(".");
+      lastSuiteName = suite;
+
+      auto prefix = oldPieces.commonPrefix(pieces).array.length;
+
+      write!(Type.emptyLine)();
+      indents += prefix;
+
+      foreach(piece; pieces[prefix .. $]) {
+        write!(Type.none)(piece, indents);
+        write!(Type.emptyLine)();
+        indents++;
       }
 
-      if(test.status == TestResult.Status.failure) {
-        write!(Type.failure)(test.name, indents);
-        failedTests++;
-      }
     } else {
-      write!(Type.testEnd)("", indents);
-
-      if(test.status == TestResult.Status.success) {
-        write!(Type.success)("Success");
-      }
-
-      if(test.status == TestResult.Status.failure) {
-        write!(Type.failure)("Failure");
-        failedTests++;
-      }
+      indents = suite.count('.') + 2;
     }
+
+    if(test.status == TestResult.Status.success) {
+      write!(Type.success)(test.name, indents);
+    }
+
+    if(test.status == TestResult.Status.failure) {
+      write!(Type.failure)(test.name, indents);
+      failedTests++;
+    }
+
     write!(Type.emptyLine);
 
     indents--;
-  }
-
-  void begin(string suite, string test, ref StepResult step) {
-    if(currentStep == 0) {
-      write!(Type.testBegin)(currentTestName, indents);
-      write!(Type.emptyLine);
-    }
-
-    stepIndents++;
-    write!(Type.step)(step.name, indents);
-    write!(Type.emptyLine);
-    currentStep++;
-  }
-
-  void end(string suite, string test, ref StepResult step) {
-    stepIndents--;
   }
 }
 
@@ -170,15 +124,11 @@ unittest {
   auto test = new TestResult("some test");
   test.status = TestResult.Status.success;
 
-  reporter.begin(suite);
-
   reporter.begin("some suite", test);
   reporter.end("some suite", test);
 
-  reporter.end(suite);
-
-  writer.buffer.should.contain("\n  some suite\n");
-  writer.buffer.should.contain("\n    ✓ some test\n");
+  writer.buffer.should.equal("\n  some suite" ~
+                             "\n    ✓ some test\n");
 }
 
 @("it should print two success tests")
@@ -193,15 +143,11 @@ unittest {
   auto test2 = new TestResult("other test");
   test2.status = TestResult.Status.success;
 
-  reporter.begin(suite);
-
   reporter.begin("some suite", test1);
   reporter.end("some suite", test1);
 
   reporter.begin("some suite", test2);
   reporter.end("some suite", test2);
-
-  reporter.end(suite);
 
   writer.buffer.should.contain("\n  some suite\n");
   writer.buffer.should.contain("\n    ✓ some test\n");
@@ -217,92 +163,53 @@ unittest {
   auto test = new TestResult("some test");
 
   test.status = TestResult.Status.failure;
+
+  reporter.begin("some suite", test);
+  reporter.end("some suite", test);
+
+  writer.buffer.should.equal("\n  some suite" ~
+                             "\n    0) some test\n");
+}
+
+@("it should split suites by dot")
+unittest {
+  auto writer = new BufferedWriter;
+  auto reporter = new SpecReporter(writer);
+
+  auto suite = SuiteResult("some.suite");
+  auto test = new TestResult("some test");
+
+  test.status = TestResult.Status.failure;
   test.throwable = new Exception("Random failure");
 
-  reporter.begin(suite);
-  reporter.begin("some suite", test);
-  reporter.end("some suite", test);
-  reporter.end(suite);
-
-  writer.buffer.should.contain("\n  some suite\n");
-  writer.buffer.should.contain("\n    0) some test\n");
-}
-
-@("it should format the steps for a success test")
-unittest {
-  auto writer = new BufferedWriter;
-  auto reporter = new SpecReporter(writer);
-
-  auto suite = SuiteResult("some suite");
-  auto test = new TestResult("some test");
-  test.status = TestResult.Status.success;
-
-  auto step = new StepResult();
-  step.name = "some step";
-
-  reporter.begin(suite);
-  reporter.begin("some suite", test);
-
-  reporter.begin("some suite", "some test", step);
-  reporter.begin("some suite", "some test", step);
-  reporter.end("some suite", "some test", step);
-  reporter.end("some suite", "some test", step);
-  reporter.begin("some suite", "some test", step);
-  reporter.end("some suite", "some test", step);
-
-  reporter.end("some suite", test);
-
-  reporter.begin("some suite", test);
-  reporter.end("some suite", test);
-
-  reporter.end(suite);
+  reporter.end("some.suite", test);
+  reporter.end("some.suite", test);
 
   writer.buffer.should.equal("\n" ~
-                             "  some suite\n" ~
-                             "    ┌ some test\n" ~
-                             "    │   some step\n" ~
-                             "    │     some step\n" ~
-                             "    │   some step\n" ~
-                             "    └ ✓ Success\n" ~
-                             "    ✓ some test\n");
+                             "  some\n" ~
+                             "    suite\n" ~
+                             "      0) some test\n" ~
+                             "      1) some test\n");
 }
 
-
-@("it should format the steps for a failing test")
+@("it should omit the common suite names")
 unittest {
   auto writer = new BufferedWriter;
   auto reporter = new SpecReporter(writer);
 
-  auto suite = SuiteResult("some suite");
+  auto suite = SuiteResult("some.suite");
   auto test = new TestResult("some test");
+
   test.status = TestResult.Status.failure;
+  test.throwable = new Exception("Random failure");
 
-  auto step = new StepResult();
-  step.name = "some step";
-
-  reporter.begin(suite);
-  reporter.begin("some suite", test);
-
-  reporter.begin("some suite", "some test", step);
-  reporter.begin("some suite", "some test", step);
-  reporter.end("some suite", "some test", step);
-  reporter.end("some suite", "some test", step);
-  reporter.begin("some suite", "some test", step);
-  reporter.end("some suite", "some test", step);
-
-  reporter.end("some suite", test);
-
-  reporter.begin("some suite", test);
-  reporter.end("some suite", test);
-
-  reporter.end(suite);
+  reporter.end("some.suite", test);
+  reporter.end("some.other", test);
 
   writer.buffer.should.equal("\n" ~
-                             "  some suite\n" ~
-                             "    ┌ some test\n" ~
-                             "    │   some step\n" ~
-                             "    │     some step\n" ~
-                             "    │   some step\n" ~
-                             "    └ 0) Failure\n" ~
-                             "    1) some test\n");
+                             "  some\n" ~
+                             "    suite\n" ~
+                             "      0) some test\n\n"
+                             "    other\n" ~
+                             "      1) some test\n");
 }

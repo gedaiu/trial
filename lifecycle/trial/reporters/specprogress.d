@@ -11,17 +11,18 @@ import trial.reporters.writer;
 import trial.reporters.stats;
 import trial.reporters.spec;
 
-class SpecProgressReporter : SpecReporter {
+class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener {
   private {
     alias UpdateFunction = void delegate(CueInfo info);
 
     struct CueInfo {
-      string position;
+      string id;
       string name;
       long duration;
       SysTime begin;
     }
 
+    ulong oldTextLength;
     StatStorage storage;
     string[] path;
 
@@ -31,75 +32,74 @@ class SpecProgressReporter : SpecReporter {
   this(StatStorage storage) {
     super();
     this.storage = storage;
+    writer.writeln("");
   }
 
   this(ReportWriter writer, StatStorage storage) {
     super(writer);
     this.storage = storage;
+    writer.writeln("");
+  }
+
+  void clearProgress() {
+    writer.goTo(1);
+    writer.write("\n" ~ " ".replicate(oldTextLength));
+    writer.goTo(1);
+    oldTextLength = 0;
   }
 
   void update() {
-    writer.resetLine;
+    auto now = Clock.currTime;
+    auto progress = cues.map!(cue => "*[" ~ (cue.duration - (now - cue.begin).total!"seconds").to!string ~ "s]" ~ cue.name).join(" ").to!string;
 
-    foreach(cue; cues) {
-      auto currentDuration = Clock.currTime - cue.begin;
-      auto diff = cue.duration - currentDuration.total!"seconds";
+    auto spaces = "";
 
-      writer.write("*[" ~ diff.to!string ~ "s]" ~ cue.name ~ " ");
+    if(oldTextLength > progress.length) {
+      spaces = " ".replicate(oldTextLength - progress.length);
     }
+
+    writer.goTo(1);
+    writer.write("\n" ~ progress ~ spaces);
+
+    oldTextLength = progress.length;
   }
 
-  void removeCue(string name) {
-    cues = cues.filter!(a => a.name == name).array;
+  void removeCue(string id) {
+    cues = cues.filter!(a => a.id != id).array;
+  }
+
+  void begin(ref SuiteResult suite) {
+    auto stat = storage.find(suite.name);
+    auto duration = (stat.end - stat.begin).total!"seconds";
+
+    cues ~= CueInfo(suite.name, suite.name, duration, Clock.currTime);
+  }
+
+  void end(ref SuiteResult suite) {
+    removeCue(suite.name);
+    update;
   }
 
   override {
-    void begin(ref SuiteResult suite) {
-      super.begin(suite);
-
-      path ~= suite.name;
-      auto cue = path.join('.');
-      auto stat = storage.find(cue);
-      auto duration = (stat.end - stat.begin).total!"seconds";
-
-      cues ~= CueInfo(cue, suite.name, duration, Clock.currTime);
-      update;
-    }
-
-    void end(ref SuiteResult suite) {
-      writer.resetLine;
-      super.end(suite);
-
-      auto cue = path.join('.');
-      path = path[0..$-1];
-
-      removeCue(cue);
-    }
-
     void begin(string suite, ref TestResult test) {
       super.begin(suite, test);
 
-      path ~= test.name;
-      auto cue = path.join('.');
-
-      auto stat = storage.find(cue);
+      auto stat = storage.find(suite ~ "." ~ test.name);
       auto duration = (stat.end - stat.begin).total!"seconds";
 
-      cues ~= CueInfo(cue, test.name, duration, Clock.currTime);
+      cues ~= CueInfo(suite ~ "." ~ test.name, test.name, duration, Clock.currTime);
       update;
     }
 
     void end(string suite, ref TestResult test) {
-      writer.resetLine;
+      clearProgress;
       super.end(suite, test);
-      auto cue = path.join('.');
-      path = path[0..$-1];
-
-      removeCue(cue);
+      cues.writeln;
+      removeCue(suite ~ "." ~ test.name);
+      cues.writeln;
+      writer.writeln("");
+      update;
     }
-
-    void begin(string suite, string test, ref StepResult step) {}
-    void end(string suite, string test, ref StepResult step) {}
   }
 }
 
@@ -121,26 +121,30 @@ unittest {
 
   auto suite = SuiteResult("some suite");
   auto test = new TestResult("some test");
-  test.status = TestResult.Status.success;
 
   reporter.begin(suite);
   reporter.begin("some suite", test);
 
-  writer.buffer.should.contain("\n  some suite\n*[10s]some suite *[10s]some test");
+  writer.buffer.should.equal("\n*[10s]some suite *[10s]some test");
 
   Thread.sleep(1.seconds);
   reporter.update();
 
-  writer.buffer.should.contain("\n  some suite\n*[9s]some suite *[9s]some test");
+  writer.buffer.should.equal("\n*[9s]some suite *[9s]some test  ");
 
+  "------------".writeln;
+  test.status = TestResult.Status.success;
   reporter.end("some suite", test);
+  "------------".writeln;
+
+  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n*[9s]some suite");
   reporter.end(suite);
 
-  writer.buffer.should.contain("\n  some suite\n    ✓ some test");
+  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n");
 
   reporter.update();
 
-  writer.buffer.should.contain("\n  some suite\n    ✓ some test");
+  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test");
 }
 
 
@@ -167,17 +171,19 @@ unittest {
   reporter.end("some suite", test1);
 
   reporter.begin("some suite", test2);
-  writer.buffer.should.contain("\n  some suite\n    ✓ test1\n*[0s]test2");
+  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n*[0s]test2");
 
   reporter.update();
-  writer.buffer.should.contain("\n  some suite\n    ✓ test1\n*[0s]test2");
+  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n*[0s]test2");
 
   reporter.end("some suite", test2);
+
+  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n    ✓ test2");
   reporter.end(suite);
 
   suite.name = "suite2";
   reporter.begin(suite);
   reporter.begin("some suite", test1);
 
-  writer.buffer.should.contain("\n  some suite\n    ✓ test1\n    ✓ test2\n\n  suite2\n*[0s]suite2 *[0s]test1");
+  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n    ✓ test2\n\n  suite2\n*[0s]suite2 *[0s]test1");
 }

@@ -5,6 +5,6 @@
 		"stats"
 	],
 
-	"runInParallel": true,
-	"maxThreads": 0
+	"runInParallel": false,
+	"maxThreads": 1
 }
