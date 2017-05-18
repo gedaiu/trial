@@ -94,9 +94,7 @@ class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener {
     void end(string suite, ref TestResult test) {
       clearProgress;
       super.end(suite, test);
-      cues.writeln;
       removeCue(suite ~ "." ~ test.name);
-      cues.writeln;
       writer.writeln("");
       update;
     }
@@ -169,19 +167,27 @@ unittest {
   reporter.end("some suite", test1);
 
   reporter.begin("some suite", test2);
-  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n*[0s]test2");
+  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n\n*[0s]some suite *[0s]test2");
 
   reporter.update();
-  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n*[0s]test2");
+  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n\n*[0s]some suite *[0s]test2");
 
   reporter.end("some suite", test2);
 
-  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n    ✓ test2");
+  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n    ✓ test2\n                          \n*[0s]some suite");
   reporter.end(suite);
 
   suite.name = "suite2";
   reporter.begin(suite);
-  reporter.begin("some suite", test1);
+  reporter.begin("suite2", test1);
+  reporter.end("suite2", test1);
 
-  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n    ✓ test2\n\n  suite2\n*[0s]suite2 *[0s]test1");
+  writer.buffer.should.equal(
+    "\n  some suite              \n" ~
+    "    ✓ test1\n"~
+    "    ✓ test2\n"~
+    "                          \n"~
+    "  suite2              \n"~
+    "    ✓ test1\n\n"~
+    "*[0s]suite2");
 }
