@@ -132,20 +132,17 @@ unittest {
 
   writer.buffer.should.equal("\n*[9s]some suite *[9s]some test  ");
 
-  "------------".writeln;
   test.status = TestResult.Status.success;
   reporter.end("some suite", test);
-  "------------".writeln;
 
   writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n*[9s]some suite");
   reporter.end(suite);
 
-  writer.buffer.writeln("!");
-  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n");
+  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n               ");
 
   reporter.update();
 
-  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test");
+  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n               ");
 }
 
 
