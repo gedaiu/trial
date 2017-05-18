@@ -140,6 +140,7 @@ unittest {
   writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n*[9s]some suite");
   reporter.end(suite);
 
+  writer.buffer.writeln("!");
   writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n");
 
   reporter.update();
