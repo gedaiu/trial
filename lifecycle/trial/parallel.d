@@ -561,8 +561,6 @@ unittest
 
   auto results = tests.runTests;
 
-  Thread.sleep(3.seconds); //just for test
-
   executed.should.equal(true);
   steps.should.equal(["begin suite2",
   "suite2.testBegin test1",
