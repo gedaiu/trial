@@ -172,6 +172,7 @@ class ParallelExecutor : ITestExecutor {
     ulong testCount;
     ulong testsFinished;
     bool isDone;
+    bool allTestsAdded;
   }
 
   this(uint maxTestCount = 0) {
@@ -186,6 +187,7 @@ class ParallelExecutor : ITestExecutor {
   private {
     ulong testCount;
     uint maxTestCount;
+    string currentSuite = "";
 
     SuiteStats[string] suiteStats;
     TestCase[string] testCases;
@@ -198,6 +200,11 @@ class ParallelExecutor : ITestExecutor {
       suiteStats[name].result.name = name;
       suiteStats[name].result.begin = Clock.currTime;
       suiteStats[name].result.end = Clock.currTime;
+
+      if(currentSuite in suiteStats) {
+        suiteStats[currentSuite].allTestsAdded = true;
+      }
+      currentSuite = name;
 
       LifeCycleListeners.instance.begin(suiteStats[name].result);
     }
@@ -221,6 +228,7 @@ class ParallelExecutor : ITestExecutor {
       testResult.status = TestResult.Status.started;
 
       suiteStats[testCase.suiteName].result.tests ~= testResult;
+      suiteStats[testCase.suiteName].testCount++;
 
       LifeCycleListeners.instance.begin(testCase.suiteName, testResult);
       testResults[key] = testResult;
@@ -232,6 +240,8 @@ class ParallelExecutor : ITestExecutor {
       testResult.end = Clock.currTime;
       testResult.status = t is null ? TestResult.Status.success : TestResult.Status.failure;
       testResult.throwable = t;
+
+      suiteStats[testCases[key].suiteName].testsFinished++;
 
       LifeCycleListeners.instance.end(testCases[key].suiteName, testResult);
       testResults.remove(key);
@@ -289,6 +299,16 @@ class ParallelExecutor : ITestExecutor {
         endTestResult(endKey, failure);
       }
 
+      //std.stdio.writeln("\n\nsuiteStats.values = ", suiteStats.values.length, "\n\n");
+
+      foreach(ref index, ref stat; suiteStats.values) {
+        //std.stdio.writeln("\n\nsuiteStats.value ", index, " ", stat.isLogged ,"&&", stat.isDone ,"&&", stat.testCount ,"==", stat.testsFinished, "\n\n");
+
+        if(stat.allTestsAdded && !stat.isDone && stat.testCount == stat.testsFinished) {
+          endSuiteResult(stat.result.name);
+        }
+      }
+
       return status.testCount;
     }
 
@@ -296,6 +316,7 @@ class ParallelExecutor : ITestExecutor {
       ulong executedTestCount;
 
       do {
+        LifeCycleListeners.instance.update();
         executedTestCount = processEvents;
         Thread.sleep(1.msecs);
       } while(executedTestCount < testCount);

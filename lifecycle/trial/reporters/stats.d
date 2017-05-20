@@ -6,6 +6,7 @@ import std.conv;
 import std.exception;
 import std.array;
 import std.datetime;
+import std.stdio;
 import std.file;
 
 import trial.interfaces;
@@ -52,7 +53,7 @@ class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifec
     }
   }
 
-  void update() {}
+  void update() { }
 
   void begin(ref SuiteResult suite) {}
 
@@ -75,7 +76,6 @@ class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifec
     string key = suite ~ "." ~ test;
 
     enforce(lastItem(key) == step.name, "Invalid step name");
-
     storage.values ~= Stat(key ~ "." ~ path[key].join('.'), step.begin, Clock.currTime);
     path[key] = path[key][0..$-1];
   }
@@ -83,7 +83,8 @@ class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifec
   void begin() {}
 
   void end(SuiteResult[]) {
-    std.file.write("trial-stats.csv", storage.toCsv);
+    auto f = File("trial-stats.csv", "w"); // open for writing
+    f.write(storage.toCsv);
   }
 }
 
@@ -226,5 +227,9 @@ unittest
 }
 
 StatStorage statsFromFile(string fileName) {
+  if(!fileName.exists) {
+    return new StatStorage();
+  }
+
   return fileName.readText.toStatStorage;
 }

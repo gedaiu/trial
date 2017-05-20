@@ -11,7 +11,7 @@ import trial.reporters.writer;
 import trial.reporters.stats;
 import trial.reporters.spec;
 
-class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener {
+class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener, ILifecycleListener {
   private {
     alias UpdateFunction = void delegate(CueInfo info);
 
@@ -48,7 +48,10 @@ class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener {
     oldTextLength = 0;
   }
 
+  void begin() {}
+  void end(SuiteResult[]) {}
   void update() {
+    writer.hideCursor;
     auto now = Clock.currTime;
     auto progress = cues.map!(cue => "*[" ~ (cue.duration - (now - cue.begin).total!"seconds").to!string ~ "s]" ~ cue.name).join(" ").to!string;
 
@@ -59,9 +62,10 @@ class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener {
     }
 
     writer.goTo(1);
-    writer.write("\n" ~ progress ~ spaces);
+    writer.write("\n" ~ progress ~ spaces ~ " ");
 
     oldTextLength = progress.length;
+    writer.showCursor;
   }
 
   void removeCue(string id) {
@@ -73,6 +77,7 @@ class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener {
     auto duration = (stat.end - stat.begin).total!"seconds";
 
     cues ~= CueInfo(suite.name, suite.name, duration, Clock.currTime);
+    update;
   }
 
   void end(ref SuiteResult suite) {
@@ -123,24 +128,24 @@ unittest {
   reporter.begin(suite);
   reporter.begin("some suite", test);
 
-  writer.buffer.should.equal("\n*[10s]some suite *[10s]some test");
+  writer.buffer.should.equal("\n*[10s]some suite *[10s]some test ");
 
   Thread.sleep(1.seconds);
   reporter.update();
 
-  writer.buffer.should.equal("\n*[9s]some suite *[9s]some test  ");
+  writer.buffer.should.equal("\n*[9s]some suite *[9s]some test   ");
 
   test.status = TestResult.Status.success;
   reporter.end("some suite", test);
 
-  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n*[9s]some suite");
+  writer.buffer.should.equal("\n  some suite                     \n    ✓ some test\n\n*[9s]some suite ");
   reporter.end(suite);
 
-  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n               ");
+  writer.buffer.should.equal("\n  some suite                     \n    ✓ some test\n\n                ");
 
   reporter.update();
 
-  writer.buffer.should.equal("\n  some suite                    \n    ✓ some test\n\n               ");
+  writer.buffer.should.equal("\n  some suite                     \n    ✓ some test\n\n                ");
 }
 
 
@@ -167,14 +172,14 @@ unittest {
   reporter.end("some suite", test1);
 
   reporter.begin("some suite", test2);
-  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n\n*[0s]some suite *[0s]test2");
+  writer.buffer.should.equal("\n  some suite               \n    ✓ test1\n\n*[0s]some suite *[0s]test2 ");
 
   reporter.update();
-  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n\n*[0s]some suite *[0s]test2");
+  writer.buffer.should.equal("\n  some suite               \n    ✓ test1\n\n*[0s]some suite *[0s]test2 ");
 
   reporter.end("some suite", test2);
 
-  writer.buffer.should.equal("\n  some suite              \n    ✓ test1\n    ✓ test2\n                          \n*[0s]some suite");
+  writer.buffer.should.equal("\n  some suite               \n    ✓ test1\n    ✓ test2\n                           \n*[0s]some suite ");
   reporter.end(suite);
 
   suite.name = "suite2";
@@ -183,11 +188,11 @@ unittest {
   reporter.end("suite2", test1);
 
   writer.buffer.should.equal(
-    "\n  some suite              \n" ~
+    "\n  some suite               \n" ~
     "    ✓ test1\n"~
     "    ✓ test2\n"~
-    "                          \n"~
-    "  suite2              \n"~
+    "                           \n"~
+    "  suite2               \n"~
     "    ✓ test1\n\n"~
-    "*[0s]suite2");
+    "*[0s]suite2 ");
 }

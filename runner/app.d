@@ -4,6 +4,9 @@ import std.algorithm;
 import std.getopt;
 import std.file;
 import std.array;
+import std.conv;
+import core.time;
+import core.thread;
 import vibe.data.json;
 
 import trial.generator;
@@ -55,6 +58,7 @@ Json dubDescribe(string path, string subPackage) {
 		}
 
 		pipes.stdout.byLine.each!(a => data ~= a);
+		Thread.sleep(10.msecs);
 	}
 
 	try {

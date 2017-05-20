@@ -23,9 +23,13 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
     import("runner.d") ~
     import("interfaces.d") ~
     import("settings.d") ~
+    import("parallel.d") ~
+    import("single.d") ~
+    import("step.d") ~
     import("reporters/writer.d") ~
     import("reporters/result.d") ~
     import("reporters/stats.d") ~
+    import("reporters/specprogress.d") ~
     import("reporters/spec.d");
 
   string code;

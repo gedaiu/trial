@@ -20,6 +20,8 @@ interface ReportWriter {
   void goTo(int);
   void write(string, Context = Context.active);
   void writeln(string, Context = Context.active);
+  void showCursor();
+  void hideCursor();
 }
 
 class ConsoleWriter : ReportWriter {
@@ -32,6 +34,9 @@ class ConsoleWriter : ReportWriter {
   void writeln(string text, Context) {
     std.stdio.writeln(text);
   }
+
+  void showCursor() {}
+  void hideCursor() {}
 }
 
 version(Have_arsd_official_terminal) {
@@ -87,7 +92,7 @@ version(Have_arsd_official_terminal) {
     }
 
     void goTo(int y) {
-      //terminal.moveTo(0, y);
+      terminal.moveTo(0, terminal.cursorY - y, ForceOption.alwaysSend);
     }
 
     void write(string text, Context context) {
@@ -102,6 +107,14 @@ version(Have_arsd_official_terminal) {
 
     void writeln(string text, Context context) {
       write(text ~ "\n", context);
+    }
+
+    void showCursor() {
+      terminal.showCursor;
+    }
+
+    void hideCursor() {
+      terminal.hideCursor;
     }
   }
 } else {
@@ -160,6 +173,9 @@ class BufferedWriter : ReportWriter {
   void writeln(string text, Context c) {
     write(text ~ '\n', c);
   }
+
+  void showCursor() {}
+  void hideCursor() {}
 }
 
 version(unittest) {

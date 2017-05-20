@@ -25,7 +25,6 @@ class LifeCycleListeners {
   }
 
   void add(T)(T listener) {
-
     static if(!is(CommonType!(ISuiteLifecycleListener, T) == void)) {
       suiteListeners ~= listener;
     }

@@ -16,10 +16,12 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
   void begin(string suite, string test, ref StepResult step) {
     stepStack[stepStack.length - 1].steps ~= step;
     stepStack ~= step;
+    LifeCycleListeners.instance.update();
   }
 
   void end(string suite, string test, ref StepResult step) {
     stepStack = stepStack[0..$-1];
+    LifeCycleListeners.instance.update();
   }
 
   SuiteResult[] beginExecution() {
@@ -31,6 +33,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
       return [];
     }
 
+    LifeCycleListeners.instance.update();
     LifeCycleListeners.instance.end(suiteResult);
     return [ suiteResult ];
   }
@@ -64,6 +67,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
   SuiteResult[] execute(TestCase testCase) {
     SuiteResult[] result;
 
+    LifeCycleListeners.instance.update();
     if(suiteResult.name != testCase.suiteName) {
       if(suiteResult.begin != SysTime.min) {
         suiteResult.end = Clock.currTime;
@@ -77,6 +81,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
 
     createTestResult(testCase);
     suiteResult.tests ~= testResult;
+    LifeCycleListeners.instance.update();
 
     return result;
   }
