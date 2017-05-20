@@ -49,11 +49,11 @@ class ThreadLifeCycleListener : LifeCycleListeners {
       assert(false, "You can not call `end` outside of the main thread");
     }
 
-    SuiteResult[] execute(TestCase func) {
+    SuiteResult[] execute(ref TestCase) {
       assert(false, "You can not call `execute` outside of the main thread");
     }
 
-    SuiteResult[] beginExecution() {
+    SuiteResult[] beginExecution(ref TestCase[]) {
       assert(false, "You can not call `beginExecution` outside of the main thread");
     }
 
@@ -169,10 +169,8 @@ class ParallelExecutor : ITestExecutor {
   struct SuiteStats {
     SuiteResult result;
 
-    ulong testCount;
     ulong testsFinished;
     bool isDone;
-    bool allTestsAdded;
   }
 
   this(uint maxTestCount = 0) {
@@ -192,19 +190,11 @@ class ParallelExecutor : ITestExecutor {
     SuiteStats[string] suiteStats;
     TestCase[string] testCases;
 
-    TestResult[string] testResults;
     StepResult[][string] stepStack;
 
     void addSuiteResult(string name) {
-      suiteStats[name] = SuiteStats();
-      suiteStats[name].result.name = name;
       suiteStats[name].result.begin = Clock.currTime;
       suiteStats[name].result.end = Clock.currTime;
-
-      if(currentSuite in suiteStats) {
-        suiteStats[currentSuite].allTestsAdded = true;
-      }
-      currentSuite = name;
 
       LifeCycleListeners.instance.begin(suiteStats[name].result);
     }
@@ -212,31 +202,41 @@ class ParallelExecutor : ITestExecutor {
     void endSuiteResult(string name) {
       suiteStats[name].result.end = Clock.currTime;
       suiteStats[name].isDone = true;
+
       LifeCycleListeners.instance.end(suiteStats[name].result);
     }
 
     void addTestResult(string key) {
       auto testCase = testCases[key];
 
-      if(testCase.suiteName !in suiteStats) {
+      if(currentSuite != testCase.suiteName) {
         addSuiteResult(testCase.suiteName);
+        currentSuite = testCase.suiteName;
       }
 
-      auto testResult = new TestResult(testCase.name);
+      auto testResult = suiteStats[testCase.suiteName]
+        .result
+        .tests
+        .filter!(a => a.name == testCase.name)
+          .front;
+
       testResult.begin = Clock.currTime;
       testResult.end = Clock.currTime;
       testResult.status = TestResult.Status.started;
 
-      suiteStats[testCase.suiteName].result.tests ~= testResult;
-      suiteStats[testCase.suiteName].testCount++;
-
       LifeCycleListeners.instance.begin(testCase.suiteName, testResult);
-      testResults[key] = testResult;
       stepStack[key] = [ testResult ];
     }
 
     void endTestResult(string key, Throwable t) {
-      auto testResult = testResults[key];
+      auto testCase = testCases[key];
+
+      auto testResult = suiteStats[testCase.suiteName]
+        .result
+        .tests
+        .filter!(a => a.name == testCase.name)
+          .front;
+
       testResult.end = Clock.currTime;
       testResult.status = t is null ? TestResult.Status.success : TestResult.Status.failure;
       testResult.throwable = t;
@@ -244,7 +244,6 @@ class ParallelExecutor : ITestExecutor {
       suiteStats[testCases[key].suiteName].testsFinished++;
 
       LifeCycleListeners.instance.end(testCases[key].suiteName, testResult);
-      testResults.remove(key);
       stepStack.remove(key);
     }
 
@@ -299,12 +298,8 @@ class ParallelExecutor : ITestExecutor {
         endTestResult(endKey, failure);
       }
 
-      //std.stdio.writeln("\n\nsuiteStats.values = ", suiteStats.values.length, "\n\n");
-
       foreach(ref index, ref stat; suiteStats.values) {
-        //std.stdio.writeln("\n\nsuiteStats.value ", index, " ", stat.isLogged ,"&&", stat.isDone ,"&&", stat.testCount ,"==", stat.testsFinished, "\n\n");
-
-        if(stat.allTestsAdded && !stat.isDone && stat.testCount == stat.testsFinished) {
+        if(!stat.isDone && stat.result.tests.length == stat.testsFinished) {
           endSuiteResult(stat.result.name);
         }
       }
@@ -323,7 +318,7 @@ class ParallelExecutor : ITestExecutor {
     }
   }
 
-  SuiteResult[] execute(TestCase testCase) {
+  SuiteResult[] execute(ref TestCase testCase) {
     import std.parallelism;
 
     SuiteResult[] result;
@@ -353,7 +348,16 @@ class ParallelExecutor : ITestExecutor {
     return result;
   }
 
-  SuiteResult[] beginExecution() {
+  SuiteResult[] beginExecution(ref TestCase[] tests) {
+    foreach(test; tests) {
+      auto const suite = test.suiteName;
+      if(suite !in suiteStats) {
+        suiteStats[suite] = SuiteStats(SuiteResult(suite));
+      }
+
+      suiteStats[suite].result.tests ~= new TestResult(test.name);
+    }
+
     ThreadProxy.instance.reset();
     return [];
   }
@@ -392,7 +396,7 @@ version(unittest) {
   }
 
   void stepMock2() @system {
-    Thread.sleep(120.msecs);
+    Thread.sleep(200.msecs);
     auto a = Step("some step");
     executed = true;
   }
@@ -487,7 +491,6 @@ unittest
   auto old = LifeCycleListeners.instance;
   scope(exit) LifeCycleListeners.instance = old;
   LifeCycleListeners.instance = new LifeCycleListeners;
-
   LifeCycleListeners.instance.add(new ParallelExecutor);
 
   auto results = tests.runTests;
@@ -550,7 +553,7 @@ unittest
       }
   }
 
-  TestCase[] tests = [ TestCase("suite2", "test1", &stepMock1), TestCase("suite2","test2", &stepMock2) ];
+  TestCase[] tests = [ TestCase("suite1", "test1", &stepMock1), TestCase("suite2","test2", &stepMock2) ];
 
   auto old = LifeCycleListeners.instance;
   scope(exit) LifeCycleListeners.instance = old;
@@ -562,17 +565,6 @@ unittest
   auto results = tests.runTests;
 
   executed.should.equal(true);
-  steps.should.equal(["begin suite2",
-  "suite2.testBegin test1",
-  "suite2.testBegin test2",
 
-  "suite2.test1.stepBegin some step",
-  "suite2.test1.stepEnd some step",
-  "suite2.testEnd test1",
-
-  "suite2.test2.stepBegin some step",
-  "suite2.test2.stepEnd some step",
-  "suite2.testEnd test2",
-
-  "end suite2"]);
+  steps.should.contain(["begin suite1", "suite1.testBegin test1", "begin suite2", "suite2.testBegin test2", "suite1.test1.stepBegin some step", "suite1.test1.stepEnd some step", "suite2.test2.stepBegin some step", "suite2.test2.stepEnd some step", "suite1.testEnd test1", "suite2.testEnd test2", "end suite2", "end suite1"]);
 }

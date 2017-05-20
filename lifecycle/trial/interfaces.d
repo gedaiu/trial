@@ -26,8 +26,8 @@ interface ISuiteLifecycleListener {
 }
 
 interface ITestExecutor {
-  SuiteResult[] beginExecution();
-  SuiteResult[] execute(TestCase);
+  SuiteResult[] beginExecution(ref TestCase[]);
+  SuiteResult[] execute(ref TestCase);
   SuiteResult[] endExecution();
 }
 

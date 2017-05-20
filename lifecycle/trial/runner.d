@@ -82,12 +82,12 @@ class LifeCycleListeners {
     stepListeners.each!(a => a.end(suite, test, step));
   }
 
-  SuiteResult[] execute(TestCase func) {
+  SuiteResult[] execute(ref TestCase func) {
     return executor.execute(func);
   }
 
-  SuiteResult[] beginExecution() {
-    return executor.beginExecution();
+  SuiteResult[] beginExecution(ref TestCase[] tests) {
+    return executor.beginExecution(tests);
   }
 
   SuiteResult[] endExecution() {
@@ -138,10 +138,10 @@ void addReporter(string name) {
     }
 }
 
-auto runTests(T)(T tests, string testName = "") {
+auto runTests(TestCase[] tests, string testName = "") {
   LifeCycleListeners.instance.begin;
 
-  SuiteResult[] results = LifeCycleListeners.instance.beginExecution;
+  SuiteResult[] results = LifeCycleListeners.instance.beginExecution(tests);
 
   foreach(test; tests.filter!(a => a.name.indexOf(testName) != -1)) {
     results ~= LifeCycleListeners.instance.execute(test);
@@ -154,5 +154,5 @@ auto runTests(T)(T tests, string testName = "") {
 }
 
 auto runTests(TestDiscovery testDiscovery, string testName = "") {
-  return runTests(testDiscovery.testCases.values.map!(a => a.values).joiner, testName);
+  return runTests(testDiscovery.testCases.values.map!(a => a.values).joiner.array, testName);
 }

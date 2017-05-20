@@ -24,7 +24,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
     LifeCycleListeners.instance.update();
   }
 
-  SuiteResult[] beginExecution() {
+  SuiteResult[] beginExecution(ref TestCase[]) {
     return [];
   }
 
@@ -64,7 +64,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
     }
   }
 
-  SuiteResult[] execute(TestCase testCase) {
+  SuiteResult[] execute(ref TestCase testCase) {
     SuiteResult[] result;
 
     LifeCycleListeners.instance.update();
