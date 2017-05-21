@@ -109,6 +109,7 @@ void addReporter(string name) {
     import trial.reporters.specprogress;
     import trial.reporters.dotmatrix;
     import trial.reporters.landing;
+    import trial.reporters.progress;
     import trial.reporters.stats;
     import trial.reporters.result;
 
@@ -128,6 +129,10 @@ void addReporter(string name) {
 
       case "landing":
         LifeCycleListeners.instance.add(new LandingReporter);
+        break;
+
+      case "progress":
+        LifeCycleListeners.instance.add(new ProgressReporter);
         break;
 
       case "result":

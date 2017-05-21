@@ -1,6 +1,6 @@
 {
 	"reporters": [
-		"landing",
+		"progress",
 		"result",
 		"stats"
 	],
