@@ -22,6 +22,7 @@ interface ReportWriter {
   void writeln(string, Context = Context.active);
   void showCursor();
   void hideCursor();
+  uint width();
 }
 
 class ConsoleWriter : ReportWriter {
@@ -37,6 +38,9 @@ class ConsoleWriter : ReportWriter {
 
   void showCursor() {}
   void hideCursor() {}
+  uint width() {
+    return 80;
+  }
 }
 
 version(Have_arsd_official_terminal) {
@@ -54,8 +58,12 @@ version(Have_arsd_official_terminal) {
 
       void setColor(Context context) {
         switch(context) {
+          case Context.active:
+            terminal.color(Color.white | Bright, 255);
+            break;
+
           case Context.inactive:
-            terminal.color(Color.white | ~Bright, 255);
+            terminal.color(Color.black | Bright, 255);
             break;
 
           case Context.success:
@@ -116,6 +124,10 @@ version(Have_arsd_official_terminal) {
     void hideCursor() {
       terminal.hideCursor;
     }
+
+    uint width() {
+      return terminal.width;
+    }
   }
 } else {
   shared static this() {
@@ -137,6 +149,10 @@ class BufferedWriter : ReportWriter {
   void goTo(int y) {
     line = line - y;
     charPos = 0;
+  }
+
+  uint width() {
+    return 80;
   }
 
   void write(string text, Context) {

@@ -65,7 +65,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
   void end(string suite, string test, ref StepResult step) {
   }
 
-  void begin() {
+  void begin(ulong) {
     beginTime = Clock.currTime;
   }
 
@@ -145,13 +145,13 @@ version(unittest) {
   import fluent.asserts;
 }
 
-@("The user should be notified with a message ehen no test is present")
+@("The user should be notified with a message when no test is present")
 unittest {
   auto writer = new BufferedWriter;
   auto reporter = new ResultReporter(writer);
   SuiteResult[] results;
 
-  reporter.begin;
+  reporter.begin(0);
   reporter.end(results);
 
   writer.buffer.should.contain("There are no tests to run.");
@@ -166,7 +166,7 @@ unittest {
   results[0].tests = [ new TestResult("some test") ];
   results[0].tests[0].status = TestResult.Status.success;
 
-  reporter.begin;
+  reporter.begin(1);
   reporter.begin(results[0]);
 
   reporter.begin("some suite", results[0].tests[0]);
@@ -188,7 +188,7 @@ unittest {
   results[0].tests[0].status = TestResult.Status.success;
   results[0].tests[1].status = TestResult.Status.success;
 
-  reporter.begin;
+  reporter.begin(2);
   reporter.begin(results[0]);
 
   reporter.begin("some suite", results[0].tests[0]);
@@ -213,7 +213,7 @@ unittest {
   results[0].tests[0].status = TestResult.Status.failure;
   results[0].tests[0].throwable = new Exception("Random failure");
 
-  reporter.begin;
+  reporter.begin(1);
   reporter.begin(results[0]);
 
   reporter.begin("some suite", results[0].tests[0]);

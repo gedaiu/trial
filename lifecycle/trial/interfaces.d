@@ -5,7 +5,7 @@ import std.datetime;
 alias TestCaseFunction = void function() @system;
 
 interface ILifecycleListener {
-  void begin();
+  void begin(ulong testCount);
   void update();
   void end(SuiteResult[]);
 }

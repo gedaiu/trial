@@ -80,7 +80,7 @@ class StatsReporter: ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifec
     path[key] = path[key][0..$-1];
   }
 
-  void begin() {}
+  void begin(ulong) {}
 
   void end(SuiteResult[]) {
     auto f = File("trial-stats.csv", "w"); // open for writing

@@ -50,8 +50,8 @@ class LifeCycleListeners {
     lifecycleListeners.each!(a => a.update());
   }
 
-  void begin() {
-    lifecycleListeners.each!(a => a.begin());
+  void begin(ulong testCount) {
+    lifecycleListeners.each!(a => a.begin(testCount));
   }
 
   void end(SuiteResult[] result) {
@@ -108,6 +108,7 @@ void addReporter(string name) {
     import trial.reporters.spec;
     import trial.reporters.specprogress;
     import trial.reporters.dotmatrix;
+    import trial.reporters.landing;
     import trial.reporters.stats;
     import trial.reporters.result;
 
@@ -125,6 +126,10 @@ void addReporter(string name) {
         LifeCycleListeners.instance.add(new DotMatrixReporter);
         break;
 
+      case "landing":
+        LifeCycleListeners.instance.add(new LandingReporter);
+        break;
+
       case "result":
         LifeCycleListeners.instance.add(new ResultReporter);
         break;
@@ -139,7 +144,7 @@ void addReporter(string name) {
 }
 
 auto runTests(TestCase[] tests, string testName = "") {
-  LifeCycleListeners.instance.begin;
+  LifeCycleListeners.instance.begin(tests.length);
 
   SuiteResult[] results = LifeCycleListeners.instance.beginExecution(tests);
 

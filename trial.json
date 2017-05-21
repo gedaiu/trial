@@ -1,6 +1,6 @@
 {
 	"reporters": [
-		"dot-matrix",
+		"landing",
 		"result",
 		"stats"
 	],

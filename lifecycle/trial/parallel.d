@@ -33,7 +33,7 @@ class ThreadLifeCycleListener : LifeCycleListeners {
       assert(false, "You can not call `add` outside of the main thread");
     }
 
-    void begin() {
+    void begin(ulong) {
       assert(false, "You can not call `begin` outside of the main thread");
     }
 
@@ -464,7 +464,7 @@ unittest
   ulong updated = 0;
 
   class MockListener : ILifecycleListener {
-    void begin() {}
+    void begin(ulong) {}
     void update() { updated++; }
     void end(SuiteResult[]) {}
   }

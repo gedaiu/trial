@@ -48,7 +48,7 @@ class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener, ILifecycleLi
     oldTextLength = 0;
   }
 
-  void begin() {}
+  void begin(ulong) {}
   void end(SuiteResult[]) {}
   void update() {
     writer.hideCursor;
