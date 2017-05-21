@@ -79,7 +79,7 @@ version(unittest) {
   import fluent.asserts;
 }
 
-@("it should print a success test")
+@("it should print 10 success tests")
 unittest {
   auto writer = new BufferedWriter;
   auto reporter = new LandingReporter(writer);

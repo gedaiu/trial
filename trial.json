@@ -2,7 +2,8 @@
 	"reporters": [
 		"progress",
 		"result",
-		"stats"
+		"stats",
+		"html"
 	],
 
 	"runInParallel": false,

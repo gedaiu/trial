@@ -12,3 +12,4 @@ dub.selections.json
 /trial-lifecycle-test-library
 /trial-runner-test-application
 trial-stats.csv
+trial-result.html
