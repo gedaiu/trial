@@ -78,7 +78,7 @@ version(unittest) {
   import trial.discovery;
   import trial.runner;
   import fluent.asserts;
-  import trial.single;
+  import trial.executor.single;
 
   __gshared bool executed;
 

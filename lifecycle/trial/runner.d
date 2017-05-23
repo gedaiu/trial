@@ -10,8 +10,8 @@ import std.string;
 import trial.discovery;
 import trial.interfaces;
 import trial.settings;
-import trial.single;
-import trial.parallel;
+import trial.executor.single;
+import trial.executor.parallel;
 
 class LifeCycleListeners {
   static LifeCycleListeners instance;

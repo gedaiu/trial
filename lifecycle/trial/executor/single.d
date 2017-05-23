@@ -1,4 +1,4 @@
-module trial.single;
+module trial.executor.single;
 
 import trial.interfaces;
 import trial.runner;

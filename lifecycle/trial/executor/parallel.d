@@ -1,4 +1,4 @@
-module trial.parallel;
+module trial.executor.parallel;
 
 import trial.interfaces;
 import trial.discovery;
