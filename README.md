@@ -17,6 +17,11 @@ idea, inspired from well known projects like [TestNg](http://testng.org/doc/),
 [NUnit](https://github.com/nunit/docs/wiki) and [mocha](https://mochajs.org/), that exposes a simple
 interface that allows you to add what you want, when you want.
 
+## How it works
+
+The `trial` executable creates a custom main that will be embedded with your code. The build is created
+using `dub` and for now it's mandatory to use the `trial` command alongside with `dub`.
+
 ## Features
 
 This library intends to provide a rich set of features that helps you to customize your test runs:
@@ -25,7 +30,14 @@ This library intends to provide a rich set of features that helps you to customi
   - Test discoveries
   - Steps and attachments
 
+## Building
+
+Clone the repository and run `dub build :runner` to create the app. 
+
 ## Structure
+
+There are two packages inside this project. The `runner` packages contains the command line interface
+to run your tests. `lifecycle` provides the functionality like test discovery and reporters.
 
 ## Fluent Asserts
 
