@@ -1,5 +1,9 @@
 /++
   A module containing the SpecProgressReporter
+  
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
 +/
 module trial.reporters.specprogress;
 
@@ -153,7 +157,6 @@ unittest {
 
   writer.buffer.should.equal("\n  some suite                     \n    ✓ some test\n\n                ");
 }
-
 
 @("it should print two success tests")
 unittest {

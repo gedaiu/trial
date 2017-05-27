@@ -1,5 +1,12 @@
 /++
   A module containing the ResultReporter
+  
+  This is an example of how this reporter looks
+  <script type="text/javascript" src="https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw.js" id="asciicast-12x1mkxfmsj1j0f7qqwarkiyw" async></script>
+
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
 +/
 module trial.reporters.result;
 

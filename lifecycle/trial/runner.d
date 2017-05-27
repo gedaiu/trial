@@ -136,6 +136,7 @@ void setupLifecycle(Settings settings) {
 void addReporter(string name) {
     import trial.reporters.spec;
     import trial.reporters.specprogress;
+    import trial.reporters.specsteps;
     import trial.reporters.dotmatrix;
     import trial.reporters.landing;
     import trial.reporters.progress;
@@ -151,6 +152,10 @@ void addReporter(string name) {
       case "spec-progress":
         auto storage = statsFromFile("trial-stats.csv");
         LifeCycleListeners.instance.add(new SpecProgressReporter(storage));
+        break;
+      
+      case "spec-steps":
+        LifeCycleListeners.instance.add(new SpecStepsReporter);
         break;
 
       case "dot-matrix":

@@ -1,6 +1,9 @@
 /++
   A module containing the LandingReporter
 
+  This is an example of how this reporter looks
+  <script type="text/javascript" src="https://asciinema.org/a/ar2qel0uzunpjmfzkg7xtvsa1.js" id="asciicast-ar2qel0uzunpjmfzkg7xtvsa1" async></script>
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan

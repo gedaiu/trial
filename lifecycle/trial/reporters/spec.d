@@ -1,5 +1,12 @@
 /++
   A module containing the SpecReporter
+  
+  This is an example of how this reporter looks
+  <script type="text/javascript" src="https://asciinema.org/a/9z1tolgn7x55v41i3mm3wlkum.js" id="asciicast-9z1tolgn7x55v41i3mm3wlkum" async></script>
+
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
 +/
 module trial.reporters.spec;
 
@@ -90,28 +97,35 @@ class SpecReporter : ITestCaseLifecycleListener
   {
   }
 
+  protected auto printSuite(string suite) {
+    ulong indents = 1;
+    
+    auto oldPieces = lastSuiteName.split(".");
+    auto pieces = suite.split(".");
+    lastSuiteName = suite;
+
+    auto prefix = oldPieces.commonPrefix(pieces).array.length;
+
+    write!(Type.emptyLine)();
+    indents += prefix;
+
+    foreach (piece; pieces[prefix .. $])
+    {
+      write!(Type.none)(piece, indents);
+      write!(Type.emptyLine)();
+      indents++;
+    }
+
+    return indents;
+  }
+
   void end(string suite, ref TestResult test)
   {
     ulong indents = 1;
 
     if (suite != lastSuiteName)
     {
-      auto oldPieces = lastSuiteName.split(".");
-      auto pieces = suite.split(".");
-      lastSuiteName = suite;
-
-      auto prefix = oldPieces.commonPrefix(pieces).array.length;
-
-      write!(Type.emptyLine)();
-      indents += prefix;
-
-      foreach (piece; pieces[prefix .. $])
-      {
-        write!(Type.none)(piece, indents);
-        write!(Type.emptyLine)();
-        indents++;
-      }
-
+      indents = printSuite(suite);
     }
     else
     {

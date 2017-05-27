@@ -1,5 +1,12 @@
 /++
   A module containing the ProgressReporter
+
+  This is an example of how this reporter looks
+  <script type="text/javascript" src="https://asciinema.org/a/a3aspcv8cw5l04l59xw9vbtqa.js" id="asciicast-a3aspcv8cw5l04l59xw9vbtqa" async></script>
+
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
 +/
 module trial.reporters.progress;
 

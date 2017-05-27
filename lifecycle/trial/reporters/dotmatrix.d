@@ -1,6 +1,9 @@
 /++
   A module containing the DotMatrixReporter
 
+  This is an example of how this reporter looks
+  <script type="text/javascript" src="https://asciinema.org/a/aorvsrruse34n2xym8y7885m1.js" id="asciicast-aorvsrruse34n2xym8y7885m1" async></script>
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
