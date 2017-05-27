@@ -1,3 +1,6 @@
+/++
+  A module containing the ProgressReporter
++/
 module trial.reporters.progress;
 
 import std.stdio;
@@ -10,11 +13,14 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
-class ProgressReporter : ITestCaseLifecycleListener, ILifecycleListener {
-
-  private {
+/// The “progress” reporter implements a simple progress-bar
+class ProgressReporter : ITestCaseLifecycleListener, ILifecycleListener
+{
+  private
+  {
     ReportWriter writer;
-    const {
+    const
+    {
       string empty = "░";
       string fill = "▓";
     }
@@ -23,55 +29,67 @@ class ProgressReporter : ITestCaseLifecycleListener, ILifecycleListener {
     ulong currentTest;
     bool success = true;
   }
-  this() {
+  this()
+  {
     writer = defaultWriter;
   }
 
-  this(ReportWriter writer) {
+  this(ReportWriter writer)
+  {
     this.writer = writer;
   }
 
-  void begin(ulong testCount) {
+  void begin(ulong testCount)
+  {
     this.testCount = testCount;
     writer.writeln("");
     draw;
   }
 
-  void update() {
+  void update()
+  {
 
   }
 
-  void end(SuiteResult[]) {
+  void end(SuiteResult[])
+  {
 
   }
 
-  void begin(string suite, ref TestResult test) { }
+  void begin(string suite, ref TestResult test)
+  {
+  }
 
-  void end(string suite, ref TestResult test) {
+  void end(string suite, ref TestResult test)
+  {
     currentTest++;
     success = success && test.status == TestResult.Status.success;
     draw;
   }
 
-  private void draw() {
+  private void draw()
+  {
     int size = min((writer.width / 4) * 3, testCount);
-    ulong position = ((cast(double)currentTest / cast(double)testCount) * size).to!long;
+    ulong position = ((cast(double) currentTest / cast(double) testCount) * size).to!long;
 
     writer.goTo(1);
 
-    writer.write(currentTest.to!string ~ "/" ~ testCount.to!string ~ " ", success ? ReportWriter.Context.active : ReportWriter.Context.danger);
+    writer.write(currentTest.to!string ~ "/" ~ testCount.to!string ~ " ",
+        success ? ReportWriter.Context.active : ReportWriter.Context.danger);
 
     writer.write(fill.replicate(position), ReportWriter.Context.active);
     writer.writeln(empty.replicate(size - position), ReportWriter.Context.inactive);
   }
 }
 
-version(unittest) {
+version (unittest)
+{
   import fluent.asserts;
 }
 
 @("it should print 10 success tests")
-unittest {
+unittest
+{
   auto writer = new BufferedWriter;
   auto reporter = new ProgressReporter(writer);
 
@@ -82,7 +100,8 @@ unittest {
 
   writer.buffer.should.equal("0/10 ░░░░░░░░░░\n");
 
-  foreach(i; 0..10) {
+  foreach (i; 0 .. 10)
+  {
     reporter.begin("some suite", test);
     reporter.end("some suite", test);
   }

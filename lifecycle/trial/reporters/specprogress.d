@@ -1,3 +1,6 @@
+/++
+  A module containing the SpecProgressReporter
++/
 module trial.reporters.specprogress;
 
 import std.stdio;
@@ -11,6 +14,9 @@ import trial.reporters.writer;
 import trial.reporters.stats;
 import trial.reporters.spec;
 
+/// A flavour of the "spec" reporter that show the progress of long tests. This works well with the
+/// parallel runner. If you are using the stats reporters, you will see a countdown for how long 
+/// you need to wait until the test is finished.
 class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener, ILifecycleListener {
   private {
     alias UpdateFunction = void delegate(CueInfo info);

@@ -1,3 +1,10 @@
+/++
+  A module containing the parallel test runner
+
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
++/
 module trial.executor.parallel;
 
 import trial.interfaces;
@@ -9,7 +16,8 @@ import std.algorithm;
 import std.array;
 import core.thread;
 
-
+/// The Lifecicle listener used to send data from the tests threads to 
+/// the main thread
 class ThreadLifeCycleListener : LifeCycleListeners {
   static string currentTest = "unknown";
 
@@ -160,12 +168,13 @@ private {
   }
 }
 
-void testThreadSetup(string testName) {
+private void testThreadSetup(string testName) {
   ThreadLifeCycleListener.currentTest = testName;
   LifeCycleListeners.instance = new ThreadLifeCycleListener;
   ThreadProxy.instance.begin(testName);
 }
 
+/// The parallel executors runs tests in a sepparate thread
 class ParallelExecutor : ITestExecutor {
   struct SuiteStats {
     SuiteResult result;

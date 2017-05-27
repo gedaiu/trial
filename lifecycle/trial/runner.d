@@ -1,3 +1,11 @@
+/++
+  The main runner logic. You can find here some LifeCycle logic and test runner
+  initalization
+  
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
++/
 module trial.runner;
 
 import std.stdio;
@@ -13,7 +21,12 @@ import trial.settings;
 import trial.executor.single;
 import trial.executor.parallel;
 
+/// The lifecycle listeners collections. You must use this instance in order
+/// to extend the runner. You can have as many listeners as you want. The only restriction
+/// is for ITestExecutor, which has no sense to have more than one instance for a run
 class LifeCycleListeners {
+
+  /// The global instange.
   static LifeCycleListeners instance;
 
   private {
@@ -24,6 +37,7 @@ class LifeCycleListeners {
     ITestExecutor executor = new DefaultExecutor;
   }
 
+  /// Add a listener to the collection
   void add(T)(T listener) {
     static if(!is(CommonType!(ISuiteLifecycleListener, T) == void)) {
       suiteListeners ~= listener;
@@ -46,55 +60,69 @@ class LifeCycleListeners {
     }
   }
 
+  /// send the update event to all listeners
   void update() {
     lifecycleListeners.each!(a => a.update());
   }
 
+  /// send the begin run event to all listeners
   void begin(ulong testCount) {
     lifecycleListeners.each!(a => a.begin(testCount));
   }
 
+  /// send the end runer event to all listeners
   void end(SuiteResult[] result) {
     lifecycleListeners.each!(a => a.end(result));
   }
 
+  /// send the begin suite event to all listeners
   void begin(ref SuiteResult suite) {
     suiteListeners.each!(a => a.begin(suite));
   }
 
+  /// send the end suite event to all listeners
   void end(ref SuiteResult suite) {
     suiteListeners.each!(a => a.end(suite));
   }
 
+  /// send the begin test event to all listeners
   void begin(string suite, ref TestResult test) {
     testListeners.each!(a => a.begin(suite, test));
   }
 
+  /// send the end test event to all listeners
   void end(string suite, ref TestResult test) {
     testListeners.each!(a => a.end(suite, test));
   }
 
+
+  /// send the begin step event to all listeners
   void begin(string suite, string test, ref StepResult step) {
     stepListeners.each!(a => a.begin(suite, test, step));
   }
 
+  /// send the end step event to all listeners
   void end(string suite, string test, ref StepResult step) {
     stepListeners.each!(a => a.end(suite, test, step));
   }
 
+  /// send the execute test to the executor listener
   SuiteResult[] execute(ref TestCase func) {
     return executor.execute(func);
   }
 
+  /// send the begin execution with the test case list to the executor listener
   SuiteResult[] beginExecution(ref TestCase[] tests) {
     return executor.beginExecution(tests);
   }
 
+  /// send the end execution the executor listener
   SuiteResult[] endExecution() {
     return executor.endExecution();
   }
 }
 
+/// setup the LifeCycle collection
 void setupLifecycle(Settings settings) {
   LifeCycleListeners.instance = new LifeCycleListeners;
   settings.reporters.map!(a => a.toLower).each!addReporter;
@@ -104,6 +132,7 @@ void setupLifecycle(Settings settings) {
   }
 }
 
+/// Adds an embeded reporter listener to the LifeCycle listeners collection
 void addReporter(string name) {
     import trial.reporters.spec;
     import trial.reporters.specprogress;
@@ -153,6 +182,7 @@ void addReporter(string name) {
     }
 }
 
+/// Runs the tests and returns the results
 auto runTests(TestCase[] tests, string testName = "") {
   LifeCycleListeners.instance.begin(tests.length);
 
@@ -168,6 +198,7 @@ auto runTests(TestCase[] tests, string testName = "") {
   return results;
 }
 
+/// ditto
 auto runTests(TestDiscovery testDiscovery, string testName = "") {
   return runTests(testDiscovery.testCases.values.map!(a => a.values).joiner.array, testName);
 }

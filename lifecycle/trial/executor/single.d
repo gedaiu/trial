@@ -1,3 +1,10 @@
+/++
+  A module containing the single threaded runner
+
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
++/
 module trial.executor.single;
 
 import trial.interfaces;
@@ -32,7 +39,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
   void end(string suite, string test, ref StepResult step)
   {
     currentStep = stepStack[stepStack.length - 1];
-    stepStack = stepStack[0 .. $-1];
+    stepStack = stepStack[0 .. $ - 1];
     LifeCycleListeners.instance.update();
   }
 

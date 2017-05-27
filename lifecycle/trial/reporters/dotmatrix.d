@@ -1,3 +1,10 @@
+/++
+  A module containing the DotMatrixReporter
+
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
++/
 module trial.reporters.dotmatrix;
 
 import std.stdio;
@@ -10,42 +17,53 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
-class DotMatrixReporter : ITestCaseLifecycleListener {
-
+/// The dot matrix reporter is simply a series of characters which represent test cases. 
+/// Failures highlight in red exclamation marks (!).
+/// Good if you prefer minimal output.
+class DotMatrixReporter : ITestCaseLifecycleListener
+{
   private ReportWriter writer;
 
-  this() {
+  this()
+  {
     writer = defaultWriter;
   }
 
-  this(ReportWriter writer) {
+  this(ReportWriter writer)
+  {
     this.writer = writer;
   }
 
-  void begin(string suite, ref TestResult test) { }
+  void begin(string suite, ref TestResult test)
+  {
+  }
 
-  void end(string suite, ref TestResult test) {
-    switch(test.status) {
-      case TestResult.Status.success:
-        writer.write(".", ReportWriter.Context.inactive);
-        break;
+  void end(string suite, ref TestResult test)
+  {
+    switch (test.status)
+    {
+    case TestResult.Status.success:
+      writer.write(".", ReportWriter.Context.inactive);
+      break;
 
-      case TestResult.Status.failure:
-        writer.write("!", ReportWriter.Context.danger);
-        break;
+    case TestResult.Status.failure:
+      writer.write("!", ReportWriter.Context.danger);
+      break;
 
-      default:
-        writer.write("?", ReportWriter.Context.warning);
+    default:
+      writer.write("?", ReportWriter.Context.warning);
     }
   }
 }
 
-version(unittest) {
+version (unittest)
+{
   import fluent.asserts;
 }
 
 @("it should print a success test")
-unittest {
+unittest
+{
   auto writer = new BufferedWriter;
   auto reporter = new DotMatrixReporter(writer);
 
@@ -61,7 +79,8 @@ unittest {
 }
 
 @("it should print a failing test")
-unittest {
+unittest
+{
   auto writer = new BufferedWriter;
   auto reporter = new DotMatrixReporter(writer);
 

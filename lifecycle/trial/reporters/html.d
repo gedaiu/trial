@@ -1,3 +1,10 @@
+/++
+  A module containing the HtmlReporter
+
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
++/
 module trial.reporters.html;
 
 import std.stdio;
@@ -11,8 +18,9 @@ import std.file;
 import trial.interfaces;
 import trial.reporters.writer;
 
-class HtmlReporter : ILifecycleListener {
-
+/// The "html" reporter outputs a hierarchical HTML body representation of your tests.
+class HtmlReporter : ILifecycleListener
+{
   string header = `<!DOCTYPE html>
   <html>
   <head>
@@ -24,34 +32,43 @@ class HtmlReporter : ILifecycleListener {
 
   string footer = `</body></html>`;
 
-  private {
+  private
+  {
     bool success = true;
   }
 
-  void begin(ulong) {}
+  void begin(ulong)
+  {
+  }
 
-  void update() {}
+  void update()
+  {
+  }
 
-  void end(SuiteResult[] results) {
+  void end(SuiteResult[] results)
+  {
     string content = header;
 
-    string escapeHtml(string text) {
+    string escapeHtml(string text)
+    {
       return text.replace("<", "&lt;").replace(">", "&gt;");
     }
 
-    string duration(T)(T item) pure {
+    string duration(T)(T item) pure
+    {
       return ` <span class="duration">` ~ (item.end - item.begin).to!string ~ `</span> `;
     }
 
-    string testStatus(T)(T item) {
-      if(item.status == TestResult.Status.success) {
+    string testStatus(T)(T item)
+    {
+      if (item.status == TestResult.Status.success)
+      {
         return `<span class="label label-success">` ~ item.status.to!string ~ `</span>`;
       }
 
-      if(item.status == TestResult.Status.failure) {
-        return `<span class="label label-danger">` ~
-                  item.status.to!string ~
-               `</span>`;
+      if (item.status == TestResult.Status.failure)
+      {
+        return `<span class="label label-danger">` ~ item.status.to!string ~ `</span>`;
       }
 
       return `<span class="label label-info">` ~ item.status.to!string ~ `</span>`;
@@ -65,26 +82,36 @@ class HtmlReporter : ILifecycleListener {
     double other = 0;
     Duration totalDuration = Duration.zero;
 
-
-    foreach(result; results) {
-      details ~= "\n<h1>" ~ escapeHtml(result.name) ~ "<small>" ~ duration(result) ~ "</small></h1>\n";
+    foreach (result; results)
+    {
+      details ~= "\n<h1>" ~ escapeHtml(result.name) ~ "<small>" ~ duration(
+          result) ~ "</small></h1>\n";
       totalDuration += result.end - result.begin;
 
-      foreach(test; result.tests) {
+      foreach (test; result.tests)
+      {
         details ~= `<div class="row">`;
-        details ~= `<div class="col-sm-4"><strong class='test-name'>` ~ escapeHtml(test.name) ~ `</strong></div>`;
-        details ~= `<div class="col-sm-8">` ~ testStatus(test) ~ ` <span class="label label-default">` ~ duration(test) ~ `</span></div>`;
+        details ~= `<div class="col-sm-4"><strong class='test-name'>` ~ escapeHtml(
+            test.name) ~ `</strong></div>`;
+        details ~= `<div class="col-sm-8">` ~ testStatus(
+            test) ~ ` <span class="label label-default">` ~ duration(test) ~ `</span></div>`;
         details ~= `</div>`;
 
-        if(test.throwable !is null) {
+        if (test.throwable !is null)
+        {
           details ~= `<pre>` ~ escapeHtml(test.throwable.to!string) ~ `</pre>`;
         }
 
-        if(test.status == TestResult.Status.success) {
+        if (test.status == TestResult.Status.success)
+        {
           passes++;
-        } else if(test.status == TestResult.Status.failure) {
+        }
+        else if (test.status == TestResult.Status.failure)
+        {
           failures++;
-        } else {
+        }
+        else
+        {
           other++;
         }
       }
@@ -100,9 +127,12 @@ class HtmlReporter : ILifecycleListener {
     auto otherPercent = ((other / (passes + failures + other)) * 100);
 
     content ~= `<div class="progress">
-      <div class="progress-bar progress-bar-success" style="width: ` ~ passPercent.to!string ~ `%;"></div>
-      <div class="progress-bar progress-bar-danger" style="width: ` ~ failurePercent.to!string ~ `%;"></div>
-      <div class="progress-bar" style="width: ` ~ otherPercent.to!string ~ `%;"></div>
+      <div class="progress-bar progress-bar-success" style="width: ` ~ passPercent.to!string
+      ~ `%;"></div>
+      <div class="progress-bar progress-bar-danger" style="width: `
+      ~ failurePercent.to!string ~ `%;"></div>
+      <div class="progress-bar" style="width: `
+      ~ otherPercent.to!string ~ `%;"></div>
     </div>`;
 
     content ~= details ~ "\n</div>" ~ footer;
@@ -111,12 +141,14 @@ class HtmlReporter : ILifecycleListener {
   }
 }
 
-version(unittest) {
+version (unittest)
+{
   import fluent.asserts;
 }
 
 @("it should print a success test")
-unittest {
+unittest
+{
   auto writer = new BufferedWriter;
   auto reporter = new HtmlReporter();
 
@@ -128,7 +160,7 @@ unittest {
   testResult.end = end;
   testResult.status = TestResult.Status.success;
 
-  SuiteResult[] result = [ SuiteResult("Test Suite", begin, end, [ testResult ]) ];
+  SuiteResult[] result = [SuiteResult("Test Suite", begin, end, [testResult])];
   reporter.end(result);
 
   auto text = readText("trial-result.html");
@@ -144,7 +176,8 @@ unittest {
 }
 
 @("it should print a failure test")
-unittest {
+unittest
+{
   auto writer = new BufferedWriter;
   auto reporter = new HtmlReporter();
 
@@ -157,7 +190,7 @@ unittest {
   testResult.status = TestResult.Status.failure;
   testResult.throwable = new Exception("Some error");
 
-  SuiteResult[] result = [ SuiteResult("Test Suite", begin, end, [ testResult ]) ];
+  SuiteResult[] result = [SuiteResult("Test Suite", begin, end, [testResult])];
   reporter.end(result);
 
   auto text = readText("trial-result.html");

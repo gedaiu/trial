@@ -1,3 +1,6 @@
+/++
+  A module containing the ResultReporter
++/
 module trial.reporters.result;
 
 import std.stdio;
@@ -8,9 +11,12 @@ import std.datetime;
 import trial.interfaces;
 import trial.reporters.writer;
 
-class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLifecycleListener, IStepLifecycleListener {
-
-  private {
+/// The "Result" reporter will print an overview of your test run
+class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
+  ISuiteLifecycleListener, IStepLifecycleListener
+{
+  private
+  {
     immutable wchar error = '✖';
 
     int suites;
@@ -26,30 +32,39 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
     string currentSuite;
   }
 
-  this() {
+  this()
+  {
     writer = defaultWriter;
   }
 
-  this(ReportWriter writer) {
+  this(ReportWriter writer)
+  {
     this.writer = writer;
   }
 
-  void begin(ref SuiteResult suite) {
+  void begin(ref SuiteResult suite)
+  {
     suites++;
     currentSuite = suite.name;
   }
 
-  void end(ref SuiteResult suite) {
+  void end(ref SuiteResult suite)
+  {
   }
 
-  void update() {}
+  void update()
+  {
+  }
 
-  void begin(string suite, ref TestResult test) {
+  void begin(string suite, ref TestResult test)
+  {
     tests++;
   }
 
-  void end(string suite, ref TestResult test) {
-    if(test.status != TestResult.Status.failure) {
+  void end(string suite, ref TestResult test)
+  {
+    if (test.status != TestResult.Status.failure)
+    {
       return;
     }
 
@@ -59,31 +74,38 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
     failedTests++;
   }
 
-  void begin(string suite, string test, ref StepResult step) {
+  void begin(string suite, string test, ref StepResult step)
+  {
   }
 
-  void end(string suite, string test, ref StepResult step) {
+  void end(string suite, string test, ref StepResult step)
+  {
   }
 
-  void begin(ulong) {
+  void begin(ulong)
+  {
     beginTime = Clock.currTime;
   }
 
-  void end(SuiteResult[] results) {
+  void end(SuiteResult[] results)
+  {
     auto diff = Clock.currTime - beginTime;
 
     writer.writeln("");
     writer.writeln("");
 
-    if(tests == 0) {
+    if (tests == 0)
+    {
       reportNoTest;
     }
 
-    if(tests == 1) {
+    if (tests == 1)
+    {
       reportOneTestResult;
     }
 
-    if(tests > 1) {
+    if (tests > 1)
+    {
       reportTestsResult;
     }
 
@@ -92,46 +114,62 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
     reportExceptions;
   }
 
-  private {
-    void reportNoTest() {
+  private
+  {
+    void reportNoTest()
+    {
       writer.write("There are no tests to run.");
     }
 
-    void reportOneTestResult() {
+    void reportOneTestResult()
+    {
       auto timeDiff = Clock.currTime - beginTime;
 
-      if(failedTests > 0) {
-        writer.write("✖ The test failed in " ~ timeDiff.to!string ~":", ReportWriter.Context.danger);
+      if (failedTests > 0)
+      {
+        writer.write("✖ The test failed in " ~ timeDiff.to!string ~ ":",
+            ReportWriter.Context.danger);
         return;
       }
 
-      writer.write("The test succeeded in " ~ timeDiff.to!string ~"!", ReportWriter.Context.info);
+      writer.write("The test succeeded in " ~ timeDiff.to!string ~ "!", ReportWriter.Context.info);
     }
 
-    void reportTestsResult() {
+    void reportTestsResult()
+    {
       string suiteText = suites == 1 ? "1 suite" : suites.to!string ~ " suites";
       auto timeDiff = Clock.currTime - beginTime;
-      writer.write("Executed " ~ tests.to!string ~ " tests in " ~ suiteText ~ " in " ~ timeDiff.to!string ~ ".\n", ReportWriter.Context.info);
+      writer.write("Executed " ~ tests.to!string ~ " tests in " ~ suiteText ~ " in " ~ timeDiff.to!string ~ ".\n",
+          ReportWriter.Context.info);
     }
 
-    void reportExceptions() {
-      version(Have_fluent_asserts_core) {
+    void reportExceptions()
+    {
+      version (Have_fluent_asserts_core)
+      {
         import fluentasserts.core.base;
       }
 
-      foreach(size_t i, t; exceptions) {
+      foreach (size_t i, t; exceptions)
+      {
         writer.writeln("");
-        writer.writeln(i.to!string ~ ") " ~failedTestNames[i] ~ ":", ReportWriter.Context.danger);
+        writer.writeln(i.to!string ~ ") " ~ failedTestNames[i] ~ ":", ReportWriter.Context.danger);
 
-        version(Have_fluent_asserts_core) {
+        version (Have_fluent_asserts_core)
+        {
           TestException e = cast(TestException) t;
 
-          if(e is null) {
+          if (e is null)
+          {
             writer.writeln(t.to!string);
-          } else {
+          }
+          else
+          {
             e.print;
           }
-        } else {
+        }
+        else
+        {
           writer.writeln(t.to!string);
         }
 
@@ -141,12 +179,14 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener, ISuiteLif
   }
 }
 
-version(unittest) {
+version (unittest)
+{
   import fluent.asserts;
 }
 
 @("The user should be notified with a message when no test is present")
-unittest {
+unittest
+{
   auto writer = new BufferedWriter;
   auto reporter = new ResultReporter(writer);
   SuiteResult[] results;
@@ -158,12 +198,13 @@ unittest {
 }
 
 @("The user should see a nice message when one test is run")
-unittest {
+unittest
+{
   auto writer = new BufferedWriter;
   auto reporter = new ResultReporter(writer);
-  SuiteResult[] results = [ SuiteResult("some suite") ];
+  SuiteResult[] results = [SuiteResult("some suite")];
 
-  results[0].tests = [ new TestResult("some test") ];
+  results[0].tests = [new TestResult("some test")];
   results[0].tests[0].status = TestResult.Status.success;
 
   reporter.begin(1);
@@ -179,12 +220,13 @@ unittest {
 }
 
 @("The user should see the number of suites and tests when multiple tests are run")
-unittest {
+unittest
+{
   auto writer = new BufferedWriter;
   auto reporter = new ResultReporter(writer);
-  SuiteResult[] results = [ SuiteResult("some suite") ];
+  SuiteResult[] results = [SuiteResult("some suite")];
 
-  results[0].tests = [ new TestResult("some test"), new TestResult("other test") ];
+  results[0].tests = [new TestResult("some test"), new TestResult("other test")];
   results[0].tests[0].status = TestResult.Status.success;
   results[0].tests[1].status = TestResult.Status.success;
 
@@ -204,12 +246,13 @@ unittest {
 }
 
 @("The user should see the reason of a failing test")
-unittest {
+unittest
+{
   auto writer = new BufferedWriter;
   auto reporter = new ResultReporter(writer);
-  SuiteResult[] results = [ SuiteResult("some suite") ];
+  SuiteResult[] results = [SuiteResult("some suite")];
 
-  results[0].tests = [ new TestResult("some test") ];
+  results[0].tests = [new TestResult("some test")];
   results[0].tests[0].status = TestResult.Status.failure;
   results[0].tests[0].throwable = new Exception("Random failure");
 
