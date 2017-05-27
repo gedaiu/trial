@@ -77,16 +77,23 @@ string[] findModules(Json describe, string subPackage) {
 
 	writeln("Looking for files inside `", rootPackage,"`");
 
-	auto neededPackage = (cast(Json[]) describe["targets"])
+	auto currentPackage = ((cast(Json[]) describe["packages"])
+		.filter!(a => a["name"].to!string == rootPackage))
+		.front;
+	
+	auto packagePath = currentPackage["path"].to!string;
+
+	auto neededTarget = (cast(Json[]) describe["targets"])
 		.filter!(a => a["rootPackage"].to!string.canFind(rootPackage))
 		.filter!(a => a["rootPackage"].to!string.canFind(subPackage));
 
-	if(neededPackage.empty) {
+	if(neededTarget.empty) {
 		return [];
 	}
 
-	return (cast(Json[]) neededPackage.front["buildSettings"]["sourceFiles"])
+	return (cast(Json[]) neededTarget.front["buildSettings"]["sourceFiles"])
 		.map!(a => a.to!string)
+		.filter!(a => a.startsWith(packagePath))
 		.map!(a => getModuleName(a))
 		.filter!(a => a != "")
 			.array;
@@ -95,14 +102,14 @@ string[] findModules(Json describe, string subPackage) {
 string[] findExternalModules(Json describe) {
 	string rootPackage = describe["rootPackage"].to!string;
 
-	auto neededPackages = (cast(Json[]) describe["targets"])
+	auto neededTargets = (cast(Json[]) describe["targets"])
 		.filter!(a => !a["rootPackage"].to!string.canFind(rootPackage));
 
-	if(neededPackages.empty) {
+	if(neededTargets.empty) {
 		return [];
 	}
 
-	Json[] files = cast(Json[])reduce!((a, b) => a ~ b)(Json.emptyArray, neededPackages.map!(a => a["buildSettings"]["sourceFiles"]));
+	Json[] files = cast(Json[])reduce!((a, b) => a ~ b)(Json.emptyArray, neededTargets.map!(a => a["buildSettings"]["sourceFiles"]));
 
 	return files
 		.map!(a => a.to!string)
@@ -128,15 +135,15 @@ string getModuleName(string fileName) {
 bool hasTrial(Json describe, string subPackage) {
 	string rootPackage = describe["rootPackage"].to!string;
 
-	auto neededPackage = (cast(Json[]) describe["targets"])
+	auto neededTarget = (cast(Json[]) describe["targets"])
 		.filter!(a => a["rootPackage"].to!string.canFind(rootPackage))
 		.filter!(a => a["rootPackage"].to!string.canFind(subPackage));
 
-		if(neededPackage.empty) {
+		if(neededTarget.empty) {
 			return false;
 		}
 
-		Json[] versions = (cast(Json[]) neededPackage.front["buildSettings"]["versions"]);
+		Json[] versions = (cast(Json[]) neededTarget.front["buildSettings"]["versions"]);
 		auto hasVersion = versions
 			.map!(a => a.to!string)
 			.filter!(a => a == "Have_trial_lifecycle").empty;
