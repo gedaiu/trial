@@ -1,6 +1,6 @@
 {
 	"reporters": [
-		"progress",
+		"spec",
 		"result",
 		"stats",
 		"html"

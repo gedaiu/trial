@@ -13,3 +13,4 @@ dub.selections.json
 /trial-runner-test-application
 trial-stats.csv
 trial-result.html
+docs/

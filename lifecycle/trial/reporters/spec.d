@@ -209,7 +209,7 @@ unittest {
   writer.buffer.should.equal("\n" ~
                              "  some\n" ~
                              "    suite\n" ~
-                             "      0) some test\n\n"
+                             "      0) some test\n\n" ~
                              "    other\n" ~
                              "      1) some test\n");
 }

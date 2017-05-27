@@ -6,57 +6,81 @@ import std.datetime;
 import trial.stackresult;
 import trial.step;
 
-class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
-  private {
+/**
+The default test executor runs test in sequential order in a single thread
+*/
+class DefaultExecutor : ITestExecutor, IStepLifecycleListener
+{
+  private
+  {
     SuiteResult suiteResult;
     TestResult testResult;
+    StepResult currentStep;
     StepResult[] stepStack;
   }
 
-  void begin(string suite, string test, ref StepResult step) {
-    stepStack[stepStack.length - 1].steps ~= step;
-    stepStack ~= step;
+  /// Add the step result and update the other listeners on every step
+  void begin(string suite, string test, ref StepResult step)
+  {
+    currentStep.steps ~= step;
+    stepStack ~= currentStep;
+    currentStep = step;
     LifeCycleListeners.instance.update();
   }
 
-  void end(string suite, string test, ref StepResult step) {
-    stepStack = stepStack[0..$-1];
+  /// Update the other listeners on every step
+  void end(string suite, string test, ref StepResult step)
+  {
+    currentStep = stepStack[stepStack.length - 1];
+    stepStack = stepStack[0 .. $-1];
     LifeCycleListeners.instance.update();
   }
 
-  SuiteResult[] beginExecution(ref TestCase[]) {
+  /// It does nothing
+  SuiteResult[] beginExecution(ref TestCase[])
+  {
     return [];
   }
 
-  SuiteResult[] endExecution() {
-    if(suiteResult.begin == SysTime.min) {
+  /// Return the result for the last executed suite
+  SuiteResult[] endExecution()
+  {
+    if (suiteResult.begin == SysTime.min)
+    {
       return [];
     }
 
     LifeCycleListeners.instance.update();
     LifeCycleListeners.instance.end(suiteResult);
-    return [ suiteResult ];
+    return [suiteResult];
   }
 
-  private {
-    void createTestResult(TestCase testCase) {
+  private
+  {
+    void createTestResult(TestCase testCase)
+    {
       testResult = new TestResult(testCase.name);
       testResult.begin = Clock.currTime;
       testResult.end = Clock.currTime;
       testResult.status = TestResult.Status.started;
-      stepStack = [ testResult ];
+      currentStep = testResult;
+
+      stepStack = [];
 
       Step.suite = testCase.suiteName;
       Step.test = testCase.name;
 
       LifeCycleListeners.instance.begin(testCase.suiteName, testResult);
 
-      try {
+      try
+      {
         testCase.func();
         testResult.status = TestResult.Status.success;
-      } catch(Throwable t) {
+      }
+      catch (Throwable t)
+      {
         testResult.status = TestResult.Status.failure;
-        testResult.throwable = toTestException(t);
+        testResult.throwable = t.toTestException;
       }
 
       testResult.end = Clock.currTime;
@@ -64,15 +88,19 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
     }
   }
 
-  SuiteResult[] execute(ref TestCase testCase) {
+  /// Execute a test case
+  SuiteResult[] execute(ref TestCase testCase)
+  {
     SuiteResult[] result;
 
     LifeCycleListeners.instance.update();
-    if(suiteResult.name != testCase.suiteName) {
-      if(suiteResult.begin != SysTime.min) {
+    if (suiteResult.name != testCase.suiteName)
+    {
+      if (suiteResult.begin != SysTime.min)
+      {
         suiteResult.end = Clock.currTime;
         LifeCycleListeners.instance.end(suiteResult);
-        result = [ suiteResult ];
+        result = [suiteResult];
       }
 
       suiteResult = SuiteResult(testCase.suiteName, Clock.currTime, Clock.currTime);
@@ -87,8 +115,10 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener {
   }
 }
 
-version(is_trial_embeded) {
-  auto toTestException(Throwable t) {
+version (is_trial_embeded)
+{
+  private auto toTestException(Throwable t)
+  {
     return t;
   }
 }

@@ -44,7 +44,7 @@ class ConsoleWriter : ReportWriter {
 }
 
 version(Have_arsd_official_terminal) {
-  import terminal;
+  import arsd.terminal;
 
   shared static this() {
     defaultWriter = new ColorConsoleWriter;

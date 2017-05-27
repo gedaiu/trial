@@ -9,6 +9,7 @@ import std.algorithm;
 import std.array;
 import core.thread;
 
+
 class ThreadLifeCycleListener : LifeCycleListeners {
   static string currentTest = "unknown";
 
@@ -89,9 +90,9 @@ private {
 
     shared {
       private {
-        string beginTests[];
-        string endTests[];
-        StepAction steps[];
+        string[] beginTests;
+        string[] endTests;
+        StepAction[] steps;
         Throwable[string] failures;
         ulong testCount;
       }
