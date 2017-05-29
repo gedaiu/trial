@@ -1,6 +1,6 @@
 /++
   A module containing the default test discovery logic
-  
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
@@ -14,7 +14,7 @@ import std.conv;
 
 import trial.interfaces;
 
-/// The default test discovery looks for `unittest` sections and groups them by module
+/// The default test discovery looks for unittest sections and groups them by module
 struct TestDiscovery {
 	TestCase[string][string] testCases;
 
