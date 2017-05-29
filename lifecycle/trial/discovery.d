@@ -14,7 +14,7 @@ import std.conv;
 
 import trial.interfaces;
 
-/// The default test discovery looks for unittest sections and groups them by module
+/// The default test discovery looks for unit test sections and groups them by module
 struct TestDiscovery {
 	TestCase[string][string] testCases;
 
