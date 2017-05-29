@@ -26,10 +26,17 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
     import("step.d") ~
     import("executor/parallel.d") ~
     import("executor/single.d") ~
+
     import("reporters/writer.d") ~
     import("reporters/result.d") ~
     import("reporters/stats.d") ~
+    import("reporters/dotmatrix.d") ~
+    import("reporters/html.d") ~
+    import("reporters/landing.d") ~
+    import("reporters/list.d") ~
+    import("reporters/progress.d") ~
     import("reporters/specprogress.d") ~
+    import("reporters/specsteps.d") ~
     import("reporters/spec.d");
 
   string code;
