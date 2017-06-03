@@ -145,7 +145,7 @@ version(Have_arsd_official_terminal) {
     }
 
     this() {
-      this.terminal = Terminal(ConsoleOutputType.cellular);
+      this.terminal = Terminal(ConsoleOutputType.linear);
       this.terminal._suppressDestruction = true;
 
       lines = this.terminal.cursorY;
