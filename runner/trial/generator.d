@@ -137,6 +137,9 @@ string removeUnittests(string data) {
           .split("version(\nunittest)")
           .map!(a => a.strip.removeTest)
           .join("\n")
+          .split("version (\nunittest)")
+          .map!(a => a.strip.removeTest)
+          .join("\n")
           .split("\n")
           .map!(a => a.stripRight)
           .join("\n");
@@ -183,4 +186,15 @@ unittest{
   int main() {
     return 0;
   }`);
+}
+
+@("It should remove unittest versions")
+unittest{
+  `module test;
+
+version (unittest)
+{
+  import fluent.asserts;
+}`.removeUnittests.should.equal(`module test;
+`);
 }

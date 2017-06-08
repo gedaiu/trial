@@ -19,9 +19,7 @@
 			"importPaths": ["lifecycle"],
 			"dependencies": {
 				"arsd-official:terminal": "~>1.2.1",
-				"fluent-asserts": {
-					"path": "../should"
-				}
+				"fluent-asserts": "*"
 			}
 		},
 		{
@@ -34,9 +32,7 @@
 			"dependencies": {
 				"trial:lifecycle": "*",
 				"vibe-d:data": "*",
-				"fluent-asserts": {
-					"path": "../should"
-				}
+				"fluent-asserts": "*"
 			},
 
 			"dflags": [ "-Jlifecycle/trial" ]
