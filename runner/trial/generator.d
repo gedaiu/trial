@@ -6,16 +6,15 @@ import std.string;
 import std.stdio;
 import std.conv;
 
+import dub.internal.vibecompat.core.log;
+
 import trial.settings;
 
-string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules, string[] externalModules, string suite = "", string testName = "") {
-  if(suite != "") {
-    writeln("Selecting suites conaining `" ~ suite ~ "`.");
-  }
-
+string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules, string[] externalModules, string testName = "") {
   testName = testName.replace(`"`, `\"`);
+
   if(testName != "") {
-    writeln("Selecting tests conaining `" ~ testName ~ "`.");
+    logInfo("Selecting tests conaining `" ~ testName ~ "`.");
   }
 
   enum d =
@@ -77,7 +76,6 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
   }
 
   code ~= modules
-    .filter!(a => a.indexOf(suite) != -1)
     .map!(a => `        testDiscovery.addModule!"` ~ a ~ `";`)
     .join("\n");
 

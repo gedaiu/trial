@@ -30,6 +30,7 @@
 			"importPaths": ["runner"],
 
 			"dependencies": {
+				"dub": "~>1.3.0",
 				"trial:lifecycle": "*",
 				"vibe-d:data": "*",
 				"fluent-asserts": "*"
