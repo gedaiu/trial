@@ -20,7 +20,7 @@ interface that allows you to add what you want, when you want.
 ## How it works
 
 The `trial` executable creates a custom main that will be embedded with your code. The build is created
-using `dub` and for now it's mandatory to use the `trial` command alongside with `dub`. All the parameters that you
+using `dub` embeded as a library, so you don't need to install dub to use this runner. All the parameters that you
 provide to trial will be passed directly to `dub`. Right now trial provides only the `--test` or `-t` option that will
 filter the discovered tests. For example `trial -t "The user should see a nice message when one test is run"` will run 
 only the tests that contain that string in the name.
