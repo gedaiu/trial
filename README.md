@@ -2,7 +2,7 @@
 
 [Writing unit tests is easy with Dlang](https://dlang.org/spec/unittest.html). Unfortunately
 when you have a big collection of unit tests, it get's hard to maintain and debug them. In order
-to avoid these problems you can use this flexible test runner for D programing language.
+to avoid these problems, you can use this flexible test runner for D programing language.
 
 ## Motivation
 
@@ -28,7 +28,7 @@ only the tests that contain that string in the name.
 ## Features
 
 This library intends to provide a rich set of features that helps you to customize your test runs:
-  - Executors
+  - [Executors](/doc/executors.md)
   - Reporters
   - Test discoveries
   - Steps and attachments
