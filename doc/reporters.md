@@ -15,6 +15,8 @@ Here are informations about the supported reporters and how you can create your 
   - [List](#list)
   - [Progress](#progress)
   - [Result](#result)
+  - [HTML](#html)
+  - [Stats](#stats)
   - [Spec Progress](#spec-progress)
 
 ## About
