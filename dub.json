@@ -33,6 +33,8 @@
 				"dub": "~>1.3.0",
 				"trial:lifecycle": "*",
 				"vibe-d:data": "*",
+				"vibe-d:core": "*",
+				"vibe-d:inet": "*",
 				"fluent-asserts": "*"
 			},
 

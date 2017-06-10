@@ -21,7 +21,8 @@ import trial.interfaces;
 import trial.reporters.spec;
 import trial.reporters.writer;
 
-///
+/// The list reporter outputs a simple specifications list as test cases pass or 
+/// fail
 class ListReporter : SpecReporter
 {
   this()

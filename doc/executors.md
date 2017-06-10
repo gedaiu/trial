@@ -1,6 +1,7 @@
 # Executors
 
 [up](../README.md)
+
 Here are informations about how the tests are executed and how you can extend this behaviour.
 
 ## Summary
@@ -9,7 +10,6 @@ Here are informations about how the tests are executed and how you can extend th
   - [The default executor](#the-default-executor)
   - [Parallel executor](#parallel-executor)
   - [Extending](#extending)
-
 
 ## About
 
