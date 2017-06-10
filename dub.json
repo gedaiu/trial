@@ -36,6 +36,7 @@
 				"fluent-asserts": "*"
 			},
 
+			"versions": ["DubUseCurl"],
 			"dflags": [ "-Jlifecycle/trial" ]
 		}
 	]

@@ -69,8 +69,6 @@ The Result reporter will print an overview of your test run
 [![asciicast](https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw.png)](https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw)
 
 
-
-
 ## Spec progress
 
 This is an experimental reporter that extends the Spec reporter. It will display the current running time and the remaining time until the tests are finished. It's recomanded to use it with the parallel executor, when you have tests that take a lot
