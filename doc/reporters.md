@@ -64,9 +64,24 @@ The progress reporter implements a simple progress-bar
 
 ## Result
 
-The Result reporter will print an overview of your test run
+The Result reporter will print an overview of your test run. This is added by default to your reporters list and it's
+mandatory to use if you want to see the details of the failed tests.
 
 [![asciicast](https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw.png)](https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw)
+
+## HTML
+
+The HTML reporter outputs a hierarchical HTML body representation of your tests. Just publish it on a webserver
+and you will have a nice report for your build.
+
+[example](http://trial.szabobogdan.com/artifacts/trial-result.html)
+
+
+## Stats
+
+The stats reporter creates a csv file with the duration and the result of all your steps and tests. It's usefull to use it with other reporters, like spec progress.
+
+[example](http://trial.szabobogdan.com/artifacts/trial-stats.csv)
 
 
 ## Spec progress
