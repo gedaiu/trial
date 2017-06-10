@@ -10,7 +10,7 @@ import std.string;
 import core.time;
 import core.thread;
 
-import vibe.data.json;
+import dub.internal.vibecompat.data.json;
 
 import dub.commandline;
 import dub.compilers.compiler;
@@ -121,7 +121,7 @@ class PackageDescription : PackageBuildCommand {
 		auto currentPackage = this.desc.packages
 			.filter!(a => a.name == rootPackage)
 			.front;
-		
+
 		auto packagePath = currentPackage.path;
 
 		if(neededTarget.empty) {
@@ -186,7 +186,7 @@ Dub createDub(CommonOptions options) {
 	try {
 		dub.packageManager.getOrLoadPackage(Path(options.root_path));
 	} catch (Exception e) {
-		logDiagnostic("No package found in current working directory."); 
+		logDiagnostic("No package found in current working directory.");
 	}
 
 	return dub;
