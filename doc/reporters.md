@@ -18,6 +18,7 @@ Here are informations about the supported reporters and how you can create your 
   - [HTML](#html)
   - [Stats](#stats)
   - [Spec Progress](#spec-progress)
+  - [Extending](#extending)
 
 ## About
 
@@ -124,3 +125,17 @@ This is an experimental reporter that extends the Spec reporter. It will display
 of time, like ui tests written with `selenium` or `appium`.
 
 To use it, add `spec-progress` to the reporters list inisde `trial.json`.
+
+## Extending
+
+If you want to write a custom reporter, have a look at the Lifecycle interface that trial provides and implement the methods that you need. 
+
+[Interfaces list](http://trial.szabobogdan.com/docs/trial/interfaces.html)
+
+If you want to use your custom reporter, you can add it to the `LifeCycleListeners`:
+
+```
+  static this() {
+    LifeCycleListeners.instance.add(new MyCustomReporter);
+  }
+```
