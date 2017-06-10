@@ -29,8 +29,8 @@ only the tests that contain that string in the name.
 
 This library intends to provide a rich set of features that helps you to customize your test runs:
   - Test discoveries
-  - [Executors](/doc/executors.md)
-  - [Reporters](/doc/reporters.md)
+  - [Executors](doc/executors.md)
+  - [Reporters](doc/reporters.md)
   - Steps and attachments
 
 ## Hacking
