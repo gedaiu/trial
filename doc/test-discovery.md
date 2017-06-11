@@ -28,7 +28,7 @@ which will use the `UnitTestDiscovery` class from the `trial.discovery.unit` mod
 
 ## Unit Test Discovery
 
-This is the default test discovery. It will search inside your modules for `unittest` blocks. If you addnotate
+This is the default test discovery. It will search inside your modules for `unittest` blocks. If you annotate
 the test with a string [UDA](http://dlang.org/spec/attribute.html#uda) that string will be used as the test name.
 
 ## Extending
@@ -44,7 +44,7 @@ void main() {
     ...
 
     auto testDiscovery0 = new UnitTestDiscovery;
-    
+
     testDiscovery0.addModule!"some.module";
     testDiscovery0.addModule!"other.module";
 
