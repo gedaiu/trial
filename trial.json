@@ -1,9 +1,13 @@
 {
 	"reporters": [
-		"list",
+		"spec",
 		"result",
 		"stats",
 		"html"
+	],
+
+	"testDiscovery": [
+		"trial.discovery.unit.UnitTestDiscovery"
 	],
 
 	"runInParallel": false,

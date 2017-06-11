@@ -156,7 +156,7 @@ class PackageDescription : PackageBuildCommand {
 			return false;
 		}
 
-		return neededTarget[0].buildSettings.versions.filter!(a => a == "Have_trial_lifecycle").empty;
+		return !neededTarget[0].buildSettings.versions.filter!(a => a == "Have_trial_lifecycle").empty;
 	}
 
 	override int execute(Dub dub, string[] free_args, string[] app_args) {

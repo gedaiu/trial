@@ -30,6 +30,9 @@ struct Settings
    */
   string[] reporters = ["spec", "result"];
 
+  /// The test discovery classes that you want to use
+  string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
+
   /// The default executor is `SingleRunner`. If you want to use the 
   /// `ParallelExecutor` set this flag true.
   bool runInParallel = false;
@@ -42,7 +45,7 @@ struct Settings
 /// Converts the settings object to DLang code. It's used by the generator
 string toCode(Settings settings)
 {
-	return "Settings(" ~ settings.reporters.to!string ~ ", "
+	return "Settings(" ~ settings.reporters.to!string ~ ", " ~ settings.testDiscovery.to!string ~ ", "
 		~ settings.runInParallel.to!string ~ ", " ~ settings.maxThreads.to!string ~ ")";
 }
 
@@ -56,6 +59,6 @@ unittest
 {
 	Settings settings;
 
-	settings.toCode.should.equal(`Settings(["spec", "result"], false, 0)`);
+	settings.toCode.should.equal(`Settings(["spec", "result"], ["trial.discovery.unit.UnitTestDiscovery"], false, 0)`);
 }
 

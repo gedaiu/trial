@@ -10,6 +10,27 @@ import dub.internal.vibecompat.core.log;
 
 import trial.settings;
 
+string generateDiscoveries(string[] discoveries, string[] modules, bool hasTrialDependency) {
+  string code;
+
+  uint index;
+  foreach(discovery; discoveries) {
+    string[] pieces = discovery.split(".");
+    string cls = pieces[pieces.length - 1];
+
+    if(pieces[0] != "trial") {
+      code ~= "\n    import " ~ pieces[0..$-1].join(".") ~ ";\n";
+    }
+
+    code ~= "      auto testDiscovery" ~ index.to!string ~ " = new " ~ cls ~ ";\n";
+    code ~= modules.map!(a => `      testDiscovery` ~ index.to!string ~ `.addModule!"` ~ a ~ `";`).join("\n");
+    code ~= "\n      LifeCycleListeners.instance.add(testDiscovery" ~ index.to!string ~ ");\n\n";
+    index++;
+  }
+
+  return code;
+}
+
 string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules, string[] externalModules, string testName = "") {
   testName = testName.replace(`"`, `\"`);
 
@@ -65,8 +86,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
 
   code ~= `
   void main() {
-      setupLifecycle(` ~ settings.toCode ~ `);
-      auto testDiscovery = new UnitTestDiscovery();` ~ "\n\n";
+      setupLifecycle(` ~ settings.toCode ~ `);` ~ "\n\n";
 
   if(hasTrialDependency) {
     externalModules ~= [ "_d_assert", "std.", "core." ];
@@ -76,12 +96,9 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
     `;
   }
 
-  code ~= modules
-    .map!(a => `      testDiscovery.addModule!"` ~ a ~ `";`)
-    .join("\n");
+  code ~= generateDiscoveries(settings.testDiscovery, modules, hasTrialDependency);
 
   code ~= `
-      LifeCycleListeners.instance.add(testDiscovery);
       runTests("` ~ testName ~ `");
   }
 
