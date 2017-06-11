@@ -12,8 +12,8 @@ Here are informations about how this runner searces for tests inside your projec
 
 ## About
 
-The test discovery happens at `compile-time`. In order to achieve this, the runner has to know about all the
-test discovery classes that you want to use in order to generate the appropiate code. You can specify the test discoveries
+The test discovery happens at `compile-time`. In order to generate the appropiate code, the
+runner has to know about all the test discovery classes that you want to use. You can specify the test discoveries
 in the `trial.json` file. The `testDiscovery` list should contain all the test discoveries classes that you need.
 
 The default value is:
