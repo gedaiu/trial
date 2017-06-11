@@ -1,6 +1,11 @@
 # Trial
 
 [![Build Status](https://travis-ci.org/gedaiu/trial.svg?branch=master)](https://travis-ci.org/gedaiu/trial)
+[![DUB Version](https://img.shields.io/dub/v/trial.svg)](https://code.dlang.org/packages/trial)
+[![DUB Installs](https://img.shields.io/dub/dt/trial.svg)](https://code.dlang.org/packages/trial)
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/gedaiu/trial.svg)](http://isitmaintained.com/project/gedaiu/trial "Percentage of issues still open")
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/gedaiu/trial.svg)](http://isitmaintained.com/project/gedaiu/trial "Average time to resolve an issue")
+
 
 [Writing unit tests is easy with Dlang](https://dlang.org/spec/unittest.html). Unfortunately
 when you have a big collection of unit tests, it get's hard to maintain and debug them. In order
