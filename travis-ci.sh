@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e -x -o pipefail
 
 # run unit tests
