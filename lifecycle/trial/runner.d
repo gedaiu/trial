@@ -150,6 +150,7 @@ void addReporter(string name) {
     import trial.reporters.progress;
     import trial.reporters.list;
     import trial.reporters.html;
+    import trial.reporters.allure;
     import trial.reporters.stats;
     import trial.reporters.result;
 
@@ -185,6 +186,10 @@ void addReporter(string name) {
 
       case "html":
         LifeCycleListeners.instance.add(new HtmlReporter);
+        break;
+
+      case "allure":
+        LifeCycleListeners.instance.add(new AllureReporter);
         break;
 
       case "result":

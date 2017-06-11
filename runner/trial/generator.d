@@ -52,6 +52,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
     import("reporters/stats.d") ~
     import("reporters/dotmatrix.d") ~
     import("reporters/html.d") ~
+    import("reporters/allure.d") ~
     import("reporters/landing.d") ~
     import("reporters/list.d") ~
     import("reporters/progress.d") ~

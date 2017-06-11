@@ -8,7 +8,6 @@
 	"license": "MIT",
 	"homepage": "http://trial.szabobogdan.com/",
 
-
 	"dependencies": {
 		"trial:lifecycle": "*"
 	},
