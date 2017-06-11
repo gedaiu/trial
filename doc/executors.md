@@ -1,6 +1,6 @@
 # Executors
 
-[up](../README.md)
+[up](../)
 
 Here are informations about how the tests are executed and how you can extend this behaviour.
 
