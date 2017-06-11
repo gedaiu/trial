@@ -18,7 +18,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
   }
 
   enum d =
-    import("discovery.d") ~
+    import("discovery/unit.d") ~
     import("runner.d") ~
     import("interfaces.d") ~
     import("settings.d") ~
@@ -44,7 +44,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
     writeln("We are using the project `trial:lifecicle` dependency.");
 
     code = "
-      import trial.discovery;
+      import trial.discovery.unit;
       import trial.runner;
       import trial.interfaces;
       import trial.settings;
@@ -65,7 +65,8 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
 
   code ~= `
   void main() {
-      TestDiscovery testDiscovery;` ~ "\n\n";
+      setupLifecycle(` ~ settings.toCode ~ `);
+      auto testDiscovery = new UnitTestDiscovery();` ~ "\n\n";
 
   if(hasTrialDependency) {
     externalModules ~= [ "_d_assert", "std.", "core." ];
@@ -76,12 +77,12 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
   }
 
   code ~= modules
-    .map!(a => `        testDiscovery.addModule!"` ~ a ~ `";`)
+    .map!(a => `      testDiscovery.addModule!"` ~ a ~ `";`)
     .join("\n");
 
   code ~= `
-      setupLifecycle(` ~ settings.toCode ~ `);
-      runTests(testDiscovery, "` ~ testName ~ `");
+      LifeCycleListeners.instance.add(testDiscovery);
+      runTests("` ~ testName ~ `");
   }
 
   version (unittest) shared static this()

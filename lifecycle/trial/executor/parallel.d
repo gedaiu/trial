@@ -8,7 +8,6 @@
 module trial.executor.parallel;
 
 import trial.interfaces;
-import trial.discovery;
 import trial.runner;
 import std.datetime;
 import std.exception;

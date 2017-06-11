@@ -15,7 +15,6 @@ import std.range;
 import std.traits;
 import std.string;
 
-import trial.discovery;
 import trial.interfaces;
 import trial.settings;
 import trial.executor.single;
@@ -34,7 +33,12 @@ class LifeCycleListeners {
     ITestCaseLifecycleListener[] testListeners;
     IStepLifecycleListener[] stepListeners;
     ILifecycleListener[] lifecycleListeners;
+    ITestDiscovery[] testDiscoveryListeners;
     ITestExecutor executor = new DefaultExecutor;
+  }
+
+  TestCase[] getTestCases() {
+    return testDiscoveryListeners.map!(a => a.getTestCases).join;
   }
 
   /// Add a listener to the collection
@@ -57,6 +61,10 @@ class LifeCycleListeners {
 
     static if(!is(CommonType!(ITestExecutor, T) == void)) {
       executor = listener;
+    }
+
+    static if(!is(CommonType!(ITestDiscovery, T) == void)) {
+      testDiscoveryListeners ~= listener;
     }
   }
 
@@ -209,6 +217,6 @@ auto runTests(TestCase[] tests, string testName = "") {
 }
 
 /// ditto
-auto runTests(TestDiscovery testDiscovery, string testName = "") {
-  return runTests(testDiscovery.testCases.values.map!(a => a.values).joiner.array, testName);
+auto runTests(string testName = "") {
+  return runTests(LifeCycleListeners.instance.getTestCases, testName);
 }

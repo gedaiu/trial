@@ -28,6 +28,10 @@ interface ILifecycleListener
   void end(SuiteResult[]);
 }
 
+interface ITestDiscovery {
+  TestCase[] getTestCases();
+}
+
 /** 
 A Listener that can run tests. During the test execution can be used only one 
 instance of this listance. After all the tests were executed the result of all
@@ -173,7 +177,6 @@ version (unittest)
   import core.thread;
 
   import trial.step;
-  import trial.discovery;
   import trial.runner;
   import fluent.asserts;
   import trial.executor.single;
