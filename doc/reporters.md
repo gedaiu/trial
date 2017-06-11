@@ -130,7 +130,7 @@ To use it, add `spec-progress` to the reporters list inisde `trial.json`.
 
 If you want to write a custom reporter, have a look at the Lifecycle interface that trial provides and implement the methods that you need. 
 
-[Interfaces list](http://trial.szabobogdan.com/docs/trial/interfaces.html)
+[Interfaces list](http://trial.szabobogdan.com/api/trial/interfaces.html)
 
 If you want to use your custom reporter, you can add it to the `LifeCycleListeners`:
 

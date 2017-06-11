@@ -35,7 +35,7 @@ This library intends to provide a rich set of features that helps you to customi
 
 ## Hacking
 
-Please have a look at `trial.interfaces`
+Please have a look at [trial.interfaces](http://trial.szabobogdan.com/api/trial/interfaces.html)
 
 ## Building
 

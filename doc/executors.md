@@ -13,7 +13,7 @@ Here are informations about how the tests are executed and how you can extend th
 
 ## About
 
-An `Executor` is a class that runs the tests and it must implement the [ITestExecutor](http://trial.szabobogdan.com/docs/trial/interfaces/ITestExecutor.html) 
+An `Executor` is a class that runs the tests and it must implement the [ITestExecutor](http://trial.szabobogdan.com/api/trial/interfaces/ITestExecutor.html) 
 interface. 
 
 ## The default executor
