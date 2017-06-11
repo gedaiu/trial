@@ -31,8 +31,8 @@ This library intends to provide a rich set of features that helps you to customi
   - [Test discoveries](doc/test-discovery.md)
   - [Executors](doc/executors.md)
   - [Reporters](doc/reporters.md)
-  - Steps
-  - Attachments
+  - [Steps](doc/steps.md)
+  - [Attachments](doc/attachments.md)
 
 ## Hacking
 
