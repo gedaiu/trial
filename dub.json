@@ -3,9 +3,11 @@
 	"authors": [
 		"Szabo Bogdan"
 	],
-	"description": "DLang test runner",
+	"description": "The extensible test runner for DLang",
 	"copyright": "Copyright © 2017, Szabo Bogdan",
 	"license": "MIT",
+	"homepage": "http://trial.szabobogdan.com/",
+
 
 	"dependencies": {
 		"trial:lifecycle": "*"
