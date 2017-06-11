@@ -3,7 +3,8 @@
 		"spec",
 		"result",
 		"stats",
-		"html"
+		"html",
+		"allure"
 	],
 
 	"testDiscovery": [

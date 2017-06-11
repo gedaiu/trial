@@ -15,3 +15,5 @@ trial-stats.csv
 trial-result.html
 docs/
 .vscode/
+allure
+allure-html

@@ -13,15 +13,44 @@ import std.conv;
 import std.datetime;
 import std.string;
 import std.algorithm;
+import std.file;
+import std.uuid;
 
 import trial.interfaces;
 import trial.reporters.writer;
+
+private string escape(string data) {
+  string escapedData = data.dup;
+
+  escapedData = escapedData.replace(`&`, `&amp;`);
+  escapedData = escapedData.replace(`"`, `&quot;`);
+  escapedData = escapedData.replace(`'`, `&apos;`);
+  escapedData = escapedData.replace(`<`, `&lt;`);
+  escapedData = escapedData.replace(`>`, `&gt;`);
+
+  return escapedData;
+}
 
 /// The Allure reporter creates a xml containing the test results, the steps
 /// and the attachments. http://allure.qatools.ru/
 class AllureReporter : ILifecycleListener
 {
+  void begin(ulong testCount) {}
 
+  void update() {}
+
+  void end(SuiteResult[] result) 
+  {
+    if(exists("allure")) {
+      std.file.rmdirRecurse("allure");
+    }
+
+    "allure".mkdir;
+
+    foreach(xml; result.map!(a => AllureSuiteXml(a).toString)) {
+      std.file.write("allure/" ~ randomUUID.toString ~ "-testsuite.xml", xml);
+    }
+  }
 }
 
 struct AllureSuiteXml {
@@ -33,6 +62,7 @@ struct AllureSuiteXml {
 
   /// Converts the suiteResult to a xml string
   string toString() {
+    auto epoch = SysTime.fromUnixTime(0);
     string tests = result.tests.map!(a => AllureTestXml(a).toString).array.join("\n");
 
     if(tests != "") {
@@ -40,9 +70,9 @@ struct AllureSuiteXml {
     }
 
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<ns2:test-suite start="` ~ result.begin.toUnixTime.to!string ~ `" stop="` ~ result.end.toUnixTime.to!string ~ `" version="` ~ this.allureVersion ~ `" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
-    <name>` ~ result.name ~ `</name>
-    <title>` ~ result.name ~ `</title>
+<ns2:test-suite start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" version="` ~ this.allureVersion ~ `" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
+    <name>` ~ result.name.escape ~ `</name>
+    <title>` ~ result.name.escape ~ `</title>
     <test-cases>`
      ~ tests ~ `
     </test-cases>
@@ -61,6 +91,7 @@ version(unittest) {
 @("AllureSuiteXml should transform an empty suite")
 unittest 
 {
+  auto epoch = SysTime.fromUnixTime(0);
   SuiteResult result;
   result.name = "Test Suite";
   result.begin = Clock.currTime;
@@ -77,11 +108,11 @@ unittest
   auto allure = AllureSuiteXml(result);
 
   allure.toString.should.equal(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<ns2:test-suite start="` ~ result.begin.toUnixTime.to!string ~ `" stop="` ~ result.end.toUnixTime.to!string ~ `" version="1.5.2" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
+<ns2:test-suite start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" version="1.5.2" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
     <name>` ~ result.name ~ `</name>
     <title>` ~ result.name ~ `</title>
     <test-cases>
-        <test-case start="` ~ test.begin.toUnixTime.to!string ~ `" stop="` ~ test.end.toUnixTime.to!string ~ `" status="passed">
+        <test-case start="` ~ (test.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
             <name>Test</name>
         </test-case>
     </test-cases>
@@ -95,6 +126,7 @@ unittest
 @("AllureSuiteXml should transform a suite with a success test")
 unittest 
 {
+  auto epoch = SysTime.fromUnixTime(0);
   SuiteResult result;
   result.name = "Test Suite";
   result.begin = Clock.currTime;
@@ -103,7 +135,7 @@ unittest
   auto allure = AllureSuiteXml(result);
 
   allure.toString.should.equal(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<ns2:test-suite start="` ~ result.begin.toUnixTime.to!string ~ `" stop="` ~ result.end.toUnixTime.to!string ~ `" version="1.5.2" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
+<ns2:test-suite start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" version="1.5.2" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
     <name>` ~ result.name ~ `</name>
     <title>` ~ result.name ~ `</title>
     <test-cases>
@@ -140,13 +172,17 @@ struct AllureTestXml {
   }
 
   string toString() {
-    string xml = `        <test-case start="` ~ result.begin.toUnixTime.to!string ~ `" stop="` ~ result.end.toUnixTime.to!string ~ `" status="` ~ allureStatus ~ `">` ~ "\n";
-    xml ~= `            <name>Test</name>` ~ "\n";
+    auto epoch = SysTime.fromUnixTime(0);
+    auto start = (result.begin - epoch).total!"msecs";
+    auto stop = (result.end - epoch).total!"msecs";
+
+    string xml = `        <test-case start="` ~ start.to!string ~ `" stop="` ~ stop.to!string ~ `" status="` ~ allureStatus ~ `">` ~ "\n";
+    xml ~= `            <name>` ~ result.name.escape ~ `</name>` ~ "\n";
 
     if(result.throwable !is null) {
       xml ~= `            <failure>
-                <message>` ~ result.throwable.msg ~ `</message>
-                <stack-trace>` ~ result.throwable.to!string ~ `</stack-trace>
+                <message>` ~ result.throwable.msg.escape ~ `</message>
+                <stack-trace>` ~ result.throwable.to!string.escape ~ `</stack-trace>
             </failure>` ~ "\n";
     }
 
@@ -159,6 +195,8 @@ struct AllureTestXml {
 @("AllureTestXml should transform a success test")
 unittest 
 {
+  auto epoch = SysTime.fromUnixTime(0);
+
   TestResult result = new TestResult("Test");
   result.begin = Clock.currTime;
   result.end = Clock.currTime;
@@ -167,7 +205,7 @@ unittest
   auto allure = AllureTestXml(result);
 
   allure.toString.should.equal(
-`        <test-case start="` ~ result.begin.toUnixTime.to!string ~ `" stop="` ~ result.end.toUnixTime.to!string ~ `" status="passed">
+`        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
             <name>Test</name>
         </test-case>`);
 }
@@ -175,6 +213,7 @@ unittest
 @("AllureTestXml should transform a failing test")
 unittest 
 {
+  auto epoch = SysTime.fromUnixTime(0);
   TestResult result = new TestResult("Test");
   result.begin = Clock.currTime;
   result.end = Clock.currTime;
@@ -184,7 +223,7 @@ unittest
   auto allure = AllureTestXml(result);
 
   allure.toString.should.equal(
-`        <test-case start="` ~ result.begin.toUnixTime.to!string ~ `" stop="` ~ result.end.toUnixTime.to!string ~ `" status="broken">
+`        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="broken">
             <name>Test</name>
             <failure>
                 <message>message</message>
