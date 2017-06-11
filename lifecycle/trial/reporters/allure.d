@@ -19,7 +19,7 @@ import trial.reporters.writer;
 
 /// The Allure reporter creates a xml containing the test results, the steps
 /// and the attachments. http://allure.qatools.ru/
-class AllureReporter
+class AllureReporter : ILifecycleListener
 {
 
 }
