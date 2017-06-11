@@ -62,7 +62,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
   string code;
 
   if(hasTrialDependency) {
-    writeln("We are using the project `trial:lifecicle` dependency.");
+    writeln("We are using the project `trial:lifecycle` dependency.");
 
     code = "
       import trial.discovery.unit;
@@ -74,7 +74,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[] mod
       import trial.reporters.stats;
       import trial.reporters.spec;\n";
   } else {
-    writeln("We will embed the `trial:lifecicle` code inside the project.");
+    writeln("We will embed the `trial:lifecycle` code inside the project.");
 
     code = "version = is_trial_embeded;\n" ~ d.split("\n")
             .filter!(a => !a.startsWith("module"))

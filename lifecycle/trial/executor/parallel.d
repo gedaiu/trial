@@ -15,7 +15,7 @@ import std.algorithm;
 import std.array;
 import core.thread;
 
-/// The Lifecicle listener used to send data from the tests threads to 
+/// The Lifecycle listener used to send data from the tests threads to 
 /// the main thread
 class ThreadLifeCycleListener : LifeCycleListeners {
   static string currentTest = "unknown";

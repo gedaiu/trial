@@ -32,7 +32,8 @@
 			"dependencies": {
 				"dub": "~>1.3.0",
 				"trial:lifecycle": "*",
-				"fluent-asserts": "*"
+				"fluent-asserts": "*",
+				"arsd-official:terminal": "~>1.2.1"
 			},
 
 			"dflags": [ "-Jlifecycle/trial" ]
