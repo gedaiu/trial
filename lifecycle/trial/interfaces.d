@@ -125,22 +125,22 @@ struct SuiteResult
   ///
   this(string name) {
     this.name = name;
-    begin = SysTime.min;
-    end = SysTime.min;
+    begin = SysTime.fromUnixTime(0);
+    end = SysTime.fromUnixTime(0);
   }
 
   ///
   this(string name, SysTime begin, SysTime end) {
     this.name = name;
-    this.begin = SysTime.min;
-    this.end = SysTime.min;
+    this.begin = begin;
+    this.end = end;
   }
 
   ///
   this(string name, SysTime begin, SysTime end, TestResult[] tests) {
     this.name = name;
-    this.begin = SysTime.min;
-    this.end = SysTime.min;
+    this.begin = begin;
+    this.end = end;
     this.tests = tests;
   }
 }

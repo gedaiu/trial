@@ -56,7 +56,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
   /// Return the result for the last executed suite
   SuiteResult[] endExecution()
   {
-    if (suiteResult.begin == SysTime.min)
+    if (suiteResult.begin == SysTime.fromUnixTime(0))
     {
       return [];
     }
@@ -103,11 +103,11 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
   SuiteResult[] execute(ref TestCase testCase)
   {
     SuiteResult[] result;
-
     LifeCycleListeners.instance.update();
+
     if (suiteResult.name != testCase.suiteName)
     {
-      if (suiteResult.begin != SysTime.min)
+      if (suiteResult.begin != SysTime.fromUnixTime(0))
       {
         suiteResult.end = Clock.currTime;
         LifeCycleListeners.instance.end(suiteResult);
