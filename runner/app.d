@@ -88,7 +88,9 @@ class PackageDescription : PackageBuildCommand {
 		TargetDescription[] neededTarget;
 	}
 
-	this(Dub dub, string subPackageName) {
+	this(CommonOptions options, string subPackageName) {
+		dub = createDub(options);
+
 		logInfo("setup package: " ~ subPackageName);
 		setupPackage(dub, subPackageName);
 
@@ -116,7 +118,7 @@ class PackageDescription : PackageBuildCommand {
 	}
 
 	string[] modules() {
-		logInfo("Looking for files inside `", rootPackage,"`");
+		logInfo("Looking for files inside `" ~ rootPackage ~ "`");
 
 		auto currentPackage = this.desc.packages
 			.filter!(a => a.name == rootPackage)
@@ -178,6 +180,7 @@ Dub createDub(CommonOptions options) {
 	// initialize DUB
 	auto package_suppliers = options.registry_urls.map!(url => cast(PackageSupplier)new RegistryPackageSupplier(URL(url))).array;
 	dub = new Dub(options.root_path, package_suppliers, options.skipRegistry);
+
 	dub.dryRun = options.annotate;
 	dub.defaultPlacementLocation = options.placementLocation;
 
@@ -216,7 +219,8 @@ version(unitttest) {} else {
 		auto commandArgs = new CommandArgs(arguments);
 
 		auto dub = createDub(options);
-		auto description = new PackageDescription(dub, subPackageName);
+
+		auto description = new PackageDescription(options, subPackageName);
 
 		Settings settings = readSettings(dub.rootPath);
 
