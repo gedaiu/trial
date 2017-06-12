@@ -158,7 +158,7 @@ struct AllureTestXml {
         return "canceled";
 
       case TestResult.Status.failure:
-        return "broken";
+        return "failed";
 
       case TestResult.Status.skip:
         return "canceled";
@@ -167,7 +167,7 @@ struct AllureTestXml {
         return "passed";
 
       default:
-        return "broken";
+        return "unknown";
     }
   }
 

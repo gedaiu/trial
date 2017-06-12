@@ -7,8 +7,8 @@
 +/
 module trial.executor.parallel;
 
-import trial.interfaces;
-import trial.runner;
+public import trial.interfaces;
+
 import std.datetime;
 import std.exception;
 import std.algorithm;
@@ -18,7 +18,7 @@ import core.thread;
 /// The Lifecycle listener used to send data from the tests threads to 
 /// the main thread
 class ThreadLifeCycleListener : LifeCycleListeners {
-  static string currentTest = "unknown";
+  static string currentTest;
 
   override {
     void begin(string suite, string test, ref StepResult step) {
@@ -72,7 +72,7 @@ class ThreadLifeCycleListener : LifeCycleListeners {
 }
 
 static ~this() {
-  if(ThreadLifeCycleListener.currentTest != "unknown") {
+  if(ThreadLifeCycleListener.currentTest != "") {
     ThreadProxy.instance.end(ThreadLifeCycleListener.currentTest);
   }
 }

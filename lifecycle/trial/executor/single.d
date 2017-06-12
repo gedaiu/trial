@@ -7,7 +7,7 @@
 +/
 module trial.executor.single;
 
-import trial.interfaces;
+public import trial.interfaces;
 import trial.runner;
 import std.datetime;
 import trial.stackresult;
@@ -24,6 +24,10 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
     TestResult testResult;
     StepResult currentStep;
     StepResult[] stepStack;
+  }
+
+  this() {
+    suiteResult = SuiteResult("unknown");
   }
 
   /// Add the step result and update the other listeners on every step
