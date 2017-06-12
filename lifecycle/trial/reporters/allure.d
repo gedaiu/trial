@@ -92,8 +92,7 @@ version(unittest) {
 unittest 
 {
   auto epoch = SysTime.fromUnixTime(0);
-  SuiteResult result;
-  result.name = "Test Suite";
+  auto result = SuiteResult("Test Suite");
   result.begin = Clock.currTime;
 
   TestResult test = new TestResult("Test");
@@ -127,8 +126,7 @@ unittest
 unittest 
 {
   auto epoch = SysTime.fromUnixTime(0);
-  SuiteResult result;
-  result.name = "Test Suite";
+  auto result = SuiteResult("Test Suite");
   result.begin = Clock.currTime;
   result.end = Clock.currTime;
 
@@ -223,7 +221,7 @@ unittest
   auto allure = AllureTestXml(result);
 
   allure.toString.should.equal(
-`        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="broken">
+`        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="failed">
             <name>Test</name>
             <failure>
                 <message>message</message>

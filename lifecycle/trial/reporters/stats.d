@@ -134,8 +134,7 @@ unittest
   auto storage = new StatStorage;
   auto stats = new StatsReporter(storage);
 
-  SuiteResult suite;
-  suite.name = "suite1";
+  SuiteResult suite = SuiteResult("suite1");
 
   stats.begin(suite);
   stats.end(suite);
@@ -160,8 +159,7 @@ unittest
   auto storage = new StatStorage;
   auto stats = new StatsReporter(storage);
 
-  SuiteResult suite;
-  suite.name = "suite";
+  SuiteResult suite = SuiteResult("suite");
 
   auto test = new TestResult("test1");
   test.status = TestResult.Status.success;
@@ -191,8 +189,7 @@ unittest
   auto storage = new StatStorage;
   auto stats = new StatsReporter(storage);
 
-  SuiteResult suite;
-  suite.name = "suite";
+  SuiteResult suite = SuiteResult("suite");
 
   auto test = new TestResult("test");
   auto step = new StepResult;

@@ -8,6 +8,7 @@
 module trial.executor.parallel;
 
 public import trial.interfaces;
+import trial.runner;
 
 import std.datetime;
 import std.exception;
@@ -393,6 +394,7 @@ class ParallelExecutor : ITestExecutor {
 version(unittest) {
   import fluent.asserts;
   import trial.step;
+  import trial.runner;
 
   void failMock() @system {
     assert(false);

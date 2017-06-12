@@ -160,7 +160,7 @@ unittest
   testResult.end = end;
   testResult.status = TestResult.Status.success;
 
-  SuiteResult[] result = [SuiteResult("Test Suite", begin, end, [testResult])];
+  SuiteResult[] result = [ SuiteResult("Test Suite", begin, end, [testResult]) ];
   reporter.end(result);
 
   auto text = readText("trial-result.html");

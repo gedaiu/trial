@@ -143,7 +143,7 @@ version(unittest) {
 	import fluent.asserts;
 }
 
-@("It should find this test")
+/// It should find this test
 unittest
 {
 	auto testDiscovery = new UnitTestDiscovery;
@@ -152,4 +152,6 @@ unittest
 
 	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
 	testDiscovery.testCases["trial.discovery.unit"].keys.length.should.equal(1);
+
+	testDiscovery.testCases["trial.discovery.unit"].keys.writeln;
 }

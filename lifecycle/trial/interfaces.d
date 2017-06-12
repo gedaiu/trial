@@ -135,6 +135,14 @@ struct SuiteResult
     this.begin = SysTime.min;
     this.end = SysTime.min;
   }
+
+  ///
+  this(string name, SysTime begin, SysTime end, TestResult[] tests) {
+    this.name = name;
+    this.begin = SysTime.min;
+    this.end = SysTime.min;
+    this.tests = tests;
+  }
 }
 
 /// A step result
@@ -428,115 +436,4 @@ unittest
   auto end = Clock.currTime + 1.msecs;
 
   result.length.should.equal(0);
-}
-
-
-/// The lifecycle listeners collections. You must use this instance in order
-/// to extend the runner. You can have as many listeners as you want. The only restriction
-/// is for ITestExecutor, which has no sense to have more than one instance for a run
-class LifeCycleListeners {
-
-  /// The global instange.
-  static LifeCycleListeners instance;
-
-  private {
-    ISuiteLifecycleListener[] suiteListeners;
-    ITestCaseLifecycleListener[] testListeners;
-    IStepLifecycleListener[] stepListeners;
-    ILifecycleListener[] lifecycleListeners;
-    ITestDiscovery[] testDiscoveryListeners;
-    ITestExecutor executor;
-  }
-
-  TestCase[] getTestCases() {
-    return testDiscoveryListeners.map!(a => a.getTestCases).join;
-  }
-
-  /// Add a listener to the collection
-  void add(T)(T listener) {
-    static if(!is(CommonType!(ISuiteLifecycleListener, T) == void)) {
-      suiteListeners ~= cast(ISuiteLifecycleListener) listener;
-    }
-
-    static if(!is(CommonType!(ITestCaseLifecycleListener, T) == void)) {
-      testListeners ~= cast(ITestCaseLifecycleListener) listener;
-    }
-
-    static if(!is(CommonType!(IStepLifecycleListener, T) == void)) {
-      stepListeners ~= cast(IStepLifecycleListener) listener;
-    }
-
-    static if(!is(CommonType!(ILifecycleListener, T) == void)) {
-      lifecycleListeners ~= cast(ILifecycleListener) listener;
-    }
-
-    static if(!is(CommonType!(ITestExecutor, T) == void)) {
-      executor = cast(ITestExecutor) listener;
-    }
-
-    static if(!is(CommonType!(ITestDiscovery, T) == void)) {
-      testDiscoveryListeners ~= cast(ITestDiscovery) listener;
-    }
-  }
-
-  /// send the update event to all listeners
-  void update() {
-    lifecycleListeners.each!(a => a.update());
-  }
-
-  /// send the begin run event to all listeners
-  void begin(ulong testCount) {
-    lifecycleListeners.each!(a => a.begin(testCount));
-  }
-
-  /// send the end runer event to all listeners
-  void end(SuiteResult[] result) {
-    lifecycleListeners.each!(a => a.end(result));
-  }
-
-  /// send the begin suite event to all listeners
-  void begin(ref SuiteResult suite) {
-    suiteListeners.each!(a => a.begin(suite));
-  }
-
-  /// send the end suite event to all listeners
-  void end(ref SuiteResult suite) {
-    suiteListeners.each!(a => a.end(suite));
-  }
-
-  /// send the begin test event to all listeners
-  void begin(string suite, ref TestResult test) {
-    testListeners.each!(a => a.begin(suite, test));
-  }
-
-  /// send the end test event to all listeners
-  void end(string suite, ref TestResult test) {
-    testListeners.each!(a => a.end(suite, test));
-  }
-
-
-  /// send the begin step event to all listeners
-  void begin(string suite, string test, ref StepResult step) {
-    stepListeners.each!(a => a.begin(suite, test, step));
-  }
-
-  /// send the end step event to all listeners
-  void end(string suite, string test, ref StepResult step) {
-    stepListeners.each!(a => a.end(suite, test, step));
-  }
-
-  /// send the execute test to the executor listener
-  SuiteResult[] execute(ref TestCase func) {
-    return executor.execute(func);
-  }
-
-  /// send the begin execution with the test case list to the executor listener
-  SuiteResult[] beginExecution(ref TestCase[] tests) {
-    return executor.beginExecution(tests);
-  }
-
-  /// send the end execution the executor listener
-  SuiteResult[] endExecution() {
-    return executor.endExecution();
-  }
 }
