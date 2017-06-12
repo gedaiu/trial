@@ -49,7 +49,7 @@ string getModuleName(string fileName) {
 Settings readSettings(Path root) {
 	string path = (root ~ Path("trial.json")).to!string;
 
-	if(!"trial.json".exists) {
+	if(!path.exists) {
 		Settings def;
 		std.file.write(path, def.serializeToJson.toPrettyString);
 	}
