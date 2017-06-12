@@ -10,7 +10,7 @@ import dub.internal.vibecompat.core.log;
 
 import trial.settings;
 
-string generateDiscoveries(string[] discoveries, string[] modules, bool hasTrialDependency) {
+string generateDiscoveries(string[] discoveries, string[2][] modules, bool hasTrialDependency) {
   string code;
 
   uint index;
@@ -23,7 +23,11 @@ string generateDiscoveries(string[] discoveries, string[] modules, bool hasTrial
     }
 
     code ~= "      auto testDiscovery" ~ index.to!string ~ " = new " ~ cls ~ ";\n";
-    code ~= modules.map!(a => `      testDiscovery` ~ index.to!string ~ `.addModule!"` ~ a ~ `";`).join("\n");
+    
+    foreach(m; modules) {
+      code ~= `      testDiscovery` ~ index.to!string ~ `.addModule!("` ~ m[0] ~ `", "` ~ m[1] ~ `");` ~ "\n";
+    }
+    
     code ~= "\n      LifeCycleListeners.instance.add(testDiscovery" ~ index.to!string ~ ");\n\n";
     index++;
   }
@@ -31,7 +35,7 @@ string generateDiscoveries(string[] discoveries, string[] modules, bool hasTrial
   return code;
 }
 
-string generateTestFile(Settings settings, bool hasTrialDependency, string[] modules, string[] externalModules, string testName = "") {
+string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] modules, string[] externalModules, string testName = "") {
   testName = testName.replace(`"`, `\"`);
 
   if(testName != "") {

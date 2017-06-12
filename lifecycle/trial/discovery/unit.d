@@ -12,6 +12,7 @@ import std.string;
 import std.traits;
 import std.conv;
 import std.array;
+import std.file;
 import std.algorithm;
 
 import trial.interfaces;
@@ -24,15 +25,16 @@ class UnitTestDiscovery : ITestDiscovery{
 		return testCases.values.map!(a => a.values).joiner.array;
 	}
 
-	void addModule(string name)()
+	void addModule(string file, string moduleName)()
 	{
-		mixin("import " ~ name ~ ";");
-		mixin("discover!(`" ~ name ~ "`, " ~ name ~ ")();");
+		mixin("import " ~ moduleName ~ ";");
+		mixin("discover!(`" ~ file ~ "`, `" ~ moduleName ~ "`, " ~ moduleName ~ ")();");
 	}
 
 	private {
-		string testName(alias test)() {
-			string name = test.stringof.to!string;
+		string testName(alias test)(ref string[] lines) {
+			string defaultName = test.stringof.to!string;
+			string name = defaultName;
 
 			foreach (att; __traits(getAttributes, test)) {
 				static if (is(typeof(att) == string)) {
@@ -40,21 +42,33 @@ class UnitTestDiscovery : ITestDiscovery{
 				}
 			}
 
+			enum key = "__unittestL";
+			enum len = key.length;
+
+			if(name == defaultName && name.indexOf(key) == 0) {
+				auto postFix = name[len..$];
+				try {
+					auto line = postFix[0..postFix.indexOf("_")].to!long;
+					name = lines[line - 2];
+				} catch(Exception e) {}
+			}
+
 			return name;
 		}
 
-		auto addTestCases(alias moduleName, composite...)() if (composite.length == 1 && isUnitTestContainer!(composite))
-		{
+		auto addTestCases(string file, alias moduleName, composite...)() if (composite.length == 1 && isUnitTestContainer!(composite))
+		{	
+			string[] lines = file.readText.split("\n");
 			foreach (test; __traits(getUnitTests, composite)) {
-				testCases[moduleName][test.mangleof] = TestCase(moduleName, testName!test, {
+				testCases[moduleName][test.mangleof] = TestCase(moduleName, testName!(test)(lines), {
 					test();
 				});
 			}
 		}
 
-		void discover(alias moduleName, composite...)() if (composite.length == 1 && isUnitTestContainer!(composite))
+		void discover(string file, alias moduleName, composite...)() if (composite.length == 1 && isUnitTestContainer!(composite))
 		{
-			addTestCases!(moduleName, composite);
+			addTestCases!(file, moduleName, composite);
 
 			static if (isUnitTestContainer!composite) {
 				foreach (member; __traits(allMembers, composite)) {
@@ -67,7 +81,7 @@ class UnitTestDiscovery : ITestDiscovery{
 					{
 						if (__traits(getMember, composite, member).mangleof !in testCases)
 						{
-							discover!(moduleName, __traits(getMember, composite, member))();
+							discover!(file, moduleName, __traits(getMember, composite, member))();
 						}
 					}
 				}
@@ -148,10 +162,11 @@ unittest
 {
 	auto testDiscovery = new UnitTestDiscovery;
 
-	testDiscovery.addModule!("trial.discovery.unit");
+	testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
 
 	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
 	testDiscovery.testCases["trial.discovery.unit"].keys.length.should.equal(1);
-
-	testDiscovery.testCases["trial.discovery.unit"].keys.writeln;
+	
+	auto key = testDiscovery.testCases["trial.discovery.unit"].keys[0];
+	testDiscovery.testCases["trial.discovery.unit"][key].name.should.equal("It should find this test");
 }
