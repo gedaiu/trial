@@ -14,8 +14,172 @@ import std.conv;
 import std.array;
 import std.file;
 import std.algorithm;
+import std.range;
+import std.typecons;
 
 import trial.interfaces;
+
+enum CommentType {
+	none,
+	begin,
+	end,
+	comment
+}
+
+CommentType commentType(T)(T line) {
+	if(line.length < 2) {
+		return CommentType.none;
+	}
+
+	if(line[0..2] == "//") {
+		return CommentType.comment;
+	}
+
+	if(line[0..2] == "/+" || line[0..2] == "/*") {
+		return CommentType.begin;
+	}
+
+	if(line.indexOf("+/") != -1 || line.indexOf("*/") != -1) {
+		return CommentType.end;
+	}
+
+	return CommentType.none;
+}
+
+@("It should group comments")
+unittest {
+	string comments = "//line 1
+	// line 2
+
+	//// other line
+	
+	/** line 3
+	line 4 ****/
+
+	//// other line
+
+	/++ line 5
+	line 6
+	+++/";
+
+	auto results = comments.compressComments;
+	
+	results.length.should.equal(5);
+	results[0].value.should.equal("line 1 line 2");	
+	results[1].value.should.equal("other line");	
+	results[2].value.should.equal("line 3 line 4");	
+	results[3].value.should.equal("other line");	
+	results[4].value.should.equal("line 5 line 6");
+
+	results[0].line.should.equal(2);	
+	results[1].line.should.equal(4);	
+	results[2].line.should.equal(7);	
+	results[3].line.should.equal(9);	
+	results[4].line.should.equal(13);
+}
+
+struct Comment {
+	ulong line;
+	string value;
+}
+
+Comment[] commentGroupToString(T)(T group) {
+	if(group.front[1] == CommentType.comment) {
+		auto slice = group.until!(a => a[1] != CommentType.comment).array;
+
+		string value = slice
+			.map!(a => a[2].stripLeft('/').array.to!string)
+			.map!(a => a.strip)
+			.join(' ')
+			.array.to!string;
+		
+		return [ Comment(slice[slice.length - 1][0], value) ];
+	}
+
+	if(group.front[1] == CommentType.begin) {
+		auto ch = group.front[2][1];
+		auto slice = group
+			.map!(a => Tuple!(int, CommentType, immutable(char), string)(a[0], a[1], a[2][1], a[2]))
+			.until!(a => a[1] == CommentType.end && a[2] == ch)(No.openRight).array;
+
+		string value = slice
+			.map!(a => a[3].strip)
+			.map!(a => a.stripLeft('/').stripLeft(ch).array.to!string)
+			.map!(a => a.strip)
+			.join(' ')
+			.until(ch ~ "/")
+			.array
+			.stripRight('/')
+			.stripRight(ch)
+			.strip
+			.to!string;
+
+		return [ Comment(slice[slice.length - 1][0], value) ];
+	}
+
+	return [];
+}
+
+bool connects(T)(T a, T b) {
+	auto items = a[0] < b[0] ? [a, b] : [b, a];
+
+	if(items[1][0] - items[0][0] != 1) {
+		return false;
+	}
+
+	if(a[1] == b[1]) {
+		return true;
+	}
+
+	if(items[0][1] != CommentType.end && items[1][1] != CommentType.begin) {
+		return true;
+	}
+
+	return false;
+}
+
+@("check comment types")
+unittest
+{
+	"".commentType.should.equal(CommentType.none);
+	"some".commentType.should.equal(CommentType.none);
+	"//some".commentType.should.equal(CommentType.comment);
+	"/+some".commentType.should.equal(CommentType.begin);
+	"/*some".commentType.should.equal(CommentType.begin);
+	"some+/some".commentType.should.equal(CommentType.end);
+	"some*/some".commentType.should.equal(CommentType.end);
+}
+
+auto compressComments(string code) 
+{
+	Comment[] result;
+
+	auto lines = code
+		.splitter("\n")
+		.map!(a => a.strip)
+		.enumerate(1)
+		.map!(a => Tuple!(int, CommentType, string)(a[0], a[1].commentType, a[1]))
+		.filter!(a => a[2] != "")
+			.array;
+
+	auto tmp = [ lines[0] ];
+	auto prev = lines[0];
+
+	foreach(line; lines[1..$]) {
+		if(tmp.length == 0 || line.connects(tmp[tmp.length - 1])) {
+			tmp ~= line;
+		} else {
+			result ~= tmp.commentGroupToString;
+			tmp = [ line ];
+		}
+	}
+
+	if(tmp.length > 0) {
+		result ~= tmp.commentGroupToString;
+	}
+
+	return result;
+}
 
 /// The default test discovery looks for unit test sections and groups them by module
 class UnitTestDiscovery : ITestDiscovery{
@@ -42,15 +206,21 @@ class UnitTestDiscovery : ITestDiscovery{
 				}
 			}
 
-			enum key = "__unittestL";
+			enum key = "__un" ~ "ittestL";
 			enum len = key.length;
 
 			if(name == defaultName && name.indexOf(key) == 0) {
-				auto postFix = name[len..$];
 				try {
-					auto line = postFix[0..postFix.indexOf("_")].to!long;
-					name = lines[line - 2];
-				} catch(Exception e) {}
+					auto postFix = name[len..$];
+					auto idx = postFix.indexOf("_");
+					if(idx != -1) {
+						auto line = postFix[0..idx].to!long;
+
+						if(line < lines.length) {
+							name = lines[line - 2];
+						}
+					}
+				} catch(Exception e) { }
 			}
 
 			return name;
