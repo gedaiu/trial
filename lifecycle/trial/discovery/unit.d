@@ -60,16 +60,22 @@ unittest {
 
 	/++ line 5
 	line 6
-	+++/";
+	+++/
+	
+	/** line 7
+   *
+   * line 8
+   */";
 
 	auto results = comments.compressComments;
 	
-	results.length.should.equal(5);
+	results.length.should.equal(6);
 	results[0].value.should.equal("line 1 line 2");	
 	results[1].value.should.equal("other line");	
 	results[2].value.should.equal("line 3 line 4");	
 	results[3].value.should.equal("other line");	
 	results[4].value.should.equal("line 5 line 6");
+	results[5].value.should.equal("line 7  line 8");
 
 	results[0].line.should.equal(2);	
 	results[1].line.should.equal(4);	
@@ -99,7 +105,7 @@ Comment[] commentGroupToString(T)(T group) {
 	if(group.front[1] == CommentType.begin) {
 		auto ch = group.front[2][1];
 		auto slice = group
-			.map!(a => Tuple!(int, CommentType, immutable(char), string)(a[0], a[1], a[2][1], a[2]))
+			.map!(a => Tuple!(int, CommentType, immutable(char), string)(a[0], a[1], a[2].length > 2 ? a[2][1] : ' ', a[2]))
 			.until!(a => a[1] == CommentType.end && a[2] == ch)(No.openRight).array;
 
 		string value = slice
@@ -118,6 +124,12 @@ Comment[] commentGroupToString(T)(T group) {
 	}
 
 	return [];
+}
+
+string getComment(const Comment[] comments, const ulong line, const string defaultValue) pure {
+	auto r = comments.filter!(a => (line - a.line) < 3);
+
+	return r.empty ? defaultValue : r.front.value;
 }
 
 bool connects(T)(T a, T b) {
@@ -196,7 +208,7 @@ class UnitTestDiscovery : ITestDiscovery{
 	}
 
 	private {
-		string testName(alias test)(ref string[] lines) {
+		string testName(alias test)(ref Comment[] comments) {
 			string defaultName = test.stringof.to!string;
 			string name = defaultName;
 
@@ -215,10 +227,7 @@ class UnitTestDiscovery : ITestDiscovery{
 					auto idx = postFix.indexOf("_");
 					if(idx != -1) {
 						auto line = postFix[0..idx].to!long;
-
-						if(line < lines.length) {
-							name = lines[line - 2];
-						}
+						name = comments.getComment(line, defaultName);
 					}
 				} catch(Exception e) { }
 			}
@@ -228,9 +237,10 @@ class UnitTestDiscovery : ITestDiscovery{
 
 		auto addTestCases(string file, alias moduleName, composite...)() if (composite.length == 1 && isUnitTestContainer!(composite))
 		{	
-			string[] lines = file.readText.split("\n");
+			Comment[] comments = file.readText.compressComments;
+
 			foreach (test; __traits(getUnitTests, composite)) {
-				testCases[moduleName][test.mangleof] = TestCase(moduleName, testName!(test)(lines), {
+				testCases[moduleName][test.mangleof] = TestCase(moduleName, testName!(test)(comments), {
 					test();
 				});
 			}
@@ -335,8 +345,6 @@ unittest
 	testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
 
 	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
-	testDiscovery.testCases["trial.discovery.unit"].keys.length.should.equal(1);
-	
-	auto key = testDiscovery.testCases["trial.discovery.unit"].keys[0];
-	testDiscovery.testCases["trial.discovery.unit"][key].name.should.equal("It should find this test");
+
+	testDiscovery.testCases["trial.discovery.unit"].values.map!"a.name".should.contain("It should find this test");
 }
