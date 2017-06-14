@@ -117,7 +117,37 @@ auto runTests(string testName = "") {
   return runTests(LifeCycleListeners.instance.getTestCases, testName);
 }
 
+/// Check if a suite result list is a success
+bool isSuccess(SuiteResult[] results) {
+  return results.map!(a => a.tests).joiner.map!(a => a.status).all!(a => a == TestResult.Status.success);
+}
 
+version(unittest) {
+  import fluent.asserts;
+}
+
+/// It should return true for an empty result
+unittest {
+  [].isSuccess.should.equal(true);
+}
+
+/// It should return true if all the tests succeded
+unittest {
+  SuiteResult[] results = [ SuiteResult("") ];
+  results[0].tests = [ new TestResult("") ];
+  results[0].tests[0].status = TestResult.Status.success;
+
+  results.isSuccess.should.equal(true);
+}
+
+/// It should return false if one the tests failed
+unittest {
+  SuiteResult[] results = [ SuiteResult("") ];
+  results[0].tests = [ new TestResult("") ];
+  results[0].tests[0].status = TestResult.Status.failure;
+
+  results.isSuccess.should.equal(false);
+}
 
 /// The lifecycle listeners collections. You must use this instance in order
 /// to extend the runner. You can have as many listeners as you want. The only restriction

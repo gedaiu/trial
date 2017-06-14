@@ -90,7 +90,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   }
 
   code ~= `
-  void main() {
+  int main() {
       setupLifecycle(` ~ settings.toCode ~ `);` ~ "\n\n";
 
   if(hasTrialDependency) {
@@ -104,7 +104,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   code ~= generateDiscoveries(settings.testDiscovery, modules, hasTrialDependency);
 
   code ~= `
-      runTests("` ~ testName ~ `");
+      return runTests("` ~ testName ~ `").isSuccess ? 0 : 1;
   }
 
   version (unittest) shared static this()
