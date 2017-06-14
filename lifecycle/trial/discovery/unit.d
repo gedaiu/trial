@@ -89,7 +89,7 @@ struct Comment {
 	string value;
 }
 
-Comment[] commentGroupToString(T)(T group) {
+Comment[] commentGroupToString(T)(T[] group) {
 	if(group.front[1] == CommentType.comment) {
 		auto slice = group.until!(a => a[1] != CommentType.comment).array;
 
@@ -104,9 +104,21 @@ Comment[] commentGroupToString(T)(T group) {
 
 	if(group.front[1] == CommentType.begin) {
 		auto ch = group.front[2][1];
+		auto index = 0;
+
+		auto newGroup = group
+		.map!(a => Tuple!(int, CommentType, immutable(char), string)(a[0], a[1], a[2].length > 2 ? a[2][1] : ' ', a[2])).array;
+
+		foreach(item; newGroup) {
+			index++;
+			if(item[1] == CommentType.end && item[2] == ch) {
+				break;
+			}
+		}
+
 		auto slice = group
 			.map!(a => Tuple!(int, CommentType, immutable(char), string)(a[0], a[1], a[2].length > 2 ? a[2][1] : ' ', a[2]))
-			.until!(a => a[1] == CommentType.end && a[2] == ch)(No.openRight).array;
+			.take(index);
 
 		string value = slice
 			.map!(a => a[3].strip)
