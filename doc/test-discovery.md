@@ -35,7 +35,7 @@ the test with a string [UDA](http://dlang.org/spec/attribute.html#uda) that stri
 
 If you want to write your custom TestDiscovery, your class must implement
 the (ITestDiscovery)[http://trial.szabobogdan.com/api/trial/interfaces/ITestDiscovery.html] interface and 
-the `void addModule(string name)()` method which will be called by the runner to help you to search inside modules.
+the `void addModule(string file, string name)()` method which will be called by the runner to help you to search inside modules.
 
 At the compile time, the runner will generate a code similar to this:
 
@@ -43,10 +43,10 @@ At the compile time, the runner will generate a code similar to this:
 void main() {
     ...
 
-    auto testDiscovery0 = new UnitTestDiscovery;
+    auto testDiscovery0 = new UnitTestDiscovery;8
 
-    testDiscovery0.addModule!"some.module";
-    testDiscovery0.addModule!"other.module";
+    testDiscovery0.addModule!("/Users/doe/project/some/module.d", "some.module");
+    testDiscovery0.addModule!("/Users/doe/project/other/module.d", "other.module");
 
     LifeCycleListeners.instance.add(testDiscovery0);
 

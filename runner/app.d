@@ -117,7 +117,7 @@ class PackageDescription : PackageBuildCommand {
 		return this.desc.targets;
 	}
 
-	string[] modules() {
+	auto modules() {
 		logInfo("Looking for files inside `" ~ rootPackage ~ "`");
 
 		auto currentPackage = this.desc.packages
@@ -127,15 +127,16 @@ class PackageDescription : PackageBuildCommand {
 		auto packagePath = currentPackage.path;
 
 		if(neededTarget.empty) {
-			return [];
+			string[2][] val;
+			return val;
 		}
 
 		return neededTarget.front.buildSettings.sourceFiles
 			.map!(a => a.to!string)
 			.filter!(a => a.startsWith(packagePath))
-			.map!(a => getModuleName(a))
-			.filter!(a => a != "")
-				.array;
+			.map!(a => [a, getModuleName(a)])
+			.filter!(a => a[1] != "")
+				.array.to!(string[2][]);
 	}
 
 	string[] externalModules() {
@@ -163,6 +164,14 @@ class PackageDescription : PackageBuildCommand {
 
 	override int execute(Dub dub, string[] free_args, string[] app_args) {
 		assert(false);
+	}
+
+	void writeTestFile(string content) {
+		std.file.write(mainFile, content);
+	}
+
+	string mainFile() {
+		return (dub.rootPath ~ Path("generated.d")).to!string;
 	}
 }
 
@@ -214,7 +223,7 @@ version(unitttest) {} else {
 		auto subPackage = arguments.find!(a => a[0] == ':');
 		auto subPackageName = subPackage.empty ? "" : subPackage.front;
 
-		arguments = arguments.filter!(a => a.indexOf("--main-file=") != 0).array ~ ["--main-file=generated.d"];
+		arguments = arguments.filter!(a => a.indexOf("--main-file=") != 0).array;
 		auto options = parseGeneralOptions(arguments);
 		auto commandArgs = new CommandArgs(arguments);
 
@@ -228,8 +237,12 @@ version(unitttest) {} else {
 		auto externalModules = description.externalModules;
 		auto hasTrialDependency = description.hasTrial;
 
-		std.file.write((dub.rootPath ~ Path("generated.d")).to!string, generateTestFile(settings, hasTrialDependency, modules, externalModules, testName));
+		logInfo("Generate main file: " ~ description.mainFile);
+		description.writeTestFile(generateTestFile(settings, hasTrialDependency, modules, externalModules, testName));
+		arguments ~= ["--main-file=" ~ description.mainFile];
 
+		options = parseGeneralOptions(arguments);
+		commandArgs = new CommandArgs(arguments); 
 		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
 
 		auto cmd = new TestCommand;

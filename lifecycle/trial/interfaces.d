@@ -30,6 +30,7 @@ interface ILifecycleListener
   void end(SuiteResult[]);
 }
 
+/// A listener that provides test cases to be executed
 interface ITestDiscovery {
   TestCase[] getTestCases();
 }
