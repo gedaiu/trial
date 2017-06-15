@@ -15,6 +15,7 @@ import std.string;
 import std.algorithm;
 import std.file;
 import std.uuid;
+import std.range;
 
 import trial.interfaces;
 import trial.reporters.writer;
@@ -169,6 +170,7 @@ struct AllureTestXml {
     }
   }
 
+  /// Return the string representation of the test
   string toString() {
     auto epoch = SysTime.fromUnixTime(0);
     auto start = (result.begin - epoch).total!"msecs";
@@ -182,6 +184,12 @@ struct AllureTestXml {
                 <message>` ~ result.throwable.msg.escape ~ `</message>
                 <stack-trace>` ~ result.throwable.to!string.escape ~ `</stack-trace>
             </failure>` ~ "\n";
+    }
+
+    if(result.steps.length > 0) {
+      xml ~= "            <steps>\n";
+      xml ~= result.steps.map!(a => AllureStepXml(a, 14)).map!(a => a.to!string).array.join('\n') ~ "\n";
+      xml ~= "            </steps>\n";
     }
 
     xml ~= `        </test-case>`;
@@ -209,8 +217,11 @@ unittest
 }
 
 @("AllureTestXml should transform a failing test")
-unittest 
+unittest
 {
+  import trial.step;
+
+  Step("prepare the test data");
   auto epoch = SysTime.fromUnixTime(0);
   TestResult result = new TestResult("Test");
   result.begin = Clock.currTime;
@@ -218,8 +229,10 @@ unittest
   result.status = TestResult.Status.failure;
   result.throwable = new Exception("message");
 
+  Step("create the report listener");
   auto allure = AllureTestXml(result);
 
+  Step("perform checks");
   allure.toString.should.equal(
 `        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="failed">
             <name>Test</name>
@@ -228,4 +241,117 @@ unittest
                 <stack-trace>object.Exception@lifecycle/trial/reporters/allure.d(` ~ result.throwable.line.to!string ~ `): message</stack-trace>
             </failure>
         </test-case>`);
+}
+
+
+@("AllureTestXml should transform a test with steps")
+unittest 
+{
+  auto epoch = SysTime.fromUnixTime(0);
+
+  TestResult result = new TestResult("Test");
+  result.begin = Clock.currTime;
+  result.end = Clock.currTime;
+  result.status = TestResult.Status.success;
+
+  StepResult step = new StepResult();
+  step.name = "some step";
+  step.begin = result.begin;
+  step.end = result.end;
+
+  result.steps = [step, step];
+
+  auto allure = AllureTestXml(result);
+
+  allure.toString.should.equal(
+`        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
+            <name>Test</name>
+            <steps>
+                <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
+                  <name>some step</name>
+                </step>
+                <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
+                  <name>some step</name>
+                </step>
+            </steps>
+        </test-case>`);
+}
+
+struct AllureStepXml {
+  private {
+    StepResult step;
+    ulong indent;
+  }
+
+  this(StepResult step, ulong indent = 0) {
+    this.step = step;
+    this.indent = indent;
+  }
+
+  /// Return the string representation of the step
+  string toString() {
+    auto epoch = SysTime.fromUnixTime(0);
+    const spaces = "  " ~ (" ".repeat(indent).array.join());
+    string result = spaces ~ `<step start="` ~ (step.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (step.end - epoch).total!"msecs".to!string ~ `" status="passed">` ~ "\n" ~
+    spaces ~ `  <name>` ~ step.name.escape ~ `</name>` ~ "\n";
+    
+    if(step.steps.length > 0) {
+      result ~= spaces ~ "  <steps>\n";
+      result ~= step.steps.map!(a => AllureStepXml(a, indent + 6)).map!(a => a.to!string).array.join('\n') ~ "\n";
+      result ~= spaces ~ "  </steps>\n";
+    }
+
+    result ~= spaces ~ `</step>`;
+
+    return result;
+  }
+}
+
+@("AllureStepXml should transform a step")
+unittest
+{
+  auto epoch = SysTime.fromUnixTime(0);
+  StepResult result = new StepResult();
+  result.name = "step";
+  result.begin = Clock.currTime;
+  result.end = Clock.currTime;
+
+  auto allure = AllureStepXml(result);
+
+  allure.toString.should.equal(
+  `  <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
+    <name>step</name>
+  </step>`);
+}
+
+@("AllureStepXml should transform nested steps")
+unittest
+{
+  auto epoch = SysTime.fromUnixTime(0);
+  StepResult result = new StepResult();
+  result.name = "step";
+  result.begin = Clock.currTime;
+  result.end = Clock.currTime;
+
+  StepResult step = new StepResult();
+  step.name = "some step";
+  step.begin = result.begin;
+  step.end = result.end;
+
+  result.steps = [ step, step ];
+
+  auto allure = AllureStepXml(result);
+
+  allure.toString.should.equal(
+  `  <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
+    <name>step</name>
+    <steps>
+        <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
+          <name>some step</name>
+        </step>
+        <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
+          <name>some step</name>
+        </step>
+    </steps>
+  </step>`);
 }
