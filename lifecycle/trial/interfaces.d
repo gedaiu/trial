@@ -43,10 +43,10 @@ three methods are concatenated and passed to `ILifecycleListener.end(SuiteResult
 interface ITestExecutor
 {
   /// Called before all tests were discovered and they are ready to be executed
-  SuiteResult[] beginExecution(ref TestCase[]);
+  SuiteResult[] beginExecution(ref const(TestCase)[]);
 
   /// Run a particullary test case
-  SuiteResult[] execute(ref TestCase);
+  SuiteResult[] execute(ref const(TestCase));
 
   /// Called when there is no more test to be executed
   SuiteResult[] endExecution();
@@ -99,6 +99,37 @@ struct TestCase
    In case of failure, an exception is thrown.
   */
   TestCaseFunction func;
+
+  /**
+    A list of labels that will be added to the final report
+  */
+  string[string] labels;
+
+  ///
+  this(const TestCase testCase) {
+    suiteName = testCase.suiteName.dup;
+    name = testCase.name.dup;
+    func = testCase.func;
+
+    foreach(key, val; testCase.labels) {
+      labels[key] = val;
+    }
+  }
+
+  ///
+  this(string suiteName, string name, TestCaseFunction func) {
+    this.suiteName = suiteName;
+    this.name = name;
+    this.func = func;
+  }
+
+  ///
+  this(string suiteName, string name, TestCaseFunction func, string[string] labels) {
+    this.suiteName = suiteName;
+    this.name = name;
+    this.func = func;
+    this.labels = labels;
+  }
 }
 
 /// A suite result
@@ -191,6 +222,11 @@ class TestResult : StepResult
   Status status = Status.created;
 
   /**
+    A list of labels that will be added to the final report
+  */
+  string[string] labels;
+
+  /**
    The reason why a test has failed. This value must be set only if the tests has the
    `failure` state
    */
@@ -244,6 +280,12 @@ version (unittest)
       stepFunction(i);
     }
   }
+}
+
+/// Convert a test case to test result
+unittest {
+  auto testCase = TestCase("Suite name", "test name", &stepMock, [ "label": "value" ]);
+
 }
 
 @("A suite runner should run a success test case and add it to the result")
@@ -377,7 +419,7 @@ unittest
   LifeCycleListeners.instance = new LifeCycleListeners;
   LifeCycleListeners.instance.add(new DefaultExecutor);
 
-  auto result = [test].runTests;
+  auto result = [ test ].runTests;
 
   result[0].tests[0].steps.length.should.equal(1);
   result[0].tests[0].steps[0].name.should.equal("some step");

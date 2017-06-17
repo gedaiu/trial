@@ -48,7 +48,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
   }
 
   /// It does nothing
-  SuiteResult[] beginExecution(ref TestCase[])
+  SuiteResult[] beginExecution(ref const(TestCase)[])
   {
     return [];
   }
@@ -68,7 +68,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
 
   private
   {
-    void createTestResult(TestCase testCase)
+    void createTestResult(const(TestCase) testCase)
     {
       testResult = new TestResult(testCase.name);
       testResult.begin = Clock.currTime;
@@ -100,7 +100,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
   }
 
   /// Execute a test case
-  SuiteResult[] execute(ref TestCase testCase)
+  SuiteResult[] execute(ref const(TestCase) testCase)
   {
     SuiteResult[] result;
     LifeCycleListeners.instance.update();

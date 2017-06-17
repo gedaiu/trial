@@ -97,7 +97,7 @@ void addReporter(string name) {
 }
 
 /// Runs the tests and returns the results
-auto runTests(TestCase[] tests, string testName = "") {
+auto runTests(const(TestCase)[] tests, string testName = "") {
   LifeCycleListeners.instance.begin(tests.length);
 
   SuiteResult[] results = LifeCycleListeners.instance.beginExecution(tests);
@@ -249,12 +249,12 @@ class LifeCycleListeners {
   }
 
   /// send the execute test to the executor listener
-  SuiteResult[] execute(ref TestCase func) {
+  SuiteResult[] execute(ref const(TestCase) func) {
     return executor.execute(func);
   }
 
   /// send the begin execution with the test case list to the executor listener
-  SuiteResult[] beginExecution(ref TestCase[] tests) {
+  SuiteResult[] beginExecution(ref const(TestCase)[] tests) {
     return executor.beginExecution(tests);
   }
 

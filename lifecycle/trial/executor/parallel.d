@@ -58,11 +58,11 @@ class ThreadLifeCycleListener : LifeCycleListeners {
       assert(false, "You can not call `end` outside of the main thread");
     }
 
-    SuiteResult[] execute(ref TestCase) {
+    SuiteResult[] execute(ref const(TestCase)) {
       assert(false, "You can not call `execute` outside of the main thread");
     }
 
-    SuiteResult[] beginExecution(ref TestCase[]) {
+    SuiteResult[] beginExecution(ref const(TestCase)[]) {
       assert(false, "You can not call `beginExecution` outside of the main thread");
     }
 
@@ -328,13 +328,13 @@ class ParallelExecutor : ITestExecutor {
     }
   }
 
-  SuiteResult[] execute(ref TestCase testCase) {
+  SuiteResult[] execute(ref const(TestCase) testCase) {
     import std.parallelism;
 
     SuiteResult[] result;
 
     auto key = testCase.suiteName ~ "|" ~ testCase.name;
-    testCases[key] = testCase;
+    testCases[key] = TestCase(testCase);
 
     testCount++;
 
@@ -358,7 +358,7 @@ class ParallelExecutor : ITestExecutor {
     return result;
   }
 
-  SuiteResult[] beginExecution(ref TestCase[] tests) {
+  SuiteResult[] beginExecution(ref const(TestCase)[] tests) {
     foreach(test; tests) {
       auto const suite = test.suiteName;
       if(suite !in suiteStats) {
