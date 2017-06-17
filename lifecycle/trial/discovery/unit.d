@@ -247,14 +247,12 @@ class UnitTestDiscovery : ITestDiscovery{
 			return name;
 		}
 
-		string[string] testLabels(alias test)() {
-			string[string] labels;
+		Label[] testLabels(alias test)() {
+			Label[] labels;
 
 			foreach (attr; __traits(getAttributes, test)) {
 				static if (__traits(hasMember, attr, "labels")) {
-					foreach(name, value; attr.labels) {
-						labels[name] = value;
-					}
+					labels ~= attr.labels;
 				}
 			}
 
@@ -387,6 +385,22 @@ unittest {
 	auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(a => a.name.indexOf("flaky") != -1);
 
 	r.empty.should.equal(false).because("a flaky test is in this module");
-	r.front.labels.keys.should.equal(["status_details"]);
-	r.front.labels["status_details"].should.equal("flaky");
+	r.front.labels.map!(a => a.name).should.equal(["status_details"]);
+	r.front.labels[0].value.should.equal("flaky");
+}
+
+/// It should find this test with issues attributes
+@Issue("1") @Issue("2")
+unittest {
+	auto testDiscovery = new UnitTestDiscovery;
+
+	testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
+
+	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
+
+	auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(a => a.name.indexOf("issues") != -1);
+
+	r.empty.should.equal(false).because("an issue test is in this module");
+	r.front.labels.map!(a => a.name).should.equal(["issue", "issue"]);
+	r.front.labels.map!(a => a.value).should.equal(["1", "2"]);
 }

@@ -82,6 +82,11 @@ interface IStepLifecycleListener
   void end(string suite, string test, ref StepResult);
 }
 
+struct Label {
+  string name;
+  string value;
+}
+
 /// A test case that will be executed
 struct TestCase
 {
@@ -103,7 +108,7 @@ struct TestCase
   /**
     A list of labels that will be added to the final report
   */
-  string[string] labels;
+  Label[] labels;
 
   ///
   this(const TestCase testCase) {
@@ -124,7 +129,7 @@ struct TestCase
   }
 
   ///
-  this(string suiteName, string name, TestCaseFunction func, string[string] labels) {
+  this(string suiteName, string name, TestCaseFunction func, Label[] labels) {
     this.suiteName = suiteName;
     this.name = name;
     this.func = func;
@@ -138,10 +143,7 @@ TestResult toTestResult(const TestCase testCase) {
 
   testResult.begin = Clock.currTime;
   testResult.end = testResult.begin;
-
-  foreach(key, label; testCase.labels) {
-    testResult.labels[key] = label;
-  }
+  testResult.labels = testCase.labels.dup;
 
   return testResult;
 }
@@ -238,7 +240,7 @@ class TestResult : StepResult
   /**
     A list of labels that will be added to the final report
   */
-  string[string] labels;
+  Label[] labels;
 
   /**
    The reason why a test has failed. This value must be set only if the tests has the
@@ -298,12 +300,11 @@ version (unittest)
 
 /// Convert a test case to test result
 unittest {
-  auto testCase = TestCase("Suite name", "test name", &stepMock, [ "label": "value" ]);
+  auto testCase = TestCase("Suite name", "test name", &stepMock, [ Label("label", "value") ]);
   auto testResult = testCase.toTestResult;
 
   testResult.name.should.equal("test name");
-  testResult.labels.keys.should.equal(["label"]);
-  testResult.labels["label"].should.equal("value");
+  testResult.labels.should.equal([ Label("label", "value") ]);
   testResult.begin.should.be.greaterThan(Clock.currTime - 1.seconds);
   testResult.end.should.be.greaterThan(Clock.currTime - 1.seconds);
   testResult.status.should.equal(TestResult.Status.created);
@@ -507,7 +508,19 @@ unittest
 struct Flaky {
 
   /// Returns the labels that set the test a flaky
-  static string[string] labels() {
-    return ["status_details": "flaky"];
+  static Label[] labels() {
+    return [Label("status_details", "flaky")];
+  }
+}
+
+/// Attribute that links an issue to a test. Some test reporters can display links, so the value can be also
+/// a link.
+struct Issue {
+
+  private string name;
+
+  /// Returns the labels that set the issue label
+  Label[] labels() {
+    return [ Label("issue", name) ];
   }
 }

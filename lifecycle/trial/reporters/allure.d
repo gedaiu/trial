@@ -179,11 +179,11 @@ struct AllureTestXml {
     string xml = `        <test-case start="` ~ start.to!string ~ `" stop="` ~ stop.to!string ~ `" status="` ~ allureStatus ~ `">` ~ "\n";
     xml ~= `            <name>` ~ result.name.escape ~ `</name>` ~ "\n";
 
-    if(result.labels.keys.length > 0) {
+    if(result.labels.length > 0) {
       xml ~= "            <labels>\n";
 
-      foreach(name, value; result.labels) {
-        xml ~= "              <label name=\"" ~ name ~ "\" value=\"" ~ value ~ "\"/>\n";
+      foreach(label; result.labels) {
+        xml ~= "              <label name=\"" ~ label.name ~ "\" value=\"" ~ label.value ~ "\"/>\n";
       }
 
       xml ~= "            </labels>\n";
@@ -295,7 +295,7 @@ unittest
   result.begin = Clock.currTime;
   result.end = Clock.currTime;
   result.status = TestResult.Status.success;
-  result.labels["status_details"] = "flaky";
+  result.labels ~= Label("status_details", "flaky");
 
   auto allure = AllureTestXml(result);
 
