@@ -1,5 +1,3 @@
-# Trial
-
 [![Build Status](https://travis-ci.org/gedaiu/trial.svg?branch=master)](https://travis-ci.org/gedaiu/trial)
 [![DUB Version](https://img.shields.io/dub/v/trial.svg)](https://code.dlang.org/packages/trial)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/gedaiu/trial.svg)](http://isitmaintained.com/project/gedaiu/trial "Percentage of issues still open")
