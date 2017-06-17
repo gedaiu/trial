@@ -132,6 +132,20 @@ struct TestCase
   }
 }
 
+///
+TestResult toTestResult(const TestCase testCase) {
+  auto testResult = new TestResult(testCase.name.dup);
+
+  testResult.begin = Clock.currTime;
+  testResult.end = testResult.begin;
+
+  foreach(key, label; testCase.labels) {
+    testResult.labels[key] = label;
+  }
+
+  return testResult;
+}
+
 /// A suite result
 struct SuiteResult
 {
@@ -275,7 +289,7 @@ version (unittest)
     auto a = Step("some step");
     executed = true;
 
-    for (int i = 0; i < 3; i++)
+    for (int i; i < 3; i++)
     {
       stepFunction(i);
     }
@@ -285,7 +299,14 @@ version (unittest)
 /// Convert a test case to test result
 unittest {
   auto testCase = TestCase("Suite name", "test name", &stepMock, [ "label": "value" ]);
+  auto testResult = testCase.toTestResult;
 
+  testResult.name.should.equal("test name");
+  testResult.labels.keys.should.equal(["label"]);
+  testResult.labels["label"].should.equal("value");
+  testResult.begin.should.be.greaterThan(Clock.currTime - 1.seconds);
+  testResult.end.should.be.greaterThan(Clock.currTime - 1.seconds);
+  testResult.status.should.equal(TestResult.Status.created);
 }
 
 @("A suite runner should run a success test case and add it to the result")

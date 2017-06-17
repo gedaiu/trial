@@ -528,7 +528,7 @@ unittest
   results.length.should.equal(1);
   results[0].tests.length.should.equal(3);
 
-  (results[0].end - results[0].begin).should.be.between(200.msecs, 220.msecs);
+  (results[0].end - results[0].begin).should.be.between(200.msecs, 250.msecs);
 }
 
 @("A parallel executor should call the events in the right order")

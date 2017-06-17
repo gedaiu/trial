@@ -70,9 +70,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
   {
     void createTestResult(const(TestCase) testCase)
     {
-      testResult = new TestResult(testCase.name);
-      testResult.begin = Clock.currTime;
-      testResult.end = Clock.currTime;
+      testResult = testCase.toTestResult;
       testResult.status = TestResult.Status.started;
       currentStep = testResult;
 

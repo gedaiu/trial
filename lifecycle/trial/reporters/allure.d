@@ -179,6 +179,16 @@ struct AllureTestXml {
     string xml = `        <test-case start="` ~ start.to!string ~ `" stop="` ~ stop.to!string ~ `" status="` ~ allureStatus ~ `">` ~ "\n";
     xml ~= `            <name>` ~ result.name.escape ~ `</name>` ~ "\n";
 
+    if(result.labels.keys.length > 0) {
+      xml ~= "            <labels>\n";
+
+      foreach(name, value; result.labels) {
+        xml ~= "              <label name=\"" ~ name ~ "\" value=\"" ~ value ~ "\"/>\n";
+      }
+
+      xml ~= "            </labels>\n";
+    }
+
     if(result.throwable !is null) {
       xml ~= `            <failure>
                 <message>` ~ result.throwable.msg.escape ~ `</message>
@@ -243,8 +253,7 @@ unittest
         </test-case>`);
 }
 
-
-@("AllureTestXml should transform a test with steps")
+/// AllureTestXml should transform a test with steps
 unittest 
 {
   auto epoch = SysTime.fromUnixTime(0);
@@ -274,6 +283,28 @@ unittest
                   <name>some step</name>
                 </step>
             </steps>
+        </test-case>`);
+}
+
+/// AllureTestXml should transform a test with labels
+unittest 
+{
+  auto epoch = SysTime.fromUnixTime(0);
+
+  TestResult result = new TestResult("Test");
+  result.begin = Clock.currTime;
+  result.end = Clock.currTime;
+  result.status = TestResult.Status.success;
+  result.labels["status_details"] = "flaky";
+
+  auto allure = AllureTestXml(result);
+
+  allure.toString.should.equal(
+`        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
+            <name>Test</name>
+            <labels>
+              <label name="status_details" value="flaky"/>
+            </labels>
         </test-case>`);
 }
 
