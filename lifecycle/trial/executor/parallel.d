@@ -509,7 +509,7 @@ unittest
   results.length.should.equal(1);
   results[0].tests.length.should.equal(3);
 
-  (results[0].end - results[0].begin).should.be.between(99.msecs, 120.msecs);
+  (results[0].end - results[0].begin).should.be.between(90.msecs, 120.msecs);
 }
 
 @("it should be able to limit the parallel tests number")
