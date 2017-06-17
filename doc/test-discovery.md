@@ -28,8 +28,25 @@ which will use the `UnitTestDiscovery` class from the `trial.discovery.unit` mod
 
 ## Unit Test Discovery
 
-This is the default test discovery. It will search inside your modules for `unittest` blocks. If you annotate
+This is the default test discovery. It will search inside your modules for `unittest` blocks. You can add custom names
+to your tests by adding a comment before the `unittest` keyword or you annotate
 the test with a string [UDA](http://dlang.org/spec/attribute.html#uda) that string will be used as the test name.
+
+```
+/// This is my awesome test
+unittest {
+    
+}
+```
+
+or 
+
+```
+@("This is my awesome test")
+unittest {
+    
+}
+```
 
 ## Extending
 
