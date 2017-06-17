@@ -224,9 +224,9 @@ class UnitTestDiscovery : ITestDiscovery{
 			string defaultName = test.stringof.to!string;
 			string name = defaultName;
 
-			foreach (att; __traits(getAttributes, test)) {
-				static if (is(typeof(att) == string)) {
-					name = att;
+			foreach (attr; __traits(getAttributes, test)) {
+				static if (is(typeof(attr) == string)) {
+					name = attr;
 				}
 			}
 
@@ -247,6 +247,20 @@ class UnitTestDiscovery : ITestDiscovery{
 			return name;
 		}
 
+		string[string] testLabels(alias test)() {
+			string[string] labels;
+
+			foreach (attr; __traits(getAttributes, test)) {
+				static if (__traits(hasMember, attr, "labels")) {
+					foreach(name, value; attr.labels) {
+						labels[name] = value;
+					}
+				}
+			}
+
+			return labels;
+		}
+
 		auto addTestCases(string file, alias moduleName, composite...)() if (composite.length == 1 && isUnitTestContainer!(composite))
 		{	
 			Comment[] comments = file.readText.compressComments;
@@ -254,7 +268,7 @@ class UnitTestDiscovery : ITestDiscovery{
 			foreach (test; __traits(getUnitTests, composite)) {
 				testCases[moduleName][test.mangleof] = TestCase(moduleName, testName!(test)(comments), {
 					test();
-				});
+				}, testLabels!(test));
 			}
 		}
 
@@ -359,4 +373,20 @@ unittest
 	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
 
 	testDiscovery.testCases["trial.discovery.unit"].values.map!"a.name".should.contain("It should find this test");
+}
+
+/// It should find this flaky test
+@Flaky
+unittest {
+	auto testDiscovery = new UnitTestDiscovery;
+
+	testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
+
+	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
+
+	auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(a => a.name.indexOf("flaky") != -1);
+
+	r.empty.should.equal(false).because("a flaky test is in this module");
+	r.front.labels.keys.should.equal(["status_details"]);
+	r.front.labels["status_details"].should.equal("flaky");
 }

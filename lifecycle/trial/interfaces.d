@@ -501,3 +501,13 @@ unittest
 
   result.length.should.equal(0);
 }
+
+/// Attribute that marks the test as flaky. Different reporters will interpret this information
+/// in different ways.
+struct Flaky {
+
+  /// Returns the labels that set the test a flaky
+  static string[string] labels() {
+    return ["status_details": "flaky"];
+  }
+}
