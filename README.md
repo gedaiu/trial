@@ -36,6 +36,7 @@ This library intends to provide a rich set of features that helps you to customi
   - [Executors](doc/executors.md)
   - [Reporters](doc/reporters.md)
   - [Steps](doc/steps.md)
+  - [Attributes](doc/attributes.md)
   - [Attachments](doc/attachments.md)
 
 ## Hacking

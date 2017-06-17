@@ -82,8 +82,12 @@ interface IStepLifecycleListener
   void end(string suite, string test, ref StepResult);
 }
 
+/// A struct representing a label for test results
 struct Label {
+  /// The label name
   string name;
+
+  /// The label value
   string value;
 }
 
@@ -522,5 +526,25 @@ struct Issue {
   /// Returns the labels that set the issue label
   Label[] labels() {
     return [ Label("issue", name) ];
+  }
+}
+
+/// Attribute that sets the feaure label
+struct Feature {
+  private string name;
+
+  /// Returns the labels that set the feature label
+  Label[] labels() {
+    return [ Label("feature", name) ];
+  }
+}
+
+/// Attribute that sets the story label
+struct Story {
+  private string name;
+
+  /// Returns the labels that set the feature label
+  Label[] labels() {
+    return [ Label("story", name) ];
   }
 }
