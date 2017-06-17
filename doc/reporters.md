@@ -16,6 +16,7 @@ Here are informations about the supported reporters and how you can create your 
   - [Progress](#progress)
   - [Result](#result)
   - [HTML](#html)
+  - [Allure](#allure)
   - [Stats](#stats)
   - [Spec Progress](#spec-progress)
   - [Extending](#extending)
@@ -110,6 +111,22 @@ and you will have a nice report for your build.
 To use it, add `html` to the reporters list inisde `trial.json`.
 
 [example](http://trial.szabobogdan.com/artifacts/trial-result.html)
+
+## Allure
+
+The Allure reporter outputs the test results in an xml file that can be used to 
+generate nice [Allure](https://docs.qameta.io/allure/2.0/) reports.
+
+To convert the xml files to html, you can use inside your project, the allure commandline:
+```
+  allure generate -o allure-html allure
+```
+
+In this case, the xml files are located in `allure` folder
+
+To use it, add `allure` to the reporters list inisde `trial.json`.
+
+[example](http://trial.szabobogdan.com/artifacts/allure/)
 
 ## Stats
 

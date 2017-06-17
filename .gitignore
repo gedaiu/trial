@@ -17,3 +17,4 @@ docs/
 .vscode/
 allure
 allure-html
+.DS_Store
