@@ -112,7 +112,6 @@ struct Attachment {
   static void fromFile(const string name, const string path, const string mime) {
     import trial.runner;
     auto a = const Attachment(name, path, name);
-    a.writeln("1.", a);
     LifeCycleListeners.instance.attach(a);
   }
 }
