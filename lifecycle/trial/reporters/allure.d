@@ -77,18 +77,28 @@ struct AllureSuiteXml {
       tests = "\n" ~ tests;
     }
 
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    auto xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ns2:test-suite start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" version="` ~ this.allureVersion ~ `" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
     <name>` ~ result.name.escape ~ `</name>
     <title>` ~ result.name.escape ~ `</title>
     <test-cases>`
      ~ tests ~ `
     </test-cases>
-    <labels>
+`;
+
+    if(result.attachments.length > 0) {
+      xml ~= "    <attachments>\n";
+      xml ~= result.attachments.map!(a => AllureAttachmentXml(a, 6, uuid)).map!(a => a.toString).array.join('\n') ~ "\n";
+      xml ~= "    </attachments>\n";
+    }
+
+    xml ~= `    <labels>
         <label name="framework" value="Trial"/>
         <label name="language" value="D"/>
     </labels>
 </ns2:test-suite>`;
+
+    return xml;
   }
 }
 
@@ -146,6 +156,46 @@ unittest
     <title>` ~ result.name ~ `</title>
     <test-cases>
     </test-cases>
+    <labels>
+        <label name="framework" value="Trial"/>
+        <label name="language" value="D"/>
+    </labels>
+</ns2:test-suite>`);
+}
+
+
+/// AllureSuiteXml should add the attachements
+unittest
+{
+  string resource = buildPath(getcwd(), "some_text.txt");
+  std.file.write(resource, "");
+
+  auto uuid = randomUUID.toString;
+
+  scope(exit) {
+    remove(resource);
+    remove("allure/" ~ uuid ~ "/title.0.some_text.txt");
+  }
+
+  auto epoch = SysTime.fromUnixTime(0);
+
+  auto result = SuiteResult("Test Suite");
+  result.begin = Clock.currTime;
+  result.end = Clock.currTime;
+  result.attachments = [ Attachment("title", resource, "plain/text") ];
+
+  auto allure = AllureSuiteXml(result, uuid);
+
+  allure.toString.should.equal(
+ `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:test-suite start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" version="1.5.2" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
+    <name>` ~ result.name ~ `</name>
+    <title>` ~ result.name ~ `</title>
+    <test-cases>
+    </test-cases>
+    <attachments>
+      <attachment title="title" source="` ~ uuid ~ `/title.0.some_text.txt" type="plain/text" />
+    </attachments>
     <labels>
         <label name="framework" value="Trial"/>
         <label name="language" value="D"/>
@@ -211,7 +261,6 @@ struct AllureTestXml {
       xml ~= result.steps.map!(a => AllureStepXml(a, 14, uuid)).map!(a => a.toString).array.join('\n') ~ "\n";
       xml ~= "            </steps>\n";
     }
-
 
     if(result.attachments.length > 0) {
       xml ~= "            <attachments>\n";

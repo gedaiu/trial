@@ -182,6 +182,9 @@ struct SuiteResult
   /// the tests executed for the current suite
   TestResult[] tests;
 
+  /// The list of attached files
+  Attachment[] attachments;
+
   ///
   @disable
   this();
