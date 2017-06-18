@@ -18,3 +18,4 @@ docs/
 allure
 allure-html
 .DS_Store
+*.lst

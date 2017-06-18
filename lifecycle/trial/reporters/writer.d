@@ -93,7 +93,7 @@ class ConsoleWriter : ReportWriter {
 }
 
 version(Have_arsd_official_terminal) {
-  import arsd.terminal;
+  static import arsd.terminal;
 
   shared static this() {
     defaultWriter = new ColorConsoleWriter;
@@ -105,7 +105,11 @@ version(Have_arsd_official_terminal) {
   class ColorConsoleWriter : ReportWriter {
     private {
       int[string] cues;
-      Terminal terminal;
+      arsd.terminal.Terminal terminal;
+      alias Color = arsd.terminal.Color;
+      alias Bright = arsd.terminal.Bright;
+      alias ForceOption = arsd.terminal.ForceOption;
+
       int lines = 0;
 
       void setColor(Context context) {
@@ -145,7 +149,7 @@ version(Have_arsd_official_terminal) {
     }
 
     this() {
-      this.terminal = Terminal(ConsoleOutputType.linear);
+      this.terminal = arsd.terminal.Terminal(arsd.terminal.ConsoleOutputType.linear);
       this.terminal._suppressDestruction = true;
 
       lines = this.terminal.cursorY;
