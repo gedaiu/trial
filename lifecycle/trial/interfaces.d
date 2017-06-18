@@ -581,7 +581,7 @@ struct Story {
   }
 }
 
-/// Attach the generated file
+/// Attach the readme file
 unittest {
-  Attachment.fromFile("generated file", "generated.d", "text/plain");
+  Attachment.fromFile("readme file", "README.md", "text/plain");
 }
