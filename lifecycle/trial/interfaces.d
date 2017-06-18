@@ -109,6 +109,7 @@ struct Attachment {
   /// The file mime path
   string mime;
 
+  /// Add a file to the current test or step
   static void fromFile(const string name, const string path, const string mime) {
     import trial.runner;
     auto a = const Attachment(name, path, name);
