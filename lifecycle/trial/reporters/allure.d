@@ -338,9 +338,7 @@ unittest
       remove(resource);
     }
 
-    if(exists("allure/" ~ uuid ~ "/name.some_text.txt")) {
-      remove("allure/" ~ uuid ~ "/name.some_text.txt");
-    }
+    remove("allure/" ~ uuid ~ "/title.0.some_text.txt");
   }
 
   auto epoch = SysTime.fromUnixTime(0);
@@ -357,7 +355,7 @@ unittest
  `        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
             <name>Test</name>
             <attachments>
-              <attachment title="title" source="` ~ uuid ~ `/title.some_text.txt" type="plain/text" />
+              <attachment title="title" source="` ~ uuid ~ `/title.0.some_text.txt" type="plain/text" />
             </attachments>
         </test-case>`);
 }
@@ -459,7 +457,7 @@ unittest
 
   scope(exit) {
     remove(resource);
-    remove("allure/" ~ uuid ~ "/name.some_image.png");
+    remove("allure/" ~ uuid ~ "/name.0.some_image.png");
   }
 
 
@@ -477,7 +475,7 @@ unittest
   `  <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
     <name>step</name>
     <attachments>
-      <attachment title="name" source="` ~ uuid ~ `/name.some_image.png" type="image/png" />
+      <attachment title="name" source="` ~ uuid ~ `/name.0.some_image.png" type="image/png" />
     </attachments>
   </step>`);
 }
@@ -503,7 +501,14 @@ struct AllureAttachmentXml {
       buildPath(destination, uuid).mkdirRecurse;
     }
 
-    auto allureFile = buildPath(destination, uuid, attachment.name ~ "." ~ baseName(attachment.file));
+    ulong index;
+
+    string allureFile;
+    
+    do {
+      allureFile = buildPath(destination, uuid, attachment.name ~ "." ~ index.to!string ~ "." ~ baseName(attachment.file));
+      index++;
+    } while(allureFile.exists);
 
     std.file.copy(attachment.file, allureFile);
     this.attachment = Attachment(attachment.name, allureFile.asRelativePath(destination).array, attachment.mime);
@@ -523,10 +528,33 @@ unittest {
   std.file.write(resource, "");
 
   auto uuid = randomUUID.toString;
-  auto expectedPath = buildPath(getcwd(), "allure/" ~ uuid ~ "/name.some_image.png");
+  auto expectedPath = buildPath(getcwd(), "allure",  uuid, "name.0.some_image.png");
 
   scope(exit) {
     remove(resource);
+    remove(expectedPath);
+  }
+
+  auto a = AllureAttachmentXml(Attachment("name", resource, ""), 0, uuid);
+
+  expectedPath.exists.should.equal(true);
+}
+
+/// Allure attachments should avoid name collisions
+unittest {
+  string resource = buildPath(getcwd(), "some_image.png");
+  std.file.write(resource, "");
+
+  auto uuid = randomUUID.toString;
+  
+  buildPath(getcwd(), "allure",  uuid).mkdirRecurse;
+  auto expectedPath = buildPath(getcwd(), "allure", uuid, "name.1.some_image.png");
+  auto existingPath = buildPath(getcwd(), "allure", uuid, "name.0.some_image.png");
+  std.file.write(existingPath, "");
+
+  scope(exit) {
+    remove(resource);
+    remove(existingPath);
     remove(expectedPath);
   }
 
