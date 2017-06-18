@@ -91,6 +91,18 @@ struct Label {
   string value;
 }
 
+/// A struct representing an attachement for test steps
+struct Attachment {
+  /// The attachement name
+  string name;
+
+  /// The absolute path to the attachement
+  string file;
+
+  /// The file mime path
+  string mime;
+}
+
 /// A test case that will be executed
 struct TestCase
 {
@@ -203,14 +215,17 @@ class StepResult
   /// The step name
   string name;
 
-  /// when the step started
+  /// When the step started
   SysTime begin;
 
-  /// when the step ended
+  /// When the step ended
   SysTime end;
 
-  /// the list of the child steps
+  /// The list of the child steps
   StepResult[] steps;
+
+  /// The list of attached files
+  Attachment[] attachments;
 
   this() {
     begin = SysTime.min;
