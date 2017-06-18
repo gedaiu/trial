@@ -62,6 +62,13 @@ interface ISuiteLifecycleListener
   void end(ref SuiteResult);
 }
 
+/// A Listener for handling attachments
+interface IAttachmentListener
+{
+  /// Called when an attachment is ready
+  void attach(ref const Attachment);
+}
+
 /// A Listener for the test case events
 interface ITestCaseLifecycleListener
 {
@@ -101,6 +108,13 @@ struct Attachment {
 
   /// The file mime path
   string mime;
+
+  static void fromFile(const string name, const string path, const string mime) {
+    import trial.runner;
+    auto a = const Attachment(name, path, name);
+    a.writeln("1.", a);
+    LifeCycleListeners.instance.attach(a);
+  }
 }
 
 /// A test case that will be executed
@@ -565,4 +579,9 @@ struct Story {
   Label[] labels() {
     return [ Label("story", name) ];
   }
+}
+
+/// Attach the generated file
+unittest {
+  Attachment.fromFile("generated file", "generated.d", "text/plain");
 }

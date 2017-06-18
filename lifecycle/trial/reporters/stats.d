@@ -16,6 +16,7 @@ import std.datetime;
 import std.stdio;
 import std.file;
 
+import trial.runner;
 import trial.interfaces;
 
 struct Stat
@@ -118,6 +119,9 @@ class StatsReporter : ILifecycleListener, ITestCaseLifecycleListener,
   {
     auto f = File("trial-stats.csv", "w"); // open for writing
     f.write(storage.toCsv);
+
+    auto attachment = const Attachment("stats", "trial-stats.csv", "text/csv");
+    LifeCycleListeners.instance.attach(attachment);
   }
 }
 

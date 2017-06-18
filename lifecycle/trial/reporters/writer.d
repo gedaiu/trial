@@ -281,15 +281,7 @@ unittest {
   writer.buffer.should.equal("1");
 }
 
-@("Buffered writer should print text and a new line")
-unittest {
-  auto writer = new BufferedWriter;
-  writer.write("1", ReportWriter.Context._default);
-  writer.writeln("2", ReportWriter.Context._default);
-  writer.buffer.should.equal("12\n");
-}
-
-@("Buffered writer should print text and a new line")
+@("Buffered writer should print text and add a new line")
 unittest {
   auto writer = new BufferedWriter;
   writer.write("1", ReportWriter.Context._default);

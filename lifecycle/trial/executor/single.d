@@ -16,7 +16,7 @@ import trial.step;
 /**
 The default test executor runs test in sequential order in a single thread
 */
-class DefaultExecutor : ITestExecutor, IStepLifecycleListener
+class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListener
 {
   private
   {
@@ -28,6 +28,16 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
 
   this() {
     suiteResult = SuiteResult("unknown");
+  }
+
+  /// Called when an attachment is ready
+  void attach(ref const Attachment attachment) {
+    if(currentStep is null) {
+      suiteResult.attachments ~= Attachment(attachment.name, attachment.file, attachment.mime);
+      return;
+    }
+
+    currentStep.attachments ~= Attachment(attachment.name, attachment.file, attachment.mime);
   }
 
   /// Add the step result and update the other listeners on every step
@@ -118,6 +128,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener
 
     createTestResult(testCase);
     suiteResult.tests ~= testResult;
+    currentStep = null;
     LifeCycleListeners.instance.update();
 
     return result;

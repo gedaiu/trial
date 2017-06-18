@@ -163,6 +163,7 @@ class LifeCycleListeners {
     IStepLifecycleListener[] stepListeners;
     ILifecycleListener[] lifecycleListeners;
     ITestDiscovery[] testDiscoveryListeners;
+    IAttachmentListener[] attachmentListeners;
     ITestExecutor executor;
   }
 
@@ -200,65 +201,74 @@ class LifeCycleListeners {
       testDiscoveryListeners ~= cast(ITestDiscovery) listener;
       testDiscoveryListeners = testDiscoveryListeners.filter!(a => a !is null).array;
     }
+
+    static if(!is(CommonType!(IAttachmentListener, T) == void)) {
+      attachmentListeners ~= cast(IAttachmentListener) listener;
+      attachmentListeners = attachmentListeners.filter!(a => a !is null).array;
+    }
   }
 
-  /// send the update event to all listeners
+  /// Send the attachment to all listeners
+  void attach(ref const Attachment attachment) {
+    attachmentListeners.each!(a => a.attach(attachment));
+  }
+
+  /// Send the update event to all listeners
   void update() {
-    lifecycleListeners.each!(a => a.update());
+    lifecycleListeners.each!"a.update";
   }
 
-  /// send the begin run event to all listeners
+  /// Send the begin run event to all listeners
   void begin(ulong testCount) {
     lifecycleListeners.each!(a => a.begin(testCount));
   }
 
-  /// send the end runer event to all listeners
+  /// Send the end runer event to all listeners
   void end(SuiteResult[] result) {
     lifecycleListeners.each!(a => a.end(result));
   }
 
-  /// send the begin suite event to all listeners
+  /// Send the begin suite event to all listeners
   void begin(ref SuiteResult suite) {
     suiteListeners.each!(a => a.begin(suite));
   }
 
-  /// send the end suite event to all listeners
+  /// Send the end suite event to all listeners
   void end(ref SuiteResult suite) {
     suiteListeners.each!(a => a.end(suite));
   }
 
-  /// send the begin test event to all listeners
+  /// Send the begin test event to all listeners
   void begin(string suite, ref TestResult test) {
     testListeners.each!(a => a.begin(suite, test));
   }
 
-  /// send the end test event to all listeners
+  /// Send the end test event to all listeners
   void end(string suite, ref TestResult test) {
     testListeners.each!(a => a.end(suite, test));
   }
 
-
-  /// send the begin step event to all listeners
+  /// Send the begin step event to all listeners
   void begin(string suite, string test, ref StepResult step) {
     stepListeners.each!(a => a.begin(suite, test, step));
   }
 
-  /// send the end step event to all listeners
+  /// Send the end step event to all listeners
   void end(string suite, string test, ref StepResult step) {
     stepListeners.each!(a => a.end(suite, test, step));
   }
 
-  /// send the execute test to the executor listener
+  /// Send the execute test to the executor listener
   SuiteResult[] execute(ref const(TestCase) func) {
     return executor.execute(func);
   }
 
-  /// send the begin execution with the test case list to the executor listener
+  /// Send the begin execution with the test case list to the executor listener
   SuiteResult[] beginExecution(ref const(TestCase)[] tests) {
     return executor.beginExecution(tests);
   }
 
-  /// send the end execution the executor listener
+  /// Send the end execution the executor listener
   SuiteResult[] endExecution() {
     return executor.endExecution();
   }

@@ -51,8 +51,10 @@ class AllureReporter : ILifecycleListener
       "allure".mkdir;
     }
 
-    string uuid = randomUUID.toString;
-    foreach(xml; result.map!(a => AllureSuiteXml(a, uuid).toString)) {
+    foreach(item; result) {
+      string uuid = randomUUID.toString;
+      string xml = AllureSuiteXml(item, uuid).toString;
+
       std.file.write("allure/" ~ uuid ~ "-testsuite.xml", xml);
     }
   }
