@@ -5,6 +5,7 @@ import std.range;
 import std.string;
 import std.stdio;
 import std.conv;
+import std.exception;
 
 /// Get the line that contains the coverage summary
 auto getCoverageSummary(string fileContent) {
@@ -54,7 +55,6 @@ string getFileName(string fileContent) {
 
   return r.front[0..pos + 2];
 }
-
 
 version(unittest) {
   import fluent.asserts;
@@ -131,15 +131,35 @@ unittest {
   ".getCoveragePercent.should.equal(88);
 }
 
+/// The representation of a line from the .lst file
 struct LineCoverage {
+
+  ///
   string code;
+
+  ///
   size_t hits;
+
+  ///
   bool hasCode;
 
   @disable this();
 
+  ///
   this(string line) {
+    enforce(line.indexOf("\n") == -1, "You should provide a line");
+    line = line.strip;
+    auto column = line.indexOf("|");
 
+    if(column == -1) {
+      code = line;
+    } else if(column == 0) {
+      code = line[1..$];
+    } else {
+      hits = line[0..column].strip.to!size_t;
+      hasCode = true;
+      code = line[column + 1..$];
+    }
   }
 }
 
@@ -152,14 +172,13 @@ unittest
   lineCoverage.hasCode.should.equal(false);
 }
 
-
 /// Parse the file lines
 auto toCoverageLines(string fileContent) {
   return fileContent
       .splitLines
       .filter!(a => a.indexOf('|') != -1 && a.indexOf('|') < 10)
       .map!(a => a.strip)
-      .map!(a =>LineCoverage(a));
+      .map!(a => LineCoverage(a));
 }
 
 /// It should convert a .lst file to covered line structs
@@ -173,4 +192,20 @@ core/cloud/source/cloud/system.d is 88% covered
 ".toCoverageLines.array;
 
   lines.length.should.equal(4);
+
+  lines[0].code.should.equal("");
+  lines[0].hits.should.equal(0);
+  lines[0].hasCode.should.equal(false);
+
+  lines[1].code.should.equal("import std.stdio;");
+  lines[1].hits.should.equal(0);
+  lines[1].hasCode.should.equal(false);
+
+  lines[2].code.should.equal("  this(File f) {");
+  lines[2].hits.should.equal(75);
+  lines[2].hasCode.should.equal(true);
+
+  lines[3].code.should.equal("  }");
+  lines[3].hits.should.equal(0);
+  lines[3].hasCode.should.equal(false);
 }
