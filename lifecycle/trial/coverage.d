@@ -7,16 +7,20 @@ import std.stdio;
 import std.conv;
 import std.exception;
 
+shared static this() {
+  import core.runtime;
+
+  dmd_coverSourcePath("coverage/raw");
+  dmd_coverDestPath("coverage/raw");
+}
+
 /// Get the line that contains the coverage summary
 auto getCoverageSummary(string fileContent) {
-  return fileContent
-      .splitLines
-      .reverse
+  return std.algorithm.reverse(fileContent.splitLines)
       .filter!(a => a.indexOf('|') == -1 || a.indexOf('|') > 9)
       .map!(a => a.strip)
       .filter!(a => a != "");
 }
-
 
 /// It should get the coverage summary from the .lst file with no coverage
 unittest {
