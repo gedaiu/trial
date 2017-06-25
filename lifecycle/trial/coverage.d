@@ -16,7 +16,12 @@ shared static this() {
 
 /// Get the line that contains the coverage summary
 auto getCoverageSummary(string fileContent) {
-  return std.algorithm.reverse(fileContent.splitLines)
+
+  auto lines = fileContent.splitLines.array;
+
+  std.algorithm.reverse(lines);
+
+  return lines
       .filter!(a => a.indexOf('|') == -1 || a.indexOf('|') > 9)
       .map!(a => a.strip)
       .filter!(a => a != "");
