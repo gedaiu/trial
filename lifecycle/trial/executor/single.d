@@ -10,8 +10,8 @@ module trial.executor.single;
 public import trial.interfaces;
 import trial.runner;
 import std.datetime;
-import trial.stackresult;
 import trial.step;
+import trial.stackresult;
 
 /**
 The default test executor runs test in sequential order in a single thread
@@ -132,13 +132,5 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
     LifeCycleListeners.instance.update();
 
     return result;
-  }
-}
-
-version (is_trial_embeded)
-{
-  private auto toTestException(Throwable t)
-  {
-    return t;
   }
 }

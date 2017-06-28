@@ -18,6 +18,12 @@ import std.datetime;
 import trial.interfaces;
 import trial.reporters.writer;
 
+version (Have_fluent_asserts_core)
+{
+  import fluentasserts.core.base;
+  import fluentasserts.core.results;
+}
+
 /// The "Result" reporter will print an overview of your test run
 class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
   ISuiteLifecycleListener, IStepLifecycleListener
@@ -152,11 +158,6 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
     void reportExceptions()
     {
-      version (Have_fluent_asserts_core)
-      {
-        import fluentasserts.core.base;
-      }
-
       foreach (size_t i, t; exceptions)
       {
         writer.writeln("");
@@ -172,7 +173,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
           }
           else
           {
-            e.print;
+            e.print(new TrialResultPrinter(defaultWriter));
           }
         }
         else
@@ -182,6 +183,46 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
         writer.writeln("");
       }
+    }
+  }
+}
+
+version (Have_fluent_asserts_core) {
+  class TrialResultPrinter : ResultPrinter {
+    ReportWriter writer;
+
+    this(ReportWriter writer) {
+      this.writer = writer;
+    }
+
+    void primary(string text) {
+      writer.write(text, ReportWriter.Context._default);
+      writer.write("");
+    }
+
+    void info(string text) {
+      writer.write(text, ReportWriter.Context.info);
+      writer.write("");
+    }
+
+    void danger(string text) {
+      writer.write(text, ReportWriter.Context.danger);
+      writer.write("");
+    }
+
+    void success(string text) {
+      writer.write(text, ReportWriter.Context.success);
+      writer.write("");
+    }
+
+    void dangerReverse(string text) {
+      writer.writeReverse(text, ReportWriter.Context.danger);
+      writer.write("");
+    }
+
+    void successReverse(string text) {
+      writer.writeReverse(text, ReportWriter.Context.success);
+      writer.write("");
     }
   }
 }
@@ -272,6 +313,6 @@ unittest
   reporter.end(results[0]);
   reporter.end(results);
 
-  writer.buffer.should.contain("✖ The test failed in");
+  writer.buffer.should.contain("✖ The te st failed in");
   writer.buffer.should.contain("0) some suite some test:\n");
 }

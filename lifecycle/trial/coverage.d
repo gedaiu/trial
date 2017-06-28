@@ -16,7 +16,6 @@ shared static this() {
 
 /// Get the line that contains the coverage summary
 auto getCoverageSummary(string fileContent) {
-
   auto lines = fileContent.splitLines.array;
 
   std.algorithm.reverse(lines);

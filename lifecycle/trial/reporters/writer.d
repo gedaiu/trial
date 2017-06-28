@@ -49,6 +49,9 @@ interface ReportWriter {
   /// Write a string
   void write(string, Context = Context.active);
 
+  /// Write a string with reversed colors
+  void writeReverse(string, Context = Context.active);
+
   /// Write a string and go to a new line
   void writeln(string, Context = Context.active);
 
@@ -72,6 +75,11 @@ class ConsoleWriter : ReportWriter {
 
   ///
   void write(string text, Context) {
+    std.stdio.write(text);
+  }
+
+  ///
+  void writeReverse(string text, Context) {
     std.stdio.write(text);
   }
 
@@ -143,6 +151,38 @@ version(Have_arsd_official_terminal) {
         }
       }
 
+
+      void setColorReverse(Context context) {
+        switch(context) {
+          case Context.active:
+            terminal.color(255, Color.white | Bright);
+            break;
+
+          case Context.inactive:
+            terminal.color(255, Color.black | Bright);
+            break;
+
+          case Context.success:
+            terminal.color(255, Color.green | Bright);
+            break;
+
+          case Context.info:
+            terminal.color(255, Color.cyan);
+            break;
+
+          case Context.warning:
+            terminal.color(255, Color.yellow);
+            break;
+
+          case Context.danger:
+            terminal.color(255, Color.red);
+            break;
+
+          default:
+            terminal.reset();
+        }
+      }
+
       void resetColor() {
         setColor(Context._default);
       }
@@ -165,6 +205,17 @@ version(Have_arsd_official_terminal) {
       lines += text.count!(a => a == '\n');
 
       setColor(context);
+
+      terminal.write(text);
+      resetColor;
+      terminal.flush;
+    }
+
+    /// writes a string with reversed colors
+    void writeReverse(string text, Context context) {
+      lines += text.count!(a => a == '\n');
+
+      setColorReverse(context);
 
       terminal.write(text);
       resetColor;
@@ -254,6 +305,12 @@ class BufferedWriter : ReportWriter {
     buffer = screen.join("\n");
     screen = buffer.split("\n");
     line += lines;
+  }
+
+
+  ///
+  void writeReverse(string text, Context c) {
+    write(text, c);
   }
 
   ///

@@ -16,8 +16,40 @@ import std.algorithm;
 
 import core.demangle;
 
+version (Have_fluent_asserts_core) { } else {
+  auto toTestException(Throwable t)
+  {
+    return t;
+  }
+}
+
+version (Have_fluent_asserts_core) {
+
 import fluentasserts.core.base;
 import fluentasserts.core.results;
+
+///
+class TestExceptionWrapper : TestException {
+  private {
+    TestException exception;
+    IResult[] results;
+  }
+
+  ///
+  this(TestException exception, IResult[] results, string fileName, size_t line, Throwable next = null) {
+    this.exception = exception;
+    this.results = results;
+
+    super(results, fileName, line, next);
+  }
+
+  ///
+  override void print(ResultPrinter printer) {
+    exception.print(printer);
+
+    results.each!(a => a.print(printer));
+  }
+}
 
 /// Converts a Throwable to a TestException which improves the failure verbosity
 TestException toTestException(Throwable t)
@@ -39,13 +71,16 @@ TestException toTestException(Throwable t)
     }
 
     exception = new TestException(results, t.file, t.line, t);
+  } else {
+    exception = new TestExceptionWrapper(exception, [ cast(IResult) new StackResult(t.info) ], t.file, t.line, t);
   }
 
   return exception;
 }
 
+
 @("toTestException should convert an Exception from the current project to a TestException with 2 reporters")
-unittest
+unittest 
 {
   auto exception = new Exception("random text");
   auto testException = exception.toTestException;
@@ -187,44 +222,39 @@ class StackResult : IResult
     }
 
     /// Prints the stack using the default writer
-    void print()
+    void print(ResultPrinter printer)
     {
-      import trial.reporters.writer;
-
       int colorIndex = 0;
-      writeln("Stack trace:\n-------------------\n...\n");
+      printer.primary("Stack trace:\n-------------------\n...\n");
 
       auto validator = ExternalValidator(externalModules);
 
       foreach (frame; getFrames)
       {
-        ReportWriter.Context context;
-
         if (validator.isExternal(frame.name))
         {
-          context = ReportWriter.Context.inactive;
+          printer.info(leftJustifier(frame.index.to!string, 4).to!string);
+          printer.info(frame.address ~ " ");
         }
         else
         {
-          context = ReportWriter.Context.active;
+          printer.info(leftJustifier(frame.index.to!string, 4).to!string);
+          printer.info(frame.address ~ " ");
         }
-
-        defaultWriter.write(leftJustifier(frame.index.to!string, 4).to!string, context);
-        defaultWriter.write(frame.address ~ " ", context);
 
         if (validator.isExternal(frame.name))
         {
-          context = ReportWriter.Context.info;
+          printer.info(frame.name);
         }
         else
         {
-          context = ReportWriter.Context.danger;
+          printer.danger(frame.name);
         }
 
-        defaultWriter.writeln(frame.name, context);
+        printer.primary("\n");
       }
 
-      defaultWriter.writeln("...");
+      printer.primary("...");
     }
   }
 }
@@ -462,13 +492,13 @@ unittest
 @("Get frame info from windows platform format with path")
 unittest
 {
-  auto line = `0x00402669 in void app.__unittestL82_8() at D:\tidynumbers\source\app.d(84)`;
+  auto line = `0x00402669 in void app.__unitestL82_8() at D:\tidynumbers\source\app.d(84)`;
 
   auto frame = line.toFrame;
   frame.index.should.equal(-1);
   frame.moduleName.should.equal("");
   frame.address.should.equal("0x00402669");
-  frame.name.should.equal("void app.__unittestL82_8()");
+  frame.name.should.equal("void app.__unitestL82_8()");
   frame.file.should.equal(`D:\tidynumbers\source\app.d`);
   frame.line.should.equal(84);
   frame.offset.should.equal("");
@@ -514,4 +544,6 @@ unittest
   frame.address.should.equal("0x00000000");
   frame.index.should.equal(-1);
   frame.offset.should.equal("0x78");
+}
+
 }

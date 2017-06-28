@@ -43,14 +43,6 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   }
 
   enum d =
-    import("discovery/unit.d") ~
-    import("runner.d") ~
-    import("interfaces.d") ~
-    import("settings.d") ~
-    import("step.d") ~
-    import("executor/parallel.d") ~
-    import("executor/single.d") ~
-
     import("reporters/writer.d") ~
     import("reporters/result.d") ~
     import("reporters/stats.d") ~
@@ -62,7 +54,16 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     import("reporters/progress.d") ~
     import("reporters/specprogress.d") ~
     import("reporters/specsteps.d") ~
-    import("reporters/spec.d");
+    import("reporters/spec.d") ~
+    
+    import("runner.d") ~ 
+    import("interfaces.d") ~ 
+    import("executor/parallel.d") ~
+    import("executor/single.d") ~
+    import("discovery/unit.d") ~
+    import("settings.d") ~
+    import("step.d") ~
+    import("stackresult.d");
 
   string code;
 
