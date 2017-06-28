@@ -313,6 +313,6 @@ unittest
   reporter.end(results[0]);
   reporter.end(results);
 
-  writer.buffer.should.contain("✖ The te st failed in");
+  writer.buffer.should.contain("✖ The test failed in");
   writer.buffer.should.contain("0) some suite some test:\n");
 }
