@@ -1,6 +1,6 @@
 /++
   A module containing the SpecReporter
-  
+
   This is an example of how this reporter looks
   <script type="text/javascript" src="https://asciinema.org/a/9z1tolgn7x55v41i3mm3wlkum.js" id="asciicast-9z1tolgn7x55v41i3mm3wlkum" async></script>
 
@@ -62,13 +62,13 @@ class SpecReporter : ITestCaseLifecycleListener
 
   private
   {
-    string indentation(ulong cnt) pure
+    string indentation(size_t cnt) pure
     {
       return "  ".replicate(cnt);
     }
   }
 
-  void write(Type t)(string text = "", ulong spaces = 0)
+  void write(Type t)(string text = "", size_t spaces = 0)
   {
     writer.write(indentation(spaces));
 
@@ -98,8 +98,8 @@ class SpecReporter : ITestCaseLifecycleListener
   }
 
   protected auto printSuite(string suite) {
-    ulong indents = 1;
-    
+    size_t indents = 1;
+
     auto oldPieces = lastSuiteName.split(".");
     auto pieces = suite.split(".");
     lastSuiteName = suite;
@@ -121,7 +121,7 @@ class SpecReporter : ITestCaseLifecycleListener
 
   void end(string suite, ref TestResult test)
   {
-    ulong indents = 1;
+    size_t indents = 1;
 
     if (suite != lastSuiteName)
     {

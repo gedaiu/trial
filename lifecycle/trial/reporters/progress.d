@@ -77,7 +77,7 @@ class ProgressReporter : ITestCaseLifecycleListener, ILifecycleListener
   private void draw()
   {
     int size = min((writer.width / 4) * 3, testCount);
-    ulong position = ((cast(double) currentTest / cast(double) testCount) * size).to!long;
+    size_t position = ((cast(double) currentTest / cast(double) testCount) * size).to!size_t;
 
     writer.goTo(1);
 

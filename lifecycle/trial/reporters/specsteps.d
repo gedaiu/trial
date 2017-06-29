@@ -18,9 +18,9 @@ import trial.reporters.writer;
 class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleListener
 {
   private {
-    ulong indents;
-    ulong stepIndents;
-    
+    size_t indents;
+    size_t stepIndents;
+
     string testBegin = "┌";
     string testEnd = "└";
     string step = "│";
@@ -55,7 +55,7 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
     void end(string suite, ref TestResult test)
     {
       write!(Type.none)(testEnd ~ " ", indents);
-     
+
       if(test.status == TestResult.Status.success) {
         write!(Type.success)("Success\n", 0);
       } else if(test.status == TestResult.Status.failure) {
@@ -72,7 +72,7 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
     stepIndents++;
     write!(Type.none)(step, indents);
     write!(Type.none)(" " ~ s.name ~ "\n", stepIndents);
-    
+
   }
 
   void end(string suite, string test, ref StepResult)
@@ -116,7 +116,7 @@ unittest
 
   reporter.end(suite);
 
-  writer.buffer.should.equal("\n" ~ 
+  writer.buffer.should.equal("\n" ~
         "  some suite\n" ~
         "    ┌ some test\n" ~
         "    │   some step\n" ~
@@ -157,13 +157,13 @@ unittest
 
   reporter.end(suite);
 
-  writer.buffer.should.equal("\n" ~ 
-      "  some suite\n" ~ 
-      "    ┌ some test\n" ~ 
-      "    │   some step\n" ~ 
-      "    │     some step\n" ~ 
-      "    │   some step\n" ~ 
-      "    └ 0) Failure\n" ~ 
-      "    ┌ some test\n" ~ 
+  writer.buffer.should.equal("\n" ~
+      "  some suite\n" ~
+      "    ┌ some test\n" ~
+      "    │   some step\n" ~
+      "    │     some step\n" ~
+      "    │   some step\n" ~
+      "    └ 0) Failure\n" ~
+      "    ┌ some test\n" ~
       "    └ 1) Failure\n");
 }
