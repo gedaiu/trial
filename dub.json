@@ -20,7 +20,9 @@
 			"importPaths": ["lifecycle"],
 			"dependencies": {
 				"arsd-official:terminal": "~>1.2.1",
-				"fluent-asserts": "~>0.5.3"
+				"fluent-asserts": {
+					"path": "../should"
+				}
 			}
 		},
 		{

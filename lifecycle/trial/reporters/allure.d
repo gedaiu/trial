@@ -200,7 +200,7 @@ unittest
     </attachments>
     <labels>
         <label name="framework" value="Trial"/>
-        <label name="language" value="D"/>
+        <label name="language" value="D"/>s
     </labels>
 </ns2:test-suite>`);
 }

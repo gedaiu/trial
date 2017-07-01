@@ -6,11 +6,15 @@ import std.string;
 import std.stdio;
 import std.conv;
 import std.exception;
+import std.file;
 
 shared static this() {
   import core.runtime;
 
-  dmd_coverSourcePath("coverage/raw");
+  if(!exists("coverage/raw")) {
+    mkdirRecurse("coverage/raw");
+  }
+
   dmd_coverDestPath("coverage/raw");
 }
 
