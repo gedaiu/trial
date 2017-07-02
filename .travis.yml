@@ -11,6 +11,7 @@ addons:
     - pkg-config
     - zlib1g-dev
     - build-essential
+    - g++-multilib
 
 d:
   # order: latest DMD, oldest DMD, LDC/GDC, remaining DMD versions
