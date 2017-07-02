@@ -1,5 +1,15 @@
 language: d
 sudo: false
+dist: trusty
+
+addons:
+  apt:
+    packages:
+    - libevent-dev
+    - libssl-dev
+    - pkg-config
+    - zlib1g-dev
+
 
 d:
   # order: latest DMD, oldest DMD, LDC/GDC, remaining DMD versions
