@@ -12,7 +12,6 @@ addons:
     - zlib1g-dev
     - build-essential
     - g++-multilib
-    - gcc-multilib
     - libcurl-dev
 
 d:
