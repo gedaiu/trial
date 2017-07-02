@@ -414,11 +414,11 @@ unittest
 struct AllureStepXml {
   private {
     StepResult step;
-    ulong indent;
+    size_t indent;
     string uuid;
   }
 
-  this(StepResult step, ulong indent, string uuid) {
+  this(StepResult step, size_t indent, string uuid) {
     this.step = step;
     this.indent = indent;
     this.uuid = uuid;
@@ -537,13 +537,13 @@ struct AllureAttachmentXml {
 
   private const {
     Attachment attachment;
-    ulong indent;
+    size_t indent;
   }
 
   @disable this();
 
   /// Init the struct and copy the atachment to the allure folder
-  this(Attachment attachment, ulong indent, string uuid) {
+  this(Attachment attachment, size_t indent, string uuid) {
     this.indent = indent;
 
     auto destination = buildPath(getcwd, "allure");

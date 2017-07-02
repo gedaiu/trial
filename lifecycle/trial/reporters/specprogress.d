@@ -1,6 +1,6 @@
 /++
   A module containing the SpecProgressReporter
-  
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
@@ -19,7 +19,7 @@ import trial.reporters.stats;
 import trial.reporters.spec;
 
 /// A flavour of the "spec" reporter that show the progress of long tests. This works well with the
-/// parallel runner. If you are using the stats reporters, you will see a countdown for how long 
+/// parallel runner. If you are using the stats reporters, you will see a countdown for how long
 /// you need to wait until the test is finished.
 class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener, ILifecycleListener {
   private {
@@ -32,7 +32,7 @@ class SpecProgressReporter : SpecReporter, ISuiteLifecycleListener, ILifecycleLi
       SysTime begin;
     }
 
-    ulong oldTextLength;
+    size_t oldTextLength;
     StatStorage storage;
     string[] path;
 

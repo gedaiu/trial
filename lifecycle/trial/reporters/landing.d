@@ -77,8 +77,8 @@ class LandingReporter : ITestCaseLifecycleListener, ILifecycleListener
 
   private void drawLane()
   {
-    int size = (writer.width / 4) * 3;
-    ulong position = ((cast(double) currentTest / cast(double) testCount) * size).to!long;
+    size_t size = (writer.width / 4) * 3;
+    size_t position = ((cast(double) currentTest / cast(double) testCount) * size).to!size_t;
 
     writer.goTo(3);
     writer.writeln(margin.replicate(size), ReportWriter.Context.inactive);

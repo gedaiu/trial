@@ -1,6 +1,6 @@
 /++
   A module containing utilities for presenting information to the user
-  
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
@@ -11,13 +11,13 @@ import std.stdio;
 import std.algorithm;
 import std.string;
 
-/// The default writer is initialized at the test run initialization with the right 
+/// The default writer is initialized at the test run initialization with the right
 /// class, depending on the hosts capabilities.
 ReportWriter defaultWriter;
 
 /// The writer interface is used to present information to the user.
 interface ReportWriter {
-  
+
   /// The information type.
   /// Convey meaning through color with a handful of emphasis utility classes.
   enum Context {
@@ -39,7 +39,7 @@ interface ReportWriter {
     /// Something that the user must notice
     danger,
 
-    /// 
+    ///
     _default
   }
 
@@ -83,7 +83,7 @@ class ConsoleWriter : ReportWriter {
     std.stdio.write(text);
   }
 
-  /// 
+  ///
   void writeln(string text, Context) {
     std.stdio.writeln(text);
   }
@@ -93,7 +93,7 @@ class ConsoleWriter : ReportWriter {
 
   /// not supported
   void hideCursor() {}
-  
+
   /// returns 80
   uint width() {
     return 80;
@@ -257,8 +257,8 @@ class BufferedWriter : ReportWriter {
   string buffer = "";
 
   private {
-    long line = 0;
-    long charPos = 0;
+    size_t line = 0;
+    size_t charPos = 0;
     bool replace;
 
     string[] screen;

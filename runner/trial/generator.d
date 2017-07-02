@@ -23,11 +23,11 @@ string generateDiscoveries(string[] discoveries, string[2][] modules, bool hasTr
     }
 
     code ~= "      auto testDiscovery" ~ index.to!string ~ " = new " ~ cls ~ ";\n";
-    
+
     foreach(m; modules) {
-      code ~= `      testDiscovery` ~ index.to!string ~ `.addModule!("` ~ m[0] ~ `", "` ~ m[1] ~ `");` ~ "\n";
+      code ~= `      testDiscovery` ~ index.to!string ~ `.addModule!(` ~ "`" ~ m[0] ~ "`" ~ `, ` ~ "`" ~ m[1] ~ "`" ~ `);` ~ "\n";
     }
-    
+
     code ~= "\n      LifeCycleListeners.instance.add(testDiscovery" ~ index.to!string ~ ");\n\n";
     index++;
   }
@@ -55,9 +55,9 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     import("reporters/specprogress.d") ~
     import("reporters/specsteps.d") ~
     import("reporters/spec.d") ~
-    
-    import("runner.d") ~ 
-    import("interfaces.d") ~ 
+
+    import("runner.d") ~
+    import("interfaces.d") ~
     import("executor/parallel.d") ~
     import("executor/single.d") ~
     import("discovery/unit.d") ~
@@ -105,7 +105,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   code ~= generateDiscoveries(settings.testDiscovery, modules, hasTrialDependency);
 
   code ~= `
-      return runTests("` ~ testName ~ `").isSuccess ? 0 : 1;
+      return runTests(` ~ "`" ~ testName ~ "`" ~ `).isSuccess ? 0 : 1;
   }
 
   version (unittest) shared static this()
