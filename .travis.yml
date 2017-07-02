@@ -13,7 +13,7 @@ addons:
     - build-essential
     - g++-multilib
     - gcc-multilib
-    - libcurl4-openssl-dev
+    - libcurl4-gnutls-dev
 
 d:
   # order: latest DMD, oldest DMD, LDC/GDC, remaining DMD versions
