@@ -1,6 +1,6 @@
 /++
   A module containing custom exceptions for display convenience
-  
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
@@ -80,7 +80,7 @@ TestException toTestException(Throwable t)
 
 
 @("toTestException should convert an Exception from the current project to a TestException with 2 reporters")
-unittest 
+unittest
 {
   auto exception = new Exception("random text");
   auto testException = exception.toTestException;
@@ -183,7 +183,7 @@ class StackResult : IResult
 
   ///
   Frame[] frames;
-  
+
   ///
   this(Throwable.TraceInfo t)
   {

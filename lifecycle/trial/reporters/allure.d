@@ -45,7 +45,7 @@ class AllureReporter : ILifecycleListener
 
   void update() {}
 
-  void end(SuiteResult[] result) 
+  void end(SuiteResult[] result)
   {
     if(!exists("allure")) {
       "allure".mkdir;
@@ -63,7 +63,7 @@ class AllureReporter : ILifecycleListener
 struct AllureSuiteXml {
   /// The suite result
   SuiteResult result;
-  
+
   /// The suite id
   string uuid;
 
@@ -109,7 +109,7 @@ version(unittest) {
 }
 
 @("AllureSuiteXml should transform an empty suite")
-unittest 
+unittest
 {
   auto epoch = SysTime.fromUnixTime(0);
   auto result = SuiteResult("Test Suite");
@@ -143,7 +143,7 @@ unittest
 }
 
 @("AllureSuiteXml should transform a suite with a success test")
-unittest 
+unittest
 {
   auto epoch = SysTime.fromUnixTime(0);
   auto result = SuiteResult("Test Suite");
@@ -166,7 +166,7 @@ unittest
 }
 
 
-/// AllureSuiteXml should add the attachements
+/// AllureSuiteXml should add the attachments
 unittest
 {
   string resource = buildPath(getcwd(), "some_text.txt");
@@ -200,7 +200,7 @@ unittest
     </attachments>
     <labels>
         <label name="framework" value="Trial"/>
-        <label name="language" value="D"/>s
+        <label name="language" value="D"/>
     </labels>
 </ns2:test-suite>`);
 }
@@ -277,7 +277,7 @@ struct AllureTestXml {
 }
 
 @("AllureTestXml should transform a success test")
-unittest 
+unittest
 {
   auto epoch = SysTime.fromUnixTime(0);
 
@@ -296,7 +296,7 @@ unittest
 
 @("AllureTestXml should transform a failing test")
 unittest
-{ 
+{
   import trial.step;
 
   Step("prepare the test data");
@@ -322,7 +322,7 @@ unittest
 }
 
 /// AllureTestXml should transform a test with steps
-unittest 
+unittest
 {
   auto epoch = SysTime.fromUnixTime(0);
 
@@ -355,7 +355,7 @@ unittest
 }
 
 /// AllureTestXml should transform a test with labels
-unittest 
+unittest
 {
   auto epoch = SysTime.fromUnixTime(0);
 
@@ -376,7 +376,7 @@ unittest
         </test-case>`);
 }
 
-/// AllureTestXml should add the attachements
+/// AllureTestXml should add the attachments
 unittest
 {
   string resource = buildPath(getcwd(), "some_text.txt");
@@ -430,7 +430,7 @@ struct AllureStepXml {
     const spaces = "  " ~ (" ".repeat(indent).array.join());
     string result = spaces ~ `<step start="` ~ (step.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (step.end - epoch).total!"msecs".to!string ~ `" status="passed">` ~ "\n" ~
     spaces ~ `  <name>` ~ step.name.escape ~ `</name>` ~ "\n";
-    
+
     if(step.steps.length > 0) {
       result ~= spaces ~ "  <steps>\n";
       result ~= step.steps.map!(a => AllureStepXml(a, indent + 6, uuid)).map!(a => a.to!string).array.join('\n') ~ "\n";
@@ -498,7 +498,7 @@ unittest
   </step>`);
 }
 
-/// AllureStepXml should add the attachements
+/// AllureStepXml should add the attachments
 unittest
 {
   string resource = buildPath(getcwd(), "some_image.png");
@@ -555,7 +555,7 @@ struct AllureAttachmentXml {
     ulong index;
 
     string allureFile;
-    
+
     do {
       allureFile = buildPath(destination, uuid, attachment.name ~ "." ~ index.to!string ~ "." ~ baseName(attachment.file));
       index++;
@@ -567,8 +567,8 @@ struct AllureAttachmentXml {
 
   /// convert the attachment to string
   string toString() {
-    return (" ".repeat(indent).array.join()) ~ "<attachment title=\"" ~ attachment.name ~ 
-      "\" source=\"" ~ attachment.file ~ 
+    return (" ".repeat(indent).array.join()) ~ "<attachment title=\"" ~ attachment.name ~
+      "\" source=\"" ~ attachment.file ~
       "\" type=\"" ~ attachment.mime ~ "\" />";
   }
 }
@@ -597,7 +597,7 @@ unittest {
   std.file.write(resource, "");
 
   auto uuid = randomUUID.toString;
-  
+
   buildPath(getcwd(), "allure",  uuid).mkdirRecurse;
   auto expectedPath = buildPath(getcwd(), "allure", uuid, "name.1.some_image.png");
   auto existingPath = buildPath(getcwd(), "allure", uuid, "name.0.some_image.png");

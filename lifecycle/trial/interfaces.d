@@ -1,6 +1,6 @@
 /++
   A module containing the interfaces used for extending the test runner
-  
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
@@ -20,13 +20,13 @@ interface ILifecycleListener
   /// This method is trigered when before the test start
   void begin(ulong testCount);
 
-  /** 
+  /**
    This method is triggered when you can perform some updates.
    The frequency varries by the test executor that you choose
    */
   void update();
 
-  /// This method is trigered when your tests are ended 
+  /// This method is trigered when your tests are ended
   void end(SuiteResult[]);
 }
 
@@ -35,8 +35,8 @@ interface ITestDiscovery {
   TestCase[] getTestCases();
 }
 
-/** 
-A Listener that can run tests. During the test execution can be used only one 
+/**
+A Listener that can run tests. During the test execution can be used only one
 instance of this listance. After all the tests were executed the result of all
 three methods are concatenated and passed to `ILifecycleListener.end(SuiteResult[])`
 */
@@ -98,12 +98,12 @@ struct Label {
   string value;
 }
 
-/// A struct representing an attachement for test steps
+/// A struct representing an attachment for test steps
 struct Attachment {
-  /// The attachement name
+  /// The attachment name
   string name;
 
-  /// The absolute path to the attachement
+  /// The absolute path to the attachment
   string file;
 
   /// The file mime path
@@ -120,8 +120,8 @@ struct Attachment {
 /// A test case that will be executed
 struct TestCase
 {
-  /** 
-  The test case suite name. It can contain `.` which is treated as a 
+  /**
+  The test case suite name. It can contain `.` which is treated as a
   separator for nested suites
   */
   string suiteName;
@@ -182,7 +182,7 @@ TestResult toTestResult(const TestCase testCase) {
 struct SuiteResult
 {
   /**
-  The suite name. It can contain `.` which is treated as a 
+  The suite name. It can contain `.` which is treated as a
   separator for nested suites
   */
   string name;
