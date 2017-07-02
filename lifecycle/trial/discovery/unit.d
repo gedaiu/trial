@@ -52,7 +52,7 @@ unittest {
 	// line 2
 
 	//// other line
-	
+
 	/** line 3
 	line 4 ****/
 
@@ -61,26 +61,26 @@ unittest {
 	/++ line 5
 	line 6
 	+++/
-	
+
 	/** line 7
    *
    * line 8
    */";
 
 	auto results = comments.compressComments;
-	
+
 	results.length.should.equal(6);
-	results[0].value.should.equal("line 1 line 2");	
-	results[1].value.should.equal("other line");	
-	results[2].value.should.equal("line 3 line 4");	
-	results[3].value.should.equal("other line");	
+	results[0].value.should.equal("line 1 line 2");
+	results[1].value.should.equal("other line");
+	results[2].value.should.equal("line 3 line 4");
+	results[3].value.should.equal("other line");
 	results[4].value.should.equal("line 5 line 6");
 	results[5].value.should.equal("line 7  line 8");
 
-	results[0].line.should.equal(2);	
-	results[1].line.should.equal(4);	
-	results[2].line.should.equal(7);	
-	results[3].line.should.equal(9);	
+	results[0].line.should.equal(2);
+	results[1].line.should.equal(4);
+	results[2].line.should.equal(7);
+	results[3].line.should.equal(9);
 	results[4].line.should.equal(13);
 }
 
@@ -98,7 +98,7 @@ Comment[] commentGroupToString(T)(T[] group) {
 			.map!(a => a.strip)
 			.join(' ')
 			.array.to!string;
-		
+
 		return [ Comment(slice[slice.length - 1][0], value) ];
 	}
 
@@ -174,7 +174,7 @@ unittest
 	"some*/some".commentType.should.equal(CommentType.end);
 }
 
-auto compressComments(string code) 
+auto compressComments(string code)
 {
 	Comment[] result;
 
@@ -206,7 +206,7 @@ auto compressComments(string code)
 }
 
 /// The default test discovery looks for unit test sections and groups them by module
-class UnitTestDiscovery : ITestDiscovery{
+class UnitTestDiscovery : ITestDiscovery {
 	TestCase[string][string] testCases;
 
 	TestCase[] getTestCases() {
@@ -260,7 +260,7 @@ class UnitTestDiscovery : ITestDiscovery{
 		}
 
 		auto addTestCases(string file, alias moduleName, composite...)() if (composite.length == 1 && isUnitTestContainer!(composite))
-		{	
+		{
 			Comment[] comments = file.readText.compressComments;
 
 			foreach (test; __traits(getUnitTests, composite)) {

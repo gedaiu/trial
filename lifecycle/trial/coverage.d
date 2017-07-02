@@ -7,6 +7,9 @@ import std.stdio;
 import std.conv;
 import std.exception;
 import std.file;
+import std.path;
+
+import trial.discovery.code;
 
 shared static this() {
   import core.runtime;
@@ -16,6 +19,25 @@ shared static this() {
   }
 
   dmd_coverDestPath("coverage/raw");
+}
+
+/// Converts coverage lst files to html
+void convertLstFiles(string packagePath) {
+  if(!exists("coverage/html")) {
+    mkdirRecurse("coverage/html");
+  }
+
+  auto coverageData =
+    dirEntries("coverage/raw", SpanMode.shallow)
+    .filter!(f => f.name.endsWith(".lst"))
+    .filter!(f => f.isFile)
+    .map!(a => readText(a.name))
+    .map!(a => a.toCoverageFile(packagePath));
+
+  foreach (data; coverageData) {
+    auto htmlFile = data.path.replace("/", "-").replace("\\", "-") ~ ".html";
+    std.file.write(buildPath("coverage", "html", htmlFile), data.toHtml);
+  }
 }
 
 /// Get the line that contains the coverage summary
@@ -58,7 +80,7 @@ unittest {
 /// Get the filename from the coverage summary
 string getFileName(string fileContent) {
   auto r = fileContent.getCoverageSummary;
-  
+
   if(r.empty) {
     return "";
   }
@@ -84,8 +106,8 @@ unittest {
 /// It should get the filename from the .lst file with no code
 unittest {
   "
-  
-  
+
+
   ".getFileName.should.equal("");
 }
 
@@ -101,7 +123,7 @@ unittest {
 /// Get the percentage from the covered summary
 double getCoveragePercent(string fileContent) {
   auto r = fileContent.getCoverageSummary;
-  
+
   if(r.empty) {
     return 100;
   }
@@ -129,8 +151,8 @@ unittest {
 /// It should get the filename from the .lst file with no code
 unittest {
   "
-  
-  
+
+
   ".getCoveragePercent.should.equal(100);
 }
 
@@ -176,7 +198,7 @@ struct LineCoverage {
 }
 
 /// It should parse an empty line
-unittest 
+unittest
 {
   auto lineCoverage = LineCoverage(`      |`);
   lineCoverage.code.should.equal("");
@@ -195,7 +217,7 @@ auto toCoverageLines(string fileContent) {
 
 /// It should convert a .lst file to covered line structs
 unittest {
-  auto lines = 
+  auto lines =
 "      |
        |import std.stdio;
      75|  this(File f) {
@@ -221,3 +243,121 @@ core/cloud/source/cloud/system.d is 88% covered
   lines[3].hits.should.equal(0);
   lines[3].hasCode.should.equal(false);
 }
+
+/// Structure that represents one .lst file
+struct CoveredFile {
+  /// The covered file path
+  string path;
+
+  /// Is true if the file is from the tested library and
+  /// false if is an external file
+  bool isInCurrentProject;
+
+  /// The module name
+  string moduleName;
+
+  /// The covered percent
+  double coveragePercent;
+
+  /// The file lines with coverage data
+  LineCoverage[] lines;
+}
+
+/// Converts a .lst file content to a CoveredFile structure
+CoveredFile toCoverageFile(string content, string packagePath) {
+
+  auto fileName = content.getFileName;
+  auto fullPath = buildNormalizedPath(getcwd, fileName);
+
+  return CoveredFile(
+    fileName,
+    fullPath.indexOf(packagePath) == 0,
+    getModuleName(fullPath),
+    getCoveragePercent(content),
+    content.toCoverageLines.array);
+}
+
+/// should convert a .lst file to CoveredFile structure
+unittest {
+  auto result = `       |/++
+       |  The main runner logic. You can find here some LifeCycle logic and test runner
+       |  initalization
+       |+/
+       |module trial.runner;
+       |
+       |  /// Send the begin run event to all listeners
+       |  void begin(ulong testCount) {
+     23|    lifecycleListeners.each!(a => a.begin(testCount));
+       |  }
+lifecycle/trial/runner.d is 74% covered
+`.toCoverageFile(buildPath(getcwd, "lifecycle/trial"));
+
+  result.path.should.equal("lifecycle/trial/runner.d");
+  result.isInCurrentProject.should.equal(true);
+  result.moduleName.should.equal("trial.runner");
+  result.coveragePercent.should.equal(74);
+  result.lines.length.should.equal(10);
+  result.lines[0].code.should.equal("/++");
+  result.lines[9].code.should.equal("  }");
+}
+
+string toHtml(CoveredFile coveredFile) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/d.min.js"></script>
+  <title>` ~ coveredFile.moduleName ~ ` Coverage</title>
+</head>
+<body>
+  <pre>
+    <code class="d">` ~ coveredFile.lines.map!(a => a.code).array.join("\n") ~ `</code>
+  </pre>
+
+  <script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>`;
+}
+
+/// should convert CoveredFile structure to html
+unittest {
+  auto result = `       |/++
+       |  The main runner logic. You can find here some LifeCycle logic and test runner
+       |  initalization
+       |+/
+       |module trial.runner;
+       |
+       |  /// Send the begin run event to all listeners
+       |  void begin(ulong testCount) {
+     23|    lifecycleListeners.each!(a => a.begin(testCount));
+       |  }
+lifecycle/trial/runner.d is 74% covered
+`.toCoverageFile(buildPath(getcwd, "lifecycle", "trial")).toHtml;
+
+  result.should.equal(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>trial.runner Coverage</title>
+</head>
+<body>
+  <pre>
+    <code>/++
+  The main runner logic. You can find here some LifeCycle logic and test runner
+  initalization
++/
+module trial.runner;
+
+  /// Send the begin run event to all listeners
+  void begin(ulong testCount) {
+    lifecycleListeners.each!(a => a.begin(testCount));
+  }</code>
+  </pre>
+</body>
+</html>`);
+}
+
