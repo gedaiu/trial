@@ -10,7 +10,7 @@ addons:
     - libssl-dev
     - pkg-config
     - zlib1g-dev
-
+    - libgcc-dev
 
 d:
   # order: latest DMD, oldest DMD, LDC/GDC, remaining DMD versions
