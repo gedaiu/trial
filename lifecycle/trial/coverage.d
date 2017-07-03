@@ -338,15 +338,8 @@ unittest {
 lifecycle/trial/runner.d is 74% covered
 `.toCoverageFile(buildPath(getcwd, "lifecycle", "trial")).toHtml;
 
-  result.should.equal(`<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>trial.runner Coverage</title>
-</head>
-<body>
-  <pre>
-    <code>/++
+  result.should.contain(`  <pre>
+    <code class="d">/++
   The main runner logic. You can find here some LifeCycle logic and test runner
   initalization
 +/
@@ -357,7 +350,6 @@ module trial.runner;
     lifecycleListeners.each!(a => a.begin(testCount));
   }</code>
   </pre>
-</body>
-</html>`);
+`);
 }
 
