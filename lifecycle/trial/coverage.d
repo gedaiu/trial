@@ -27,6 +27,8 @@ void convertLstFiles(string packagePath) {
     mkdirRecurse("coverage/html");
   }
 
+  std.file.write(buildPath("coverage", "html", "coverage.css"), import("coverage.css"));
+
   auto coverageData =
     dirEntries("coverage/raw", SpanMode.shallow)
     .filter!(f => f.name.endsWith(".lst"))
@@ -301,6 +303,29 @@ lifecycle/trial/runner.d is 74% covered
   result.lines[9].code.should.equal("  }");
 }
 
+/// Generate the html for a line coverage
+string toLineCoverage(T)(LineCoverage line, T index) {
+  return `<div class="line ` ~ 
+            (line.hasCode ? "has-code" : "") ~ ` ` ~ 
+            (line.hits > 0 ? "hit" : "") ~ `"><span class="line-number">` ~ 
+              index.to!string ~ `</span><span class="hit-count">` ~ line.hits.to!string ~ `</span></div>`;
+}
+
+/// Get the line coverage column for the html report
+string toHtmlCoverage(LineCoverage[] lines) {
+  return lines.enumerate(1).map!(a => a[1].toLineCoverage(a[0])).array.join("");
+}
+
+/// Cont how many lines were hit
+auto hitLines(LineCoverage[] lines) {
+  return lines.filter!(a => a.hits > 0).array.length;
+}
+
+/// Cont how many lines were hit
+auto codeLines(LineCoverage[] lines) {
+  return lines.filter!(a => a.hasCode).array.length;
+}
+
 string toHtml(CoveredFile coveredFile) {
   return `<!doctype html>
 <html lang="en">
@@ -308,48 +333,35 @@ string toHtml(CoveredFile coveredFile) {
   <meta charset="utf-8">
 
   <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="coverage.css">
 
   <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/d.min.js"></script>
   <title>` ~ coveredFile.moduleName ~ ` Coverage</title>
 </head>
 <body>
-  <pre>
-    <code class="d">` ~ coveredFile.lines.map!(a => a.code).array.join("\n") ~ `</code>
-  </pre>
-
+  <header>
+    <h1>` ~ coveredFile.moduleName ~ ` - ` ~ coveredFile.path ~ `</h1>
+    
+    Lines ` ~ coveredFile.lines.hitLines.to!string ~ `/` ~ coveredFile.lines.codeLines.to!string ~ `
+    <div class="progress">
+      <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" aria-valuenow="` ~ coveredFile.coveragePercent.to!string ~ `" aria-valuemin="0" aria-valuemax="100" style="width: ` ~ coveredFile.coveragePercent.to!string ~ `%">
+        <span class="sr-only">` ~ coveredFile.coveragePercent.to!string ~ `% Covered</span>
+        ` ~ coveredFile.coveragePercent.to!string ~ `%
+      </div>
+    </div>
+  
+  </header>
+  <main class="coverage">
+    <figure>
+      <pre class="code-container">
+        <div class="coverage-container">` ~ coveredFile.lines.toHtmlCoverage ~ `</div>
+        <code class="d">` ~ coveredFile.lines.map!(a => a.code.replace("<", "&lt;").replace(">", "&gt;")).array.join("\n") ~ `</code>
+      </pre>
+    </figure>
+  </main>
   <script>hljs.initHighlightingOnLoad();</script>
 </body>
 </html>`;
 }
-
-/// should convert CoveredFile structure to html
-unittest {
-  auto result = `       |/++
-       |  The main runner logic. You can find here some LifeCycle logic and test runner
-       |  initalization
-       |+/
-       |module trial.runner;
-       |
-       |  /// Send the begin run event to all listeners
-       |  void begin(ulong testCount) {
-     23|    lifecycleListeners.each!(a => a.begin(testCount));
-       |  }
-lifecycle/trial/runner.d is 74% covered
-`.toCoverageFile(buildPath(getcwd, "lifecycle", "trial")).toHtml;
-
-  result.should.contain(`  <pre>
-    <code class="d">/++
-  The main runner logic. You can find here some LifeCycle logic and test runner
-  initalization
-+/
-module trial.runner;
-
-  /// Send the begin run event to all listeners
-  void begin(ulong testCount) {
-    lifecycleListeners.each!(a => a.begin(testCount));
-  }</code>
-  </pre>
-`);
-}
-
