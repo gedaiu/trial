@@ -34,12 +34,19 @@ void convertLstFiles(string packagePath) {
     .filter!(f => f.name.endsWith(".lst"))
     .filter!(f => f.isFile)
     .map!(a => readText(a.name))
-    .map!(a => a.toCoverageFile(packagePath));
+    .map!(a => a.toCoverageFile(packagePath)).array;
+
+
+  std.file.write(buildPath("coverage", "html", "index.html"), coverageData.toHtmlIndex);
 
   foreach (data; coverageData) {
-    auto htmlFile = data.path.replace("/", "-").replace("\\", "-") ~ ".html";
+    auto htmlFile = data.path.toCoverageHtmlFileName;
     std.file.write(buildPath("coverage", "html", htmlFile), data.toHtml);
   }
+}
+
+string toCoverageHtmlFileName(string fileName) {
+  return fileName.replace("/", "-").replace("\\", "-") ~ ".html";
 }
 
 /// Get the line that contains the coverage summary
@@ -220,7 +227,7 @@ auto toCoverageLines(string fileContent) {
 /// It should convert a .lst file to covered line structs
 unittest {
   auto lines =
-"      |
+ "      |
        |import std.stdio;
      75|  this(File f) {
        |  }
@@ -273,7 +280,7 @@ CoveredFile toCoverageFile(string content, string packagePath) {
 
   return CoveredFile(
     fileName,
-    fullPath.indexOf(packagePath) == 0,
+    fullPath.indexOf(packagePath) == 0 && fullPath.indexOf("generated.d") == -1,
     getModuleName(fullPath),
     getCoveragePercent(content),
     content.toCoverageLines.array);
@@ -303,6 +310,14 @@ lifecycle/trial/runner.d is 74% covered
   result.lines[9].code.should.equal("  }");
 }
 
+/// should mark the `generated.d` file as external file
+unittest {
+  auto result = `generated.d is 74% covered
+`.toCoverageFile(buildPath(getcwd, "lifecycle/trial"));
+
+  result.isInCurrentProject.should.equal(false);
+}
+
 /// Generate the html for a line coverage
 string toLineCoverage(T)(LineCoverage line, T index) {
   return `<div class="line ` ~ 
@@ -326,7 +341,7 @@ auto codeLines(LineCoverage[] lines) {
   return lines.filter!(a => a.hasCode).array.length;
 }
 
-string toHtml(CoveredFile coveredFile) {
+string wrapToHtml(string content, string title) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -338,10 +353,16 @@ string toHtml(CoveredFile coveredFile) {
 
   <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/d.min.js"></script>
-  <title>` ~ coveredFile.moduleName ~ ` Coverage</title>
+  <title>` ~ title ~ `</title>
 </head>
 <body>
-  <header>
+  ` ~ content ~ `
+</body>
+</html>`;
+}
+
+string toHtml(CoveredFile coveredFile) {
+  return wrapToHtml(`<header>
     <h1>` ~ coveredFile.moduleName ~ ` - ` ~ coveredFile.path ~ `</h1>
     
     Lines ` ~ coveredFile.lines.hitLines.to!string ~ `/` ~ coveredFile.lines.codeLines.to!string ~ `
@@ -361,7 +382,51 @@ string toHtml(CoveredFile coveredFile) {
       </pre>
     </figure>
   </main>
-  <script>hljs.initHighlightingOnLoad();</script>
-</body>
-</html>`;
+  <script>hljs.initHighlightingOnLoad();</script>`, coveredFile.moduleName ~ " coverage");
+}
+
+string indexTable(string content) {
+  return `<table class="table">
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>File</th>
+      <th>Lines Covered</th>
+      <th>Percent</th>
+    </tr>
+  </thead>
+  <tbody>` ~ content ~ `
+    </tbody>
+  </table>`;
+}
+
+string toHtmlIndex(CoveredFile[] coveredFiles) {
+  sort!("toUpper(a.path) < toUpper(b.path)", SwapStrategy.stable)(coveredFiles);
+  string content;
+
+  string table;
+  foreach(file; coveredFiles.filter!"a.isInCurrentProject") {
+    table ~= `<tr>
+      <td><a href="` ~ file.path.toCoverageHtmlFileName ~ `">` ~ file.path ~ `</a></td>
+      <td>` ~ file.moduleName ~ `</td>
+      <td>` ~ file.lines.hitLines.to!string ~ `/` ~ file.lines.codeLines.to!string ~ `</td>
+      <td>` ~ file.coveragePercent.to!string ~ `% </td>
+    </tr>`;
+  }
+
+  content ~= `<h1>Project</h1>` ~ table.indexTable;
+
+  table = "";
+  foreach(file; coveredFiles.filter!"!a.isInCurrentProject") {
+    table ~= `<tr>
+      <td><a href="` ~ file.path.toCoverageHtmlFileName ~ `">` ~ file.path ~ `</a></td>
+      <td>` ~ file.moduleName ~ `</td>
+      <td>` ~ file.lines.hitLines.to!string ~ `/` ~ file.lines.codeLines.to!string ~ `</td>
+      <td>` ~ file.coveragePercent.to!string ~ `% </td>
+    </tr>`;
+  }
+
+  content ~= `<h1>Dependencies</h1>` ~ table.indexTable;
+
+  return wrapToHtml(content, "Code Coverage report");
 }
