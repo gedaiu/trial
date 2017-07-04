@@ -361,17 +361,21 @@ string wrapToHtml(string content, string title) {
 </html>`;
 }
 
+string htmlProgress(string percent) {
+  return `<div class="progress">
+      <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" aria-valuenow="` ~ percent ~ `" aria-valuemin="0" aria-valuemax="100" style="width: ` ~ percent ~ `%">
+        <span class="sr-only">` ~ percent ~ `% Covered</span>
+        ` ~ percent ~ `%
+      </div>
+    </div>`;
+}
+
 string toHtml(CoveredFile coveredFile) {
   return wrapToHtml(`<header>
     <h1>` ~ coveredFile.moduleName ~ ` - ` ~ coveredFile.path ~ `</h1>
     
     Lines ` ~ coveredFile.lines.hitLines.to!string ~ `/` ~ coveredFile.lines.codeLines.to!string ~ `
-    <div class="progress">
-      <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" aria-valuenow="` ~ coveredFile.coveragePercent.to!string ~ `" aria-valuemin="0" aria-valuemax="100" style="width: ` ~ coveredFile.coveragePercent.to!string ~ `%">
-        <span class="sr-only">` ~ coveredFile.coveragePercent.to!string ~ `% Covered</span>
-        ` ~ coveredFile.coveragePercent.to!string ~ `%
-      </div>
-    </div>
+    ` ~ htmlProgress(coveredFile.coveragePercent.to!string) ~`
   
   </header>
   <main class="coverage">
@@ -405,14 +409,33 @@ string toHtmlIndex(CoveredFile[] coveredFiles) {
   string content;
 
   string table;
+  double percent = 0;
+  size_t totalHitLines;
+  size_t totalLines;
+  int count;
+
   foreach(file; coveredFiles.filter!"a.isInCurrentProject") {
+    auto currentHitLines = file.lines.hitLines;
+    auto currentTotalLines = file.lines.codeLines;
+
     table ~= `<tr>
       <td><a href="` ~ file.path.toCoverageHtmlFileName ~ `">` ~ file.path ~ `</a></td>
       <td>` ~ file.moduleName ~ `</td>
-      <td>` ~ file.lines.hitLines.to!string ~ `/` ~ file.lines.codeLines.to!string ~ `</td>
-      <td>` ~ file.coveragePercent.to!string ~ `% </td>
+      <td>` ~ file.lines.hitLines.to!string ~ `/` ~ currentTotalLines.to!string ~ `</td>
+      <td>` ~ file.coveragePercent.to!string.htmlProgress ~ `</td>
     </tr>`;
+
+    percent += file.coveragePercent;
+    totalHitLines += currentHitLines;
+    totalLines += currentTotalLines;
+    count++;
   }
+
+  table ~= `<tr>
+      <td colspan="2">Total</td>
+      <td>` ~ totalHitLines.to!string ~ `/` ~ totalLines.to!string ~ `</td>
+      <td>` ~ (percent / count).to!int.to!string.htmlProgress ~ `</td>
+    </tr>`;
 
   content ~= `<h1>Project</h1>` ~ table.indexTable;
 
@@ -422,7 +445,7 @@ string toHtmlIndex(CoveredFile[] coveredFiles) {
       <td><a href="` ~ file.path.toCoverageHtmlFileName ~ `">` ~ file.path ~ `</a></td>
       <td>` ~ file.moduleName ~ `</td>
       <td>` ~ file.lines.hitLines.to!string ~ `/` ~ file.lines.codeLines.to!string ~ `</td>
-      <td>` ~ file.coveragePercent.to!string ~ `% </td>
+      <td>` ~ file.coveragePercent.to!string.htmlProgress ~ `</td>
     </tr>`;
   }
 
