@@ -341,6 +341,15 @@ auto codeLines(LineCoverage[] lines) {
   return lines.filter!(a => a.hasCode).array.length;
 }
 
+string replaceVariable(const string page, const string key, const string value) pure {
+  return page.replace("{"~key~"}", value);
+}
+
+/// It should replace a variable inside a page
+unittest {
+  `-{key}-`.replaceVariable("key", "value").should.equal("-value-");
+}
+
 string wrapToHtml(string content, string title) {
   return `<!doctype html>
 <html lang="en">
