@@ -14,30 +14,30 @@ import trial.discovery.code;
 shared static this() {
   import core.runtime;
 
-  if(!exists("coverage/raw")) {
-    mkdirRecurse("coverage/raw");
+  if(!exists(buildPath("coverage", "raw"))) {
+    mkdirRecurse(buildPath("coverage", "raw"));
   }
 
-  dmd_coverDestPath("coverage/raw");
+  dmd_coverDestPath(buildPath("coverage", "raw"));
 }
 
 /// Converts coverage lst files to html
-void convertLstFiles(string packagePath) {
-  if(!exists("coverage/html")) {
-    mkdirRecurse("coverage/html");
+void convertLstFiles(string packagePath, string packageName) {
+  if(!exists(buildPath("coverage", "html"))) {
+    mkdirRecurse(buildPath("coverage", "html"));
   }
 
   std.file.write(buildPath("coverage", "html", "coverage.css"), import("coverage.css"));
 
   auto coverageData =
-    dirEntries("coverage/raw", SpanMode.shallow)
+    dirEntries(buildPath("coverage", "raw"), SpanMode.shallow)
     .filter!(f => f.name.endsWith(".lst"))
     .filter!(f => f.isFile)
     .map!(a => readText(a.name))
     .map!(a => a.toCoverageFile(packagePath)).array;
 
 
-  std.file.write(buildPath("coverage", "html", "index.html"), coverageData.toHtmlIndex);
+  std.file.write(buildPath("coverage", "html", "index.html"), coverageData.toHtmlIndex(packageName));
 
   foreach (data; coverageData) {
     auto htmlFile = data.path.toCoverageHtmlFileName;
@@ -370,14 +370,22 @@ string htmlProgress(string percent) {
     </div>`;
 }
 
+string coverageHeader(CoveredFile coveredFile) {
+  auto pieces = pathSplitter(coveredFile.path).array;
+
+  return `<header>
+    <h1>` ~ coveredFile.moduleName ~ ` 
+      <small>` ~ coveredFile.lines.hitLines.to!string ~ `/` ~ coveredFile.lines.codeLines.to!string ~ `(` 
+        ~ coveredFile.coveragePercent.to!string ~ `%) line coverage</small></h1>
+    <ol class="breadcrumb">
+      <li><a href="index.html">index</a></li>
+      <li>` ~ pieces.join(`</li><li>`) ~ `</li>
+    </ol>
+  </header>`;
+}
+
 string toHtml(CoveredFile coveredFile) {
-  return wrapToHtml(`<header>
-    <h1>` ~ coveredFile.moduleName ~ ` - ` ~ coveredFile.path ~ `</h1>
-    
-    Lines ` ~ coveredFile.lines.hitLines.to!string ~ `/` ~ coveredFile.lines.codeLines.to!string ~ `
-    ` ~ htmlProgress(coveredFile.coveragePercent.to!string) ~`
-  
-  </header>
+  return wrapToHtml(coverageHeader(coveredFile) ~ `
   <main class="coverage">
     <figure>
       <pre class="code-container">
@@ -404,7 +412,7 @@ string indexTable(string content) {
   </table>`;
 }
 
-string toHtmlIndex(CoveredFile[] coveredFiles) {
+string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
   sort!("toUpper(a.path) < toUpper(b.path)", SwapStrategy.stable)(coveredFiles);
   string content;
 
@@ -437,7 +445,7 @@ string toHtmlIndex(CoveredFile[] coveredFiles) {
       <td>` ~ (percent / count).to!int.to!string.htmlProgress ~ `</td>
     </tr>`;
 
-  content ~= `<h1>Project</h1>` ~ table.indexTable;
+  content ~= indexHeader(name, percent / count, totalHitLines, totalLines) ~ table.indexTable;
 
   table = "";
   foreach(file; coveredFiles.filter!"!a.isInCurrentProject") {
@@ -451,5 +459,11 @@ string toHtmlIndex(CoveredFile[] coveredFiles) {
 
   content ~= `<h1>Dependencies</h1>` ~ table.indexTable;
 
+  content = `<div class="container">` ~ content ~ `</div>`;
+
   return wrapToHtml(content, "Code Coverage report");
+}
+
+string indexHeader(string name, double percent, size_t totalHitLines, size_t totalLines) {
+  return `<h1>` ~ name ~ ` <small>` ~ percent.to!int.to!string ~ `% line coverage</small></h1>`;
 }

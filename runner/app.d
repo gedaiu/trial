@@ -248,7 +248,7 @@ version(unitttest) {} else {
 		} catch(Exception e) {
 			return 1;
 		} finally {
-			convertLstFiles(dub.rootPath.toString);
+			convertLstFiles(dub.rootPath.toString, dub.projectName);
 		}
 
 		return 0;
