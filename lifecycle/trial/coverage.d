@@ -36,7 +36,7 @@ void convertLstFiles(string packagePath, string packageName) {
     .map!(a => readText(a.name))
     .map!(a => a.toCoverageFile(packagePath)).array;
 
-
+  std.file.write(buildPath("coverage", "html", "coverage-shield.svg"), coverageShield(coverageData.filter!"a.isInCurrentProject".array.coveragePercent.to!int.to!string));
   std.file.write(buildPath("coverage", "html", "index.html"), coverageData.toHtmlIndex(packageName));
 
   foreach (data; coverageData) {
@@ -412,12 +412,23 @@ string indexTable(string content) {
   </table>`;
 }
 
+double coveragePercent(CoveredFile[] coveredFiles) {
+  int count;
+  double percent = 0;
+
+  foreach(file; coveredFiles.filter!"a.isInCurrentProject") {
+    percent += file.coveragePercent;
+    count++;
+  }
+
+  return percent / count;
+}
+
 string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
   sort!("toUpper(a.path) < toUpper(b.path)", SwapStrategy.stable)(coveredFiles);
   string content;
 
   string table;
-  double percent = 0;
   size_t totalHitLines;
   size_t totalLines;
   int count;
@@ -433,7 +444,6 @@ string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
       <td>` ~ file.coveragePercent.to!string.htmlProgress ~ `</td>
     </tr>`;
 
-    percent += file.coveragePercent;
     totalHitLines += currentHitLines;
     totalLines += currentTotalLines;
     count++;
@@ -442,10 +452,10 @@ string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
   table ~= `<tr>
       <td colspan="2">Total</td>
       <td>` ~ totalHitLines.to!string ~ `/` ~ totalLines.to!string ~ `</td>
-      <td>` ~ (percent / count).to!int.to!string.htmlProgress ~ `</td>
+      <td>` ~ coveredFiles.coveragePercent.to!int.to!string.htmlProgress ~ `</td>
     </tr>`;
 
-  content ~= indexHeader(name, percent / count, totalHitLines, totalLines) ~ table.indexTable;
+  content ~= indexHeader(name) ~ table.indexTable;
 
   table = "";
   foreach(file; coveredFiles.filter!"!a.isInCurrentProject") {
@@ -464,6 +474,12 @@ string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
   return wrapToHtml(content, "Code Coverage report");
 }
 
-string indexHeader(string name, double percent, size_t totalHitLines, size_t totalLines) {
-  return `<h1>` ~ name ~ ` <small>` ~ percent.to!int.to!string ~ `% line coverage</small></h1>`;
+string indexHeader(string name) {
+  return `<h1>` ~ name ~ ` <img src="coverage-shield.svg"></h1>`;
+}
+
+string coverageShield(string percent) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="118" height="20">` ~
+  `<linearGradient id="b" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/>`~
+  `<stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="a"><rect width="118" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#a)"><path fill="#555" d="M0 0h83v20H0z"/><path fill="#4c1" d="M83 0h35v20H83z"/><path fill="url(#b)" d="M0 0h118v20H0z"/></g><g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11"><text x="41.5" y="15" fill="#010101" fill-opacity=".3">line coverage</text><text x="41.5" y="14">line coverage</text><text x="99.5" y="15" fill="#010101" fill-opacity=".3">` ~ percent ~ `%</text><text x="99.5" y="14">` ~ percent ~ `%</text></g></svg>`;
 }
