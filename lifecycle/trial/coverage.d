@@ -27,7 +27,7 @@ void convertLstFiles(string packagePath, string packageName) {
     mkdirRecurse(buildPath("coverage", "html"));
   }
 
-  std.file.write(buildPath("coverage", "html", "coverage.css"), import("coverage.css"));
+  std.file.write(buildPath("coverage", "html", "coverage.css"), import("templates/coverage.css"));
 
   auto coverageData =
     dirEntries(buildPath("coverage", "raw"), SpanMode.shallow)
@@ -478,8 +478,13 @@ string indexHeader(string name) {
   return `<h1>` ~ name ~ ` <img src="coverage-shield.svg"></h1>`;
 }
 
+
+/// Create line coverage shield as svg
 string coverageShield(string percent) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="118" height="20">` ~
-  `<linearGradient id="b" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/>`~
-  `<stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="a"><rect width="118" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#a)"><path fill="#555" d="M0 0h83v20H0z"/><path fill="#4c1" d="M83 0h35v20H83z"/><path fill="url(#b)" d="M0 0h118v20H0z"/></g><g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11"><text x="41.5" y="15" fill="#010101" fill-opacity=".3">line coverage</text><text x="41.5" y="14">line coverage</text><text x="99.5" y="15" fill="#010101" fill-opacity=".3">` ~ percent ~ `%</text><text x="99.5" y="14">` ~ percent ~ `%</text></g></svg>`;
+  return import("templates/coverage.svg").replace("?%", percent ~ "%");
+}
+
+/// The line coverage shield should contain the percent
+unittest {
+  coverageShield("30").should.contain("30%");
 }
