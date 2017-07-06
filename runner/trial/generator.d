@@ -5,10 +5,14 @@ import std.array;
 import std.string;
 import std.stdio;
 import std.conv;
+import std.file;
+import std.path;
 
 import dub.internal.vibecompat.core.log;
 
 import trial.settings;
+
+private string[string] templates;
 
 string generateDiscoveries(string[] discoveries, string[2][] modules, bool hasTrialDependency) {
   string code;
@@ -35,12 +39,25 @@ string generateDiscoveries(string[] discoveries, string[2][] modules, bool hasTr
   return code;
 }
 
+void setupTemplate(string file)() {
+  mixin("templates[`" ~ file ~"`] = import(`" ~ file ~ "`);");
+}
+
 string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] modules, string[] externalModules, string testName = "") {
   testName = testName.replace(`"`, `\"`);
 
   if(testName != "") {
     logInfo("Selecting tests conaining `" ~ testName ~ "`.");
   }
+
+  setupTemplate!"templates/coverage.css";
+  setupTemplate!"templates/coverage.svg";
+  setupTemplate!"templates/coverageBody.html";
+  setupTemplate!"templates/coverageColumn.html";
+  setupTemplate!"templates/coverageHeader.html";
+  setupTemplate!"templates/indexTable.html";
+  setupTemplate!"templates/page.html";
+  setupTemplate!"templates/progress.html";
 
   enum d =
     import("reporters/writer.d") ~
@@ -61,6 +78,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     import("executor/parallel.d") ~
     import("executor/single.d") ~
     import("discovery/unit.d") ~
+    import("discovery/code.d") ~
     import("settings.d") ~
     import("step.d") ~
     import("coverage.d") ~
@@ -88,7 +106,8 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
             .filter!(a => !a.startsWith("@(\""))
             .filter!(a => a.indexOf("import") == -1 || a.indexOf("trial.") == -1)
             .join("\n")
-            .removeUnittests;
+            .removeUnittests
+            .replaceImports;
   }
 
   code ~= `
@@ -262,3 +281,31 @@ version (unittest)
 `);
 }
 
+string replaceImports(string source) {
+  auto pieces = source.split(`import("`);
+
+  foreach(i; 1..pieces.length) {
+    auto tmpPieces = pieces[i].split(`")`);
+    auto path = tmpPieces[0];
+
+    pieces[i] = "`" ~ templates[path] ~ "`" ~ tmpPieces[1..$].join(`")`);
+  }
+
+  return pieces.join("");
+}
+
+/// It should replace the import statement with the file content
+unittest {
+  templates["templates/something.html"] = "content";
+  `string toLineCoverage(T)(LineCoverage line, T index) {
+  return import("templates/something.html")
+            .replaceVariable("hasCode", line.hasCode ? "has-code" : "")
+            .replaceVariable("hit", line.hits > 0 ? "hit" : "")
+            .replaceVariable("line", index.to!string)
+  `.replaceImports.should.equal(`string toLineCoverage(T)(LineCoverage line, T index) {
+  return ` ~ "`content`" ~ `
+            .replaceVariable("hasCode", line.hasCode ? "has-code" : "")
+            .replaceVariable("hit", line.hits > 0 ? "hit" : "")
+            .replaceVariable("line", index.to!string)
+  `);
+}
