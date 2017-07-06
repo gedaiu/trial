@@ -320,15 +320,24 @@ unittest {
 
 /// Generate the html for a line coverage
 string toLineCoverage(T)(LineCoverage line, T index) {
-  return `<div class="line ` ~ 
-            (line.hasCode ? "has-code" : "") ~ ` ` ~ 
-            (line.hits > 0 ? "hit" : "") ~ `"><span class="line-number">` ~ 
-              index.to!string ~ `</span><span class="hit-count">` ~ line.hits.to!string ~ `</span></div>`;
+  return import("templates/coverageColumn.html")
+            .replaceVariable("hasCode", line.hasCode ? "has-code" : "")
+            .replaceVariable("hit", line.hits > 0 ? "hit" : "")
+            .replaceVariable("line", index.to!string)
+            .replaceVariable("hitCount", line.hits.to!string);
+}
+
+/// Render line coverage column
+unittest {
+  LineCoverage("    |").toLineCoverage(1).should.contain([`<span class="line-number">1</span>`, `<span class="hit-count">0</span>`]);
+  LineCoverage("    |").toLineCoverage(1).should.not.contain(["has-code", `hit"`]);
+
+  LineCoverage("    1|code").toLineCoverage(2).should.contain([ `<span class="line-number">2</span>`, `<span class="hit-count">1</span>`, "has-code", `hit"` ]);
 }
 
 /// Get the line coverage column for the html report
 string toHtmlCoverage(LineCoverage[] lines) {
-  return lines.enumerate(1).map!(a => a[1].toLineCoverage(a[0])).array.join("");
+  return lines.enumerate(1).map!(a => a[1].toLineCoverage(a[0])).array.join("").replace("\n", "");
 }
 
 /// Cont how many lines were hit
@@ -341,6 +350,7 @@ auto codeLines(LineCoverage[] lines) {
   return lines.filter!(a => a.hasCode).array.length;
 }
 
+/// Replace an `{variable}` inside a string
 string replaceVariable(const string page, const string key, const string value) pure {
   return page.replace("{"~key~"}", value);
 }
@@ -350,79 +360,101 @@ unittest {
   `-{key}-`.replaceVariable("key", "value").should.equal("-value-");
 }
 
+/// wraps some string in a html page
 string wrapToHtml(string content, string title) {
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-
-  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-  <link rel="stylesheet" href="coverage.css">
-
-  <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
-  <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/d.min.js"></script>
-  <title>` ~ title ~ `</title>
-</head>
-<body>
-  ` ~ content ~ `
-</body>
-</html>`;
+  return import("templates/page.html").replaceVariable("content", content).replaceVariable("title", title);
 }
 
+///should replace the variables inside the page.html
+unittest {
+  auto page = wrapToHtml("some content", "some title");
+
+  page.should.contain(`<title>some title</title>`);
+  page.should.contain("<body>\n  some content\n</body>");
+}
+
+/// Create an html progress bar
 string htmlProgress(string percent) {
-  return `<div class="progress">
-      <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" aria-valuenow="` ~ percent ~ `" aria-valuemin="0" aria-valuemax="100" style="width: ` ~ percent ~ `%">
-        <span class="sr-only">` ~ percent ~ `% Covered</span>
-        ` ~ percent ~ `%
-      </div>
-    </div>`;
+  return import("templates/progress.html").replaceVariable("percent", percent);
 }
 
+///should replace the variables inside the page.html
+unittest {
+  htmlProgress("33").should.contain(`33%`);
+  htmlProgress("33").should.contain(`33% Covered`);
+}
+
+/// Generate the coverage page header
 string coverageHeader(CoveredFile coveredFile) {
-  auto pieces = pathSplitter(coveredFile.path).array;
-
-  return `<header>
-    <h1>` ~ coveredFile.moduleName ~ ` 
-      <small>` ~ coveredFile.lines.hitLines.to!string ~ `/` ~ coveredFile.lines.codeLines.to!string ~ `(` 
-        ~ coveredFile.coveragePercent.to!string ~ `%) line coverage</small></h1>
-    <ol class="breadcrumb">
-      <li><a href="index.html">index</a></li>
-      <li>` ~ pieces.join(`</li><li>`) ~ `</li>
-    </ol>
-  </header>`;
+  return import("templates/coverageHeader.html")
+          .replaceVariable("title", coveredFile.moduleName)
+          .replaceVariable("hitLines", coveredFile.lines.hitLines.to!string)
+          .replaceVariable("totalLines", coveredFile.lines.codeLines.to!string)
+          .replaceVariable("coveragePercent", coveredFile.coveragePercent.to!string)
+          .replaceVariable("pathPieces", pathSplitter(coveredFile.path).array.join(`</li><li>`));
 }
 
+/// Check variables for the coverage header
+unittest {
+  CoveredFile coveredFile;
+  coveredFile.moduleName = "module.name";
+  coveredFile.coveragePercent = 30;
+  coveredFile.path = "a/b";
+  coveredFile.lines = [ LineCoverage("       0| not code"), LineCoverage("    1| some code") ];
+
+  auto header = coverageHeader(coveredFile);
+
+  header.should.contain(`<h1>module.name`);
+  header.should.contain(`1/2`);
+  header.should.contain(`30%`);
+  header.should.contain(`<li>a</li><li>b</li>`);
+}
+
+/// Convert a `CoveredFile` struct to html
 string toHtml(CoveredFile coveredFile) {
-  return wrapToHtml(coverageHeader(coveredFile) ~ `
-  <main class="coverage">
-    <figure>
-      <pre class="code-container">
-        <div class="coverage-container">` ~ coveredFile.lines.toHtmlCoverage ~ `</div>
-        <code class="d">` ~ coveredFile.lines.map!(a => a.code.replace("<", "&lt;").replace(">", "&gt;")).array.join("\n") ~ `</code>
-      </pre>
-    </figure>
-  </main>
-  <script>hljs.initHighlightingOnLoad();</script>`, coveredFile.moduleName ~ " coverage");
+   return wrapToHtml(
+     coverageHeader(coveredFile) ~ 
+     import("templates/coverageBody.html")
+          .replaceVariable("lines", coveredFile.lines.toHtmlCoverage)
+          .replaceVariable("code", coveredFile.lines.map!(a => a.code.replace("<", "&lt;").replace(">", "&gt;")).array.join("\n")),
+
+      coveredFile.moduleName ~ " coverage"
+   );
+}
+
+/// Check variables for the coverage html
+unittest {
+  CoveredFile coveredFile;
+  coveredFile.moduleName = "module.name";
+  coveredFile.coveragePercent = 30;
+  coveredFile.path = "a/b";
+  coveredFile.lines = [ LineCoverage("       0| <not code>"), LineCoverage("    1| some code") ];
+
+  auto html = toHtml(coveredFile);
+
+  html.should.contain(`<h1>module.name`);
+  html.should.contain(`&lt;not code&gt;`);
+  html.should.contain(`<title>module.name coverage</title>`);
+  html.should.contain(`hit"`);
 }
 
 string indexTable(string content) {
-  return `<table class="table">
-  <thead>
-    <tr>
-      <th>Module</th>
-      <th>File</th>
-      <th>Lines Covered</th>
-      <th>Percent</th>
-    </tr>
-  </thead>
-  <tbody>` ~ content ~ `
-    </tbody>
-  </table>`;
+  return import("templates/indexTable.html").replaceVariable("content", content);
 }
 
+/// Check if the table body is inserted
+unittest {
+  indexTable("some content").should.contain(`<tbody>some content</tbody>`);
+}
+
+/// Calculate the coverage percent from the current project
 double coveragePercent(CoveredFile[] coveredFiles) {
   int count;
+
+  if(coveredFiles.length == 0) {
+    return 100;
+  }
+
   double percent = 0;
 
   foreach(file; coveredFiles.filter!"a.isInCurrentProject") {
@@ -431,6 +463,37 @@ double coveragePercent(CoveredFile[] coveredFiles) {
   }
 
   return percent / count;
+}
+
+/// No files are always 100% covered
+unittest {
+  [].coveragePercent.should.equal(100);
+}
+
+/// Should calculate the coverage based on the current files
+unittest {
+  CoveredFile coveredFile1;
+  coveredFile1.isInCurrentProject = true;
+  coveredFile1.coveragePercent = 30;
+
+  CoveredFile coveredFile2;
+  coveredFile2.isInCurrentProject = true;
+  coveredFile2.coveragePercent = 40;
+
+  [coveredFile1, coveredFile2].coveragePercent.should.equal(35);
+}
+
+/// Should ignore the coverage from the external files
+unittest {
+  CoveredFile coveredFile1;
+  coveredFile1.isInCurrentProject = true;
+  coveredFile1.coveragePercent = 30;
+
+  CoveredFile coveredFile2;
+  coveredFile2.isInCurrentProject = false;
+  coveredFile2.coveragePercent = 40;
+
+  [coveredFile1, coveredFile2].coveragePercent.should.equal(30);
 }
 
 string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
@@ -459,9 +522,9 @@ string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
   }
 
   table ~= `<tr>
-      <td colspan="2">Total</td>
-      <td>` ~ totalHitLines.to!string ~ `/` ~ totalLines.to!string ~ `</td>
-      <td>` ~ coveredFiles.coveragePercent.to!int.to!string.htmlProgress ~ `</td>
+      <th colspan="2">Total</td>
+      <th>` ~ totalHitLines.to!string ~ `/` ~ totalLines.to!string ~ `</td>
+      <th>` ~ coveredFiles.coveragePercent.to!int.to!string.htmlProgress ~ `</td>
     </tr>`;
 
   content ~= indexHeader(name) ~ table.indexTable;
