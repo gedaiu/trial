@@ -413,7 +413,7 @@ unittest {
 /// Convert a `CoveredFile` struct to html
 string toHtml(CoveredFile coveredFile) {
    return wrapToHtml(
-     coverageHeader(coveredFile) ~ 
+     coverageHeader(coveredFile) ~
      import("templates/coverageBody.html")
           .replaceVariable("lines", coveredFile.lines.toHtmlCoverage)
           .replaceVariable("code", coveredFile.lines.map!(a => a.code.replace("<", "&lt;").replace(">", "&gt;")).array.join("\n")),

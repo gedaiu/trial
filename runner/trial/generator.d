@@ -63,6 +63,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     import("discovery/unit.d") ~
     import("settings.d") ~
     import("step.d") ~
+    import("coverage.d") ~
     import("stackresult.d");
 
   string code;
@@ -133,7 +134,26 @@ string removeTest(string data) {
     return data;
   }
 
+  char ignore;
+
   foreach(size_t i, ch; data) {
+    if(ignore != char.init) {
+
+      if(ignore == ch) {
+        ignore = char.init;
+      }
+
+      continue;
+    }
+
+    if(ch == '`') {
+      ignore = '`';
+    }
+
+    if(ch == '"') {
+      ignore = '"';
+    }
+
     if(ch == '{') {
       cnt++;
     }
@@ -190,6 +210,27 @@ unittest{
   }`);
 }
 
+
+
+@("It should ignore strings inside unit tests")
+unittest{
+  `module test;
+
+  unittest {
+    "}";
+  }
+
+  int main() {
+    return 0;
+  }`.removeUnittests.should.equal(`module test;
+
+
+  int main() {
+    return 0;
+  }`);
+}
+
+
 @("It should remove unittest versions")
 unittest{
   `module test;
@@ -220,3 +261,4 @@ version (unittest)
 }`.removeUnittests.should.equal(`module test;
 `);
 }
+
