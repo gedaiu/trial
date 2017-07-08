@@ -1,0 +1,108 @@
+body, html {
+  height: 100%;
+}
+
+header {
+  background-color: #FFF;
+  border-bottom: 1px solid #777;
+  padding: 10px;
+}
+
+header .progress {
+  max-width: 300px;
+}
+
+header .progress .progress-bar {
+  min-width: 2em;
+}
+
+main {
+  display: block;
+  margin: 0;
+}
+
+figure {
+  display: block;
+  margin: 0;
+  width: 100%;
+}
+
+figure figcaption {
+  display: block;
+  font-family: sans-serif;
+  padding: 5px 10px 4px 10px;
+  border-radius: 3px 3px 0 0;
+  font-weight: bold;
+}
+
+pre {
+  overflow: visible;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+  word-break: break-all;
+  word-wrap: break-word;
+  background-color: transparent;
+  border: 0;
+  border-radius: 0;
+  line-height: 1.5;
+  width: 100%;
+}
+
+.code-container {
+  position: relative;
+}
+
+.coverage-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100px;
+  font: inherit;
+}
+
+.code-container code {
+  position: absolute;
+  left: 100px;
+  top: 0;
+  width: calc(100% - 50px);
+}
+
+code.hljs {
+    padding-top: 0;
+
+    font-size: inherit;
+    line-height: inherit;
+    width: calc(100% - 100px);
+}
+
+pre .line {
+  font: inherit;
+  color: #777;
+  overflow: hidden;
+  position: relative;
+  
+  border-right: 3px solid #ccc;
+  padding-left: 5px;
+}
+
+pre .line .hit-count {
+  opacity: 0;
+}
+
+pre .line.has-code .hit-count {
+  display: block;
+  position: absolute;
+  opacity: 1;
+  top: 0;
+  right: 3px;
+  color: #0000cc;
+}
+
+pre .line.has-code {
+  border-right: 3px solid #ff0000;
+}
+
+pre .line.has-code.hit {
+  border-right: 3px solid #00aa00;
+}

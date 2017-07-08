@@ -31,20 +31,8 @@ import dub.internal.utils;
 
 import trial.generator;
 import trial.settings;
-
-string getModuleName(string fileName) {
-	auto file = File(fileName);
-
-	auto moduleLine = file.byLine()
-		.map!(a => a.to!string)
-		.filter!(a => a.startsWith("module"));
-
-	if(moduleLine.empty) {
-		return "";
-	}
-
-	return moduleLine.front.split(' ')[1].split(";")[0];
-}
+import trial.discovery.code;
+import trial.coverage;
 
 Settings readSettings(Path root) {
 	string path = (root ~ Path("trial.json")).to!string;
@@ -242,7 +230,7 @@ version(unitttest) {} else {
 		arguments ~= ["--main-file=" ~ description.mainFile];
 
 		options = parseGeneralOptions(arguments);
-		commandArgs = new CommandArgs(arguments); 
+		commandArgs = new CommandArgs(arguments);
 		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
 
 		auto cmd = new TestCommand;
@@ -259,6 +247,8 @@ version(unitttest) {} else {
 			cmd.execute(dub, remainingArgs, []);
 		} catch(Exception e) {
 			return 1;
+		} finally {
+			convertLstFiles(dub.rootPath.toString, dub.projectName);
 		}
 
 		return 0;

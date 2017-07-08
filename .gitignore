@@ -19,3 +19,10 @@ allure
 allure-html
 .DS_Store
 *.lst
+coverage/
+libcurl.dll
+libeay32.dll
+ssleay32.dll
+trial-lifecycle-test-library.exe
+trial.exe
+trial_lifecycle.lib
