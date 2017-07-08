@@ -130,27 +130,27 @@ version(Have_arsd_official_terminal) {
       void setColor(Context context) {
         switch(context) {
           case Context.active:
-            terminal.color(Color.white | Bright, 255);
+            terminal.color(Color.white | Bright,  Color.DEFAULT);
             break;
 
           case Context.inactive:
-            terminal.color(Color.black | Bright, 255);
+            terminal.color(Color.black | Bright, Color.DEFAULT);
             break;
 
           case Context.success:
-            terminal.color(Color.green | Bright, 255);
+            terminal.color(Color.green | Bright, Color.DEFAULT);
             break;
 
           case Context.info:
-            terminal.color(Color.cyan, 255);
+            terminal.color(Color.cyan, Color.DEFAULT);
             break;
 
           case Context.warning:
-            terminal.color(Color.yellow, 255);
+            terminal.color(Color.yellow, Color.DEFAULT);
             break;
 
           case Context.danger:
-            terminal.color(Color.red, 255);
+            terminal.color(Color.red, Color.DEFAULT);
             break;
 
           default:
@@ -162,27 +162,27 @@ version(Have_arsd_official_terminal) {
       void setColorReverse(Context context) {
         switch(context) {
           case Context.active:
-            terminal.color(255, Color.white | Bright);
+            terminal.color(Color.DEFAULT, Color.white | Bright);
             break;
 
           case Context.inactive:
-            terminal.color(255, Color.black | Bright);
+            terminal.color(Color.DEFAULT, Color.black | Bright);
             break;
 
           case Context.success:
-            terminal.color(255, Color.green | Bright);
+            terminal.color(Color.DEFAULT, Color.green | Bright);
             break;
 
           case Context.info:
-            terminal.color(255, Color.cyan);
+            terminal.color(Color.DEFAULT, Color.cyan);
             break;
 
           case Context.warning:
-            terminal.color(255, Color.yellow);
+            terminal.color(Color.DEFAULT, Color.yellow);
             break;
 
           case Context.danger:
-            terminal.color(255, Color.red);
+            terminal.color(Color.DEFAULT, Color.red);
             break;
 
           default:
@@ -214,8 +214,10 @@ version(Have_arsd_official_terminal) {
       setColor(context);
 
       terminal.write(text);
+      terminal.flush;
       resetColor;
       terminal.flush;
+
     }
 
     /// writes a string with reversed colors
@@ -231,7 +233,7 @@ version(Have_arsd_official_terminal) {
 
     /// writes a string and go to a new line
     void writeln(string text, Context context) {
-      write(text ~ "\n", context);
+      this.write(text ~ "\n", context);
     }
 
     /// show the terminal cursor
