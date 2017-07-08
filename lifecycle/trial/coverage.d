@@ -41,6 +41,7 @@ void convertLstFiles(string packagePath, string packageName) {
 
   foreach (data; coverageData) {
     auto htmlFile = data.path.toCoverageHtmlFileName;
+
     std.file.write(buildPath("coverage", "html", htmlFile), data.toHtml);
   }
 }
@@ -272,15 +273,40 @@ struct CoveredFile {
   LineCoverage[] lines;
 }
 
+
+/// Check if a file is in the current path
+bool isPackagePath(string fullPath, string packagePath) {
+  if(fullPath.indexOf("generated.d") != -1) {
+    return false;
+  }
+
+  if(fullPath.indexOf(packagePath) == 0) {
+    return true;
+  }
+
+  if(fullPath.replace("\\", "/").indexOf(packagePath) == 0) {
+    return true;
+  }
+
+  return false;
+}
+
+/// Check project paths
+unittest {
+  "../../something.d".isPackagePath("/Users/trial/").should.equal(false);
+  "/Users/trial/generated.d".isPackagePath("/Users/trial/").should.equal(false);
+  "/Users/trial/runner.d".isPackagePath("/Users/trial/").should.equal(true);
+  "C:\\Users\\trial\\runner.d".isPackagePath("C:/Users/trial/").should.equal(true);
+}
+
 /// Converts a .lst file content to a CoveredFile structure
 CoveredFile toCoverageFile(string content, string packagePath) {
-
   auto fileName = content.getFileName;
   auto fullPath = buildNormalizedPath(getcwd, fileName);
 
   return CoveredFile(
     fileName,
-    fullPath.indexOf(packagePath) == 0 && fullPath.indexOf("generated.d") == -1,
+    fullPath.isPackagePath(packagePath),
     getModuleName(fullPath),
     getCoveragePercent(content),
     content.toCoverageLines.array);
@@ -524,7 +550,7 @@ string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
   table ~= `<tr>
       <th colspan="2">Total</td>
       <th>` ~ totalHitLines.to!string ~ `/` ~ totalLines.to!string ~ `</td>
-      <th>` ~ coveredFiles.coveragePercent.to!int.to!string.htmlProgress ~ `</td>
+      <th>` ~ coveredFiles.coveragePercent.to!string.htmlProgress ~ `</td>
     </tr>`;
 
   content ~= indexHeader(name) ~ table.indexTable;
