@@ -104,6 +104,13 @@ version(Have_arsd_official_terminal) {
   static import arsd.terminal;
 
   shared static this() {
+    version(windows) {
+      import core.sys.windows.windows;
+
+      SetConsoleCP(65001);
+      SetConsoleOutputCP(65001);
+    }
+
     defaultWriter = new ColorConsoleWriter;
   }
 
