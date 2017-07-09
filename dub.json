@@ -21,9 +21,7 @@
 			"dependencies": {
 				"arsd-official:terminal": "~>1.2.1",
 				"fluent-asserts": "~>0.6.0"
-			},
-
-			"dflags": [ "-Jlifecycle/trial" ]
+			}
 		},
 		{
 			"name": "runner",

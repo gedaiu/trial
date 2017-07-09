@@ -1,7 +1,7 @@
 /++
   The main runner logic. You can find here some LifeCycle logic and test runner
   initalization
-  
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
@@ -54,7 +54,7 @@ void addReporter(string name) {
         auto storage = statsFromFile("trial-stats.csv");
         LifeCycleListeners.instance.add(new SpecProgressReporter(storage));
         break;
-      
+
       case "spec-steps":
         LifeCycleListeners.instance.add(new SpecStepsReporter);
         break;
