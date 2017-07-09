@@ -126,11 +126,12 @@ version(Have_arsd_official_terminal) {
       alias ForceOption = arsd.terminal.ForceOption;
 
       int lines = 0;
+      bool movedToBottom = false;
 
       void setColor(Context context) {
         switch(context) {
           case Context.active:
-            terminal.color(Color.white | Bright,  Color.DEFAULT);
+            terminal.color(Color.white | Bright, Color.DEFAULT);
             break;
 
           case Context.inactive:
@@ -204,6 +205,10 @@ version(Have_arsd_official_terminal) {
 
     /// Go up `y` lines
     void goTo(int y) {
+      if(!movedToBottom) {
+        movedToBottom = true;
+        terminal.moveTo(0, terminal.height - 1);
+      }
       terminal.moveTo(0, terminal.cursorY - y, ForceOption.alwaysSend);
     }
 
@@ -217,7 +222,6 @@ version(Have_arsd_official_terminal) {
       terminal.flush;
       resetColor;
       terminal.flush;
-
     }
 
     /// writes a string with reversed colors
