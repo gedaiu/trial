@@ -9,6 +9,9 @@ module trial.discovery.testclass;
 
 import std.meta;
 import std.traits;
+import std.uni;
+import std.conv;
+import std.string;
 
 import trial.interfaces;
 
@@ -30,8 +33,6 @@ class TestClassDiscovery : ITestDiscovery {
       mixin("import " ~ ModuleName ~ ";");
       enum classList = classMembers!(ModuleName);
 
-      pragma(msg, "===>", classList);
-
       foreach(className; classList) {
         mixin("alias CurrentClass = " ~ ModuleName ~ "." ~ className ~ ";");
 
@@ -39,7 +40,9 @@ class TestClassDiscovery : ITestDiscovery {
 
         foreach(member; members) {
           static if(isTestMember!(ModuleName, className, member)) {
-            list ~= TestCase("", "", ({
+            string testName = getTestName!(ModuleName, className, member);
+
+            list ~= TestCase(ModuleName ~ "." ~ className, testName, ({
 
             }), [ ]);
           }
@@ -49,12 +52,38 @@ class TestClassDiscovery : ITestDiscovery {
   }
 }
 
-bool isTestMember(string ModuleName, string className, string member)() {
-  pragma(msg, className, ":", member);
+string getTestName(string ModuleName, string className, string member)() {
   mixin("import " ~ ModuleName ~ ";");
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
 
-  pragma(msg, member, attributes.stringof, testAttributes!attributes);
+  enum testAttributes = testAttributes!attributes;
+  enum name = testAttributes[0].name;
+
+  static if(name.length == 0) {
+    return member.camelToSentence;
+  } else {
+    return name;
+   }
+}
+
+/// Converts a string from camel notation to a readable sentence
+string camelToSentence(const string name) pure {
+  string sentence;
+
+  foreach(ch; name) {
+    if(ch.toUpper == ch) {
+      sentence ~= " " ~ ch.toLower.to!string;
+    } else {
+      sentence ~= ch;
+    }
+  }
+
+  return sentence.capitalize;
+}
+
+bool isTestMember(string ModuleName, string className, string member)() {
+  mixin("import " ~ ModuleName ~ ";");
+  mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
 
   return testAttributes!attributes.length > 0;
 }
@@ -101,9 +130,16 @@ version(unittest) {
   import fluent.asserts;
 
   class SomeTestSuite {
-
     @Test()
     void aSimpleTest() {
+
+    }
+  }
+
+  class OtherTestSuite {
+
+    @Test("Some other name")
+    void aCustomTest() {
 
     }
   }
@@ -114,5 +150,12 @@ unittest {
   auto discovery = new TestClassDiscovery();
   discovery.addModule!(`lifecycle/trial/discovery/testclass.d`, `trial.discovery.testclass`);
 
-  discovery.getTestCases.length.should.equal(1);
+  auto testCases = discovery.getTestCases;
+
+  testCases.length.should.equal(2);
+  testCases[0].suiteName.should.equal(`trial.discovery.testclass.SomeTestSuite`);
+  testCases[0].name.should.equal(`A simple test`);
+
+  testCases[1].suiteName.should.equal(`trial.discovery.testclass.OtherTestSuite`);
+  testCases[1].name.should.equal(`Some other name`);
 }

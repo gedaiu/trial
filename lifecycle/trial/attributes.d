@@ -4,7 +4,10 @@ struct TestAttribute {
   string name;
 }
 
-
-@property TestAttribute Test() {
+TestAttribute Test() {
   return TestAttribute("");
+}
+
+TestAttribute Test(string name) {
+  return TestAttribute(name);
 }
