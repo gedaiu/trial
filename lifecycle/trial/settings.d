@@ -1,6 +1,6 @@
 /++
   Settings parser and structures
-  
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
@@ -17,12 +17,12 @@ struct Settings
   bool bail;*/
 
   /** The reporter list that will be added by the runner at startup
-   * You can use here only the embeded reporters. 
+   * You can use here only the embeded reporters.
    * If you want to use a custom reporter you can use `static this` constructor
    *
    * Examples:
    * ------------------------
-   * static this 
+   * static this
    * {
    *    LifeCycleListeners.instance.add(myCustomReporter);
    * }
@@ -33,7 +33,7 @@ struct Settings
   /// The test discovery classes that you want to use
   string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
 
-  /// The default executor is `SingleRunner`. If you want to use the 
+  /// The default executor is `SingleRunner`. If you want to use the
   /// `ParallelExecutor` set this flag true.
   bool runInParallel = false;
 
