@@ -12,6 +12,7 @@ import std.traits;
 import std.uni;
 import std.conv;
 import std.string;
+import std.algorithm;
 
 import trial.interfaces;
 
@@ -43,7 +44,8 @@ class TestClassDiscovery : ITestDiscovery {
             string testName = getTestName!(ModuleName, className, member);
 
             list ~= TestCase(ModuleName ~ "." ~ className, testName, ({
-
+              mixin(`auto instance = new ` ~ className ~ `();`);
+              mixin(`instance.` ~ member ~ `;`);
             }), [ ]);
           }
         }
@@ -130,9 +132,11 @@ version(unittest) {
   import fluent.asserts;
 
   class SomeTestSuite {
+    static string lastTest;
+
     @Test()
     void aSimpleTest() {
-
+      lastTest = "a simple test";
     }
   }
 
@@ -158,4 +162,19 @@ unittest {
 
   testCases[1].suiteName.should.equal(`trial.discovery.testclass.OtherTestSuite`);
   testCases[1].name.should.equal(`Some other name`);
+}
+
+/// It should execute tests from a Test Suite class
+unittest {
+  auto discovery = new TestClassDiscovery();
+  discovery.addModule!(`lifecycle/trial/discovery/testclass.d`, `trial.discovery.testclass`);
+
+  auto test = discovery.getTestCases
+    .filter!(a => a.suiteName == `trial.discovery.testclass.SomeTestSuite`)
+    .filter!(a => a.name == `A simple test`)
+    .front;
+
+  test.func();
+
+  SomeTestSuite.lastTest.should.equal("a simple test");
 }
