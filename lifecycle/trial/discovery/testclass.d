@@ -15,6 +15,7 @@ import std.string;
 import std.algorithm;
 
 import trial.interfaces;
+import trial.attributes;
 
 struct SetupEvent {
   string name;
@@ -220,8 +221,6 @@ template isTestAttribute(alias Attribute)
 
 template isSetupAttribute(alias Attribute)
 {
-  import trial.attributes;
-
   static if(!is(CommonType!(Attribute, TestSetupAttribute) == void)) {
     enum bool isSetupAttribute = true;
   } else {
