@@ -16,6 +16,56 @@ import std.algorithm;
 
 import trial.interfaces;
 
+struct SetupEvent {
+  string name;
+
+  TestSetupAttribute setup;
+  TestCaseFunction func;
+}
+
+
+private {
+  SetupEvent[][string] setupMethods;
+  Object[string] testClassInstances;
+  size_t[string] testMethodCount;
+  size_t[string] testMethodExecuted;
+}
+
+void methodDone(string ModuleName, string ClassName)() {
+  enum key = ModuleName ~ "." ~ ClassName;
+
+  testMethodExecuted[key]++;
+
+  if(testMethodExecuted[key] >= testMethodCount[key]) {
+    if(key in setupMethods) {
+      foreach(setupMethod; setupMethods[key].filter!(a => a.setup.afterAll)) {
+        setupMethod.func();
+      }
+    }
+
+    testClassInstances.remove(key);
+  }
+}
+auto getTestClassInstance(string ModuleName, string ClassName)() {
+  enum key = ModuleName ~ "." ~ ClassName;
+
+  if(key !in testClassInstances) {
+    mixin(`import ` ~ ModuleName ~ `;`);
+    mixin(`auto instance = new ` ~ ClassName ~ `();`);
+
+    testClassInstances[key] = instance;
+    testMethodExecuted[key] = 0;
+
+    if(key in setupMethods) {
+      foreach(setupMethod; setupMethods[key].filter!(a => a.setup.beforeAll)) {
+        setupMethod.func();
+      }
+    }
+  }
+
+  mixin(`return cast(` ~ key ~ `) testClassInstances[key];`);
+}
+
 /// The default test discovery looks for unit test sections and groups them by module
 class TestClassDiscovery : ITestDiscovery {
   private TestCase[] list;
@@ -40,12 +90,56 @@ class TestClassDiscovery : ITestDiscovery {
         enum members = __traits(allMembers, CurrentClass);
 
         foreach(member; members) {
+          static if(isSetupMember!(ModuleName, className, member)) {
+            enum setup = getSetup!(ModuleName, className, member);
+            enum key = ModuleName ~ "." ~ className;
+
+            auto exists = key in setupMethods && !setupMethods[key].filter!(a => a.name == member).empty;
+
+            if(!exists) {
+              setupMethods[key] ~= SetupEvent(member, setup, ({
+                mixin(`auto instance = new ` ~ className ~ `();`);
+                mixin(`instance.` ~ member ~ `;`);
+              }));
+            }
+
+            pragma(msg, className, ":", member, ":", setup);
+          }
+        }
+      }
+
+      foreach(className; classList) {
+        enum key = ModuleName ~ "." ~ className;
+        mixin("alias CurrentClass = " ~ key ~ ";");
+
+        enum members = __traits(allMembers, CurrentClass);
+        testMethodCount[key] = 0;
+
+        foreach(member; members) {
           static if(isTestMember!(ModuleName, className, member)) {
+            testMethodCount[key]++;
             string testName = getTestName!(ModuleName, className, member);
 
             list ~= TestCase(ModuleName ~ "." ~ className, testName, ({
-              mixin(`auto instance = new ` ~ className ~ `();`);
+              auto instance = getTestClassInstance!(ModuleName, className);
+
+              enum key = ModuleName ~ "." ~ className;
+
+              if(key in setupMethods) {
+                foreach(setupMethod; setupMethods[key].filter!(a => a.setup.beforeEach)) {
+                  setupMethod.func();
+                }
+              }
+
               mixin(`instance.` ~ member ~ `;`);
+
+              if(key in setupMethods) {
+                foreach(setupMethod; setupMethods[key].filter!(a => a.setup.afterEach)) {
+                  setupMethod.func();
+                }
+              }
+
+              methodDone!(ModuleName, className);
             }), [ ]);
           }
         }
@@ -65,7 +159,14 @@ string getTestName(string ModuleName, string className, string member)() {
     return member.camelToSentence;
   } else {
     return name;
-   }
+  }
+}
+
+auto getSetup(string ModuleName, string className, string member)() {
+  mixin("import " ~ ModuleName ~ ";");
+  mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
+
+  return setupAttributes!attributes[0];
 }
 
 /// Converts a string from camel notation to a readable sentence
@@ -90,6 +191,13 @@ bool isTestMember(string ModuleName, string className, string member)() {
   return testAttributes!attributes.length > 0;
 }
 
+bool isSetupMember(string ModuleName, string className, string member)() {
+  mixin("import " ~ ModuleName ~ ";");
+  mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
+
+  return setupAttributes!attributes.length > 0;
+}
+
 template isClass(string name)
 {
   mixin("
@@ -103,12 +211,21 @@ template isTestAttribute(alias Attribute)
 {
   import trial.attributes;
 
-  pragma(msg, Attribute, "?", CommonType!(Attribute, TestAttribute));
-
   static if(!is(CommonType!(Attribute, TestAttribute) == void)) {
     enum bool isTestAttribute = true;
   } else {
     enum bool isTestAttribute = false;
+  }
+}
+
+template isSetupAttribute(alias Attribute)
+{
+  import trial.attributes;
+
+  static if(!is(CommonType!(Attribute, TestSetupAttribute) == void)) {
+    enum bool isSetupAttribute = true;
+  } else {
+    enum bool isSetupAttribute = false;
   }
 }
 
@@ -120,6 +237,11 @@ template extractClasses(string moduleName, members...)
 template testAttributes(attributes...)
 {
   alias Filter!(isTestAttribute, attributes) testAttributes;
+}
+
+template setupAttributes(attributes...)
+{
+  alias Filter!(isSetupAttribute, attributes) setupAttributes;
 }
 
 template classMembers(string moduleName)
@@ -141,10 +263,31 @@ version(unittest) {
   }
 
   class OtherTestSuite {
+    static string[] order;
+
+    @BeforeEach()
+    void beforeEach() {
+      order ~= "before each";
+    }
+
+    @AfterEach()
+    void afterEach() {
+      order ~= "after each";
+    }
+
+    @BeforeAll()
+    void beforeAll() {
+      order ~= "before all";
+    }
+
+    @AfterAll()
+    void afterAll() {
+      order ~= "after all";
+    }
 
     @Test("Some other name")
     void aCustomTest() {
-
+      order ~= "a custom test";
     }
   }
 }
@@ -166,6 +309,10 @@ unittest {
 
 /// It should execute tests from a Test Suite class
 unittest {
+  scope(exit) {
+    SomeTestSuite.lastTest = "";
+  }
+
   auto discovery = new TestClassDiscovery();
   discovery.addModule!(`lifecycle/trial/discovery/testclass.d`, `trial.discovery.testclass`);
 
@@ -177,4 +324,23 @@ unittest {
   test.func();
 
   SomeTestSuite.lastTest.should.equal("a simple test");
+}
+
+/// It should execute the before and after methods tests from a Test Suite class
+unittest {
+  scope(exit) {
+    OtherTestSuite.order = [];
+  }
+
+  auto discovery = new TestClassDiscovery();
+  discovery.addModule!(`lifecycle/trial/discovery/testclass.d`, `trial.discovery.testclass`);
+
+  auto test = discovery.getTestCases
+    .filter!(a => a.suiteName == `trial.discovery.testclass.OtherTestSuite`)
+    .filter!(a => a.name == `Some other name`)
+    .front;
+
+  test.func();
+
+  OtherTestSuite.order.should.equal([ "before all", "before each", "a custom test", "after each", "after all"]);
 }
