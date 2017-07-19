@@ -13,6 +13,7 @@ import std.uni;
 import std.conv;
 import std.string;
 import std.algorithm;
+import std.random;
 
 import trial.interfaces;
 import trial.attributes;
@@ -23,7 +24,6 @@ struct SetupEvent {
   TestSetupAttribute setup;
   TestCaseFunction func;
 }
-
 
 private {
   SetupEvent[][string] setupMethods;
@@ -342,4 +342,40 @@ unittest {
   test.func();
 
   OtherTestSuite.order.should.equal([ "before all", "before each", "a custom test", "after each", "after all"]);
+}
+
+string randomParameters(T...)() {
+  static if(T.length == 0) {
+    //alias randomParameters = AliasSeq!();
+    return "";
+  } else static if(T.length == 1) {
+    return "uniform!" ~ T[0].stringof ~ "()";
+  } else {
+    return randomParameters!(T[0]) ~ ", " ~ randomParameters!(T[1..$]);
+  }
+}
+
+void methodCaller(T)(T func) {
+  enum parameterCount = arity!func;
+  mixin("func(" ~ randomParameters!(Parameters!func) ~ ");");
+}
+
+/// methodCaller should call the method with random numeric values
+unittest {
+  class TestClass {
+    static int usedIntValue = 0;
+    static ulong usedUlongValue = 0;
+
+    void randomMethod(int value, ulong other) {
+      usedIntValue = value;
+      usedUlongValue = other;
+    }
+  }
+
+  auto instance = new TestClass;
+
+  methodCaller(&instance.randomMethod);
+
+  TestClass.usedIntValue.should.not.equal(0);
+  TestClass.usedUlongValue.should.not.equal(0);
 }
