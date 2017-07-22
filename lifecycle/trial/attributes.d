@@ -1,7 +1,6 @@
 module trial.attributes;
 
 struct TestAttribute {
-  string name;
 }
 
 struct TestSetupAttribute {
@@ -12,11 +11,7 @@ struct TestSetupAttribute {
 }
 
 TestAttribute Test() {
-  return TestAttribute("");
-}
-
-TestAttribute Test(string name) {
-  return TestAttribute(name);
+  return TestAttribute();
 }
 
 TestSetupAttribute BeforeEach() {

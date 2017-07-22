@@ -156,9 +156,16 @@ string getTestName(string ModuleName, string className, string member)() {
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
 
   enum testAttributes = testAttributes!attributes;
-  enum name = testAttributes[0].name;
 
-  static if(name.length == 0) {
+  string name;
+
+  foreach(attribute; attributes) {
+    static if(is(typeof(attribute) == string)) {
+      name = attribute;
+    }
+  }
+
+  if(name.length == 0) {
     return member.camelToSentence;
   } else {
     return name;
@@ -304,7 +311,8 @@ version(unittest) {
       order ~= "after all";
     }
 
-    @Test("Some other name")
+    @Test()
+    @("Some other name")
     void aCustomTest() {
       order ~= "a custom test";
     }
@@ -442,8 +450,6 @@ version(unittest) {
 }
 /// methodCaller should call the method with custom random generators
 unittest {
-
-
   class TestClass {
     static int usedIntValue = 0;
     static ulong usedUlongValue = 0;
