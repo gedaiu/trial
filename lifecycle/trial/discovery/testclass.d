@@ -32,7 +32,7 @@ private {
   size_t[string] testMethodExecuted;
 }
 
-void methodDone(string ModuleName, string ClassName)() {
+private void methodDone(string ModuleName, string ClassName)() {
   enum key = ModuleName ~ "." ~ ClassName;
 
   testMethodExecuted[key]++;
@@ -47,7 +47,8 @@ void methodDone(string ModuleName, string ClassName)() {
     testClassInstances.remove(key);
   }
 }
-auto getTestClassInstance(string ModuleName, string ClassName)() {
+
+private auto getTestClassInstance(string ModuleName, string ClassName)() {
   enum key = ModuleName ~ "." ~ ClassName;
 
   if(key !in testClassInstances) {
@@ -71,10 +72,13 @@ auto getTestClassInstance(string ModuleName, string ClassName)() {
 class TestClassDiscovery : ITestDiscovery {
   private TestCase[] list;
 
+  /// Returns all the test cases that were found in the modules
+  /// added with `addModule`
   TestCase[] getTestCases() {
     return list;
   }
 
+  /// Add tests from a certain module
   void addModule(string file, string moduleName)()
   {
     discover!moduleName;
@@ -103,8 +107,6 @@ class TestClassDiscovery : ITestDiscovery {
                 mixin(`instance.` ~ member ~ `;`);
               }));
             }
-
-            pragma(msg, className, ":", member, ":", setup);
           }
         }
       }
@@ -218,6 +220,11 @@ template isTestAttribute(alias Attribute)
     enum bool isTestAttribute = false;
   }
 }
+template isRightParameter(string parameterName) {
+  template isRightParameter(alias Attribute) {
+    enum isRightParameter = Attribute.parameterName == parameterName;
+  }
+}
 
 template isSetupAttribute(alias Attribute)
 {
@@ -228,9 +235,22 @@ template isSetupAttribute(alias Attribute)
   }
 }
 
+template isValueProvider(alias Attribute) {
+  static if(__traits(hasMember, Attribute, "provide") && __traits(hasMember, Attribute, "parameterName")) {
+    enum bool isValueProvider = true;
+  } else {
+    enum bool isValueProvider = false;
+  }
+}
+
 template extractClasses(string moduleName, members...)
 {
   alias Filter!(isClass,members) extractClasses;
+}
+
+template extractValueProviders(Elements...)
+{
+  alias Filter!(isValueProvider, Elements) extractValueProviders;
 }
 
 template testAttributes(attributes...)
@@ -245,7 +265,7 @@ template setupAttributes(attributes...)
 
 template classMembers(string moduleName)
 {
-    mixin("alias extractClasses!(moduleName, __traits(allMembers, " ~ moduleName ~ ")) classMembers;");
+  mixin("alias extractClasses!(moduleName, __traits(allMembers, " ~ moduleName ~ ")) classMembers;");
 }
 
 version(unittest) {
@@ -344,20 +364,43 @@ unittest {
   OtherTestSuite.order.should.equal([ "before all", "before each", "a custom test", "after each", "after all"]);
 }
 
-string randomParameters(T...)() {
-  static if(T.length == 0) {
-    //alias randomParameters = AliasSeq!();
-    return "";
-  } else static if(T.length == 1) {
-    return "uniform!" ~ T[0].stringof ~ "()";
+string randomParameters(alias T, int index)() pure nothrow {
+  alias paramTypes = Parameters!T;
+  enum params = ParameterIdentifierTuple!T;
+  alias providers = Filter!(isRightParameter!(params[index].stringof[1..$-1]), extractValueProviders!(__traits(getAttributes, T)));
+
+  enum provider = "Filter!(isRightParameter!(" ~ params[index].stringof ~ "), extractValueProviders!(__traits(getAttributes, T)))";
+
+  static if(providers.length > 0) {
+    immutable string definition = "auto param_" ~ params[index] ~ " = " ~ provider ~ "[0]().provide; ";
   } else {
-    return randomParameters!(T[0]) ~ ", " ~ randomParameters!(T[1..$]);
+    immutable string definition = "auto param_" ~ params[index] ~ " = uniform!" ~ paramTypes[index].stringof ~ "(); ";
+  }
+
+  static if(index == 0) {
+    return definition;
+  } else {
+    return definition ~ randomParameters!(T, index-1);
   }
 }
 
-void methodCaller(T)(T func) {
-  enum parameterCount = arity!func;
-  mixin("func(" ~ randomParameters!(Parameters!func) ~ ");");
+string methodParameters(alias T, int size)() {
+  enum params = ParameterIdentifierTuple!T;
+
+  static if(size == 0) {
+    return "";
+  } else static if(size == 1) {
+    return "param_" ~ params[0];
+  } else {
+    return methodParameters!(T, size - 1) ~ ", param_" ~ params[size - 1];
+  }
+}
+
+void methodCaller(alias T, U)(U func) {
+  enum parameterCount = arity!T;
+
+  mixin(randomParameters!(T, parameterCount - 1));
+  mixin("func(" ~ methodParameters!(T, parameterCount) ~ ");");
 }
 
 /// methodCaller should call the method with random numeric values
@@ -374,8 +417,49 @@ unittest {
 
   auto instance = new TestClass;
 
-  methodCaller(&instance.randomMethod);
+  methodCaller!(instance.randomMethod)(&instance.randomMethod);
 
   TestClass.usedIntValue.should.not.equal(0);
   TestClass.usedUlongValue.should.not.equal(0);
+}
+
+struct ValueProvider(string name, alias T) {
+  immutable static string parameterName = name;
+
+  auto provide() {
+    return T();
+  }
+}
+
+auto For(string name, alias T)() {
+  return ValueProvider!(name, T)();
+}
+
+version(unittest) {
+  auto someCustomFunction() {
+    return 6;
+  }
+}
+/// methodCaller should call the method with custom random generators
+unittest {
+
+
+  class TestClass {
+    static int usedIntValue = 0;
+    static ulong usedUlongValue = 0;
+
+    @For!("value", { return 5; })
+    @For!("other", { return someCustomFunction(); })
+    void randomMethod(int value, ulong other) {
+      usedIntValue = value;
+      usedUlongValue = other;
+    }
+  }
+
+  auto instance = new TestClass;
+
+  methodCaller!(instance.randomMethod)(&instance.randomMethod);
+
+  TestClass.usedIntValue.should.equal(5);
+  TestClass.usedUlongValue.should.equal(6);
 }
