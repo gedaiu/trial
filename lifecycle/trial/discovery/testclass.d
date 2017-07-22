@@ -372,7 +372,7 @@ unittest {
   OtherTestSuite.order.should.equal([ "before all", "before each", "a custom test", "after each", "after all"]);
 }
 
-string randomParameters(alias T, int index)() pure nothrow {
+private string generateRandomParameters(alias T, int index)() pure nothrow {
   alias paramTypes = Parameters!T;
   enum params = ParameterIdentifierTuple!T;
   alias providers = Filter!(isRightParameter!(params[index].stringof[1..$-1]), extractValueProviders!(__traits(getAttributes, T)));
@@ -388,11 +388,11 @@ string randomParameters(alias T, int index)() pure nothrow {
   static if(index == 0) {
     return definition;
   } else {
-    return definition ~ randomParameters!(T, index-1);
+    return definition ~ generateRandomParameters!(T, index-1);
   }
 }
 
-string methodParameters(alias T, int size)() {
+private string generateMethodParameters(alias T, int size)() {
   enum params = ParameterIdentifierTuple!T;
 
   static if(size == 0) {
@@ -400,15 +400,16 @@ string methodParameters(alias T, int size)() {
   } else static if(size == 1) {
     return "param_" ~ params[0];
   } else {
-    return methodParameters!(T, size - 1) ~ ", param_" ~ params[size - 1];
+    return generateMethodParameters!(T, size - 1) ~ ", param_" ~ params[size - 1];
   }
 }
 
+/// Call a method using the right data provders
 void methodCaller(alias T, U)(U func) {
   enum parameterCount = arity!T;
 
-  mixin(randomParameters!(T, parameterCount - 1));
-  mixin("func(" ~ methodParameters!(T, parameterCount) ~ ");");
+  mixin(generateRandomParameters!(T, parameterCount - 1));
+  mixin("func(" ~ generateMethodParameters!(T, parameterCount) ~ ");");
 }
 
 /// methodCaller should call the method with random numeric values
@@ -448,6 +449,7 @@ version(unittest) {
     return 6;
   }
 }
+
 /// methodCaller should call the method with custom random generators
 unittest {
   class TestClass {

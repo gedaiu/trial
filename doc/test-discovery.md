@@ -8,6 +8,7 @@ Here are informations about how this runner searces for tests inside your projec
 
   - [About](#about)
   - [Unit Test discovery](#unit-test-discovery)
+  - [Test Class discovery](#test-class-discovery)
   - [Extending](#extending)
 
 ## About
@@ -35,23 +36,67 @@ the test with a string [UDA](http://dlang.org/spec/attribute.html#uda) that stri
 ```
 /// This is my awesome test
 unittest {
-    
+
 }
 ```
 
-or 
+or
 
 ```
 @("This is my awesome test")
 unittest {
-    
+
 }
+```
+
+## Test Class discovery
+
+Test class discovery search for classes annotated with `@Test()`. This discovery method is inspired from the `xUnit` frameworks, that usualy uses oop concepts to write the tests. In order to use this discovery, you need to add the `trial:lifecycle` dependency.
+
+In order to use this discovery method, you need to add `"trial.discovery.discovery.TestClassDiscovery"` to the `trial.json` file.
+
+```
+    "testDiscovery": [
+        "trial.discovery.discovery.TestClassDiscovery"
+    ],
+```
+
+There are a bunch of other (annotations)[http://trial.szabobogdan.com/api/trial/discovery/testclass.html] that are useful.
+
+```
+    class OtherTestSuite {
+        @BeforeEach()
+        void beforeEach() {
+            ...
+        }
+
+        @AfterEach()
+        void afterEach() {
+            ...
+        }
+
+        @BeforeAll()
+        void beforeAll() {
+            ...
+        }
+
+        @AfterAll()
+        void afterAll() {
+            ...
+        }
+
+        @Test()
+        @("Some other name")
+        void aCustomTest() {
+            ...
+        }
+    }
 ```
 
 ## Extending
 
 If you want to write your custom TestDiscovery, your class must implement
-the (ITestDiscovery)[http://trial.szabobogdan.com/api/trial/interfaces/ITestDiscovery.html] interface and 
+the (ITestDiscovery)[http://trial.szabobogdan.com/api/trial/interfaces/ITestDiscovery.html] interface and
 the `void addModule(string file, string name)()` method which will be called by the runner to help you to search inside modules.
 
 At the compile time, the runner will generate a code similar to this:
