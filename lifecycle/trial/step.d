@@ -2,7 +2,7 @@
   When you run complex tests, or tests that take a lot of time, it helps
   to mark certain areas as steps, to ease the debug or to improve the report.
 
-  A good usage is for running BDD tests where a step can be steps from the 
+  A good usage is for running BDD tests where a step can be steps from the
   `Gherkin Syntax` or UI Automation tests.
 
   Copyright: © 2017 Szabo Bogdan
@@ -27,14 +27,14 @@ import std.stdio;
   * void TestSetup() @system
   * {
   *   auto aStep = Step("Given some precondition");
-  *   
+  *
   *   Step("Some setup");
   *   performSomeSetup();
-  *   
+  *
   *   Step("Other setup");
   *   performOtherSetup();
   * }
-  * // will create this tree: 
+  * // will create this tree:
   * // Test
   * //  |
   * //  +- Given some precondition
