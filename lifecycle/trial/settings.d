@@ -57,6 +57,9 @@ struct Settings
   /// The number of threads tha you want to use
   /// `0` means the number of cores that your processor has
   uint maxThreads = 0;
+
+  ///
+  GlyphSettings glyphs;
   }
 }
 
