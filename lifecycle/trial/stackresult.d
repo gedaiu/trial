@@ -214,8 +214,7 @@ class StackResult : IResult
 
       foreach (frame; getFrames)
       {
-        result ~= leftJustifier(frame.index.to!string, 4).to!string
-          ~ frame.address ~ " " ~ frame.name ~ "\n";
+        result ~= frame.toString ~ "\n";
       }
 
       return result ~ "...";
@@ -302,6 +301,85 @@ struct Frame
 
   ///
   int line = -1;
+
+  string toString() const {
+    string result;
+
+    if(index >= 0) {
+      result ~= leftJustifier(index.to!string, 4).to!string;
+    }
+
+    result ~= address ~ " ";
+    result ~= name == "" ? "????" : name;
+
+    if(moduleName != "") {
+      result ~= " at " ~ moduleName;
+    }
+
+    if(offset != "") {
+      result ~= " + " ~ offset;
+    }
+
+    if(file != "") {
+      result ~= " (" ~ file;
+
+      if(line > 0) {
+        result ~= ":" ~ line.to!string;
+      }
+
+      result ~= ")";
+    }
+
+    return result;
+  }
+}
+
+/// The frame should convert a frame to string
+unittest
+{
+  Frame(10, "some.module", "0xffffff", "name", "offset", "file.d", 120).toString.should.equal(
+    `10  0xffffff name at some.module + offset (file.d:120)`
+  );
+}
+
+/// The frame should not output an index < 0 or a line < 0
+unittest
+{
+  Frame(-1, "some.module", "0xffffff", "name", "offset", "file.d", -1).toString.should.equal(
+    `0xffffff name at some.module + offset (file.d)`
+  );
+}
+
+/// The frame should not output the file if it is missing from the stack
+unittest
+{
+  Frame(-1, "some.module", "0xffffff", "name", "offset", "", 10).toString.should.equal(
+    `0xffffff name at some.module + offset`
+  );
+}
+
+/// The frame should not output the module if it is missing from the stack
+unittest
+{
+  Frame(-1, "", "0xffffff", "name", "offset", "", 10).toString.should.equal(
+    `0xffffff name + offset`
+  );
+}
+
+/// The frame should not output the offset if it is missing from the stack
+unittest
+{
+  Frame(-1, "", "0xffffff", "name", "", "", 10).toString.should.equal(
+    `0xffffff name`
+  );
+}
+
+/// The frame should display `????` when the name is missing
+unittest
+{
+  Frame(-1, "", "0xffffff", "", "", "", 10).toString.should.equal(
+    `0xffffff ????`
+  );
 }
 
 immutable static
