@@ -24,6 +24,7 @@ version (Have_fluent_asserts_core)
   import fluentasserts.core.results;
 }
 
+/// A structure containing the glyphs used for the result reporter
 struct ResultGlyphs {
   string error = "✖";
 }
