@@ -16,14 +16,25 @@ import trial.reporters.writer;
 
 /// A structure containing the glyphs used for the spec steps reporter
 struct SpecStepsGlyphs {
-  ///
-  string testBegin = "┌";
+  version(Windows) {
+    ///
+    string testBegin = "+";
 
-  ///
-  string testEnd = "└";
+    ///
+    string testEnd = "+";
 
-  ///
-  string step = "│";
+    ///
+    string step = "|";
+  } else {
+    ///
+    string testBegin = "┌";
+
+    ///
+    string testEnd = "└";
+
+    ///
+    string step = "│";
+  }
 }
 
 ///

@@ -15,24 +15,14 @@ import trial.reporters.specsteps;
 version(Have_dub) {
   import dub.internal.vibecompat.data.serialization;
 }
-
-/// A structure representing the `trial.json` file
-struct Settings
+///
+mixin template SettingsFields()
 {
   /*
   bool colors;
   bool sort;
   bool bail;*/
 
-  version(Have_dub) {
-    @optional {
-      string[] reporters = ["spec", "result"];
-      string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
-      bool runInParallel = false;
-      uint maxThreads = 0;
-      GlyphSettings glyphs;
-    }
-  } else {
   /** The reporter list that will be added by the runner at startup
    * You can use here only the embeded reporters.
    * If you want to use a custom reporter you can use `static this` constructor
@@ -60,26 +50,40 @@ struct Settings
 
   ///
   GlyphSettings glyphs;
+}
+
+/// A structure representing the `trial.json` file
+struct Settings
+{
+  version(Have_dub) {
+    @optional {
+      mixin SettingsFields;
+    }
+  } else {
+    mixin SettingsFields;
   }
+}
+
+mixin template GlyphSettingsFields()
+{
+  ///
+  SpecGlyphs spec;
+
+  ///
+  SpecStepsGlyphs specSteps;
+
+  ///
+  ResultGlyphs result;
 }
 
 /// The gliph settings
 struct GlyphSettings {
   version(Have_dub) {
     @optional {
-      SpecGlyphs spec;
-      SpecStepsGlyphs specSteps;
-      ResultGlyphs result;
+      mixin GlyphSettingsFields;
     }
   } else {
-    ///
-    SpecGlyphs spec;
-
-    ///
-    SpecStepsGlyphs specSteps;
-
-    ///
-    ResultGlyphs result;
+    mixin GlyphSettingsFields;
   }
 }
 

@@ -22,9 +22,13 @@ import trial.reporters.writer;
 
 /// A structure containing the glyphs used for the spec reporter
 struct SpecGlyphs {
-
-  ///
-  string ok = "✓";
+  version(Windows) {
+    ///
+    string ok = "+";
+  } else {
+    ///
+    string ok = "✓";
+  }
 }
 
 ///

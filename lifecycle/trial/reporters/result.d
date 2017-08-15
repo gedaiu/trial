@@ -26,7 +26,13 @@ version (Have_fluent_asserts_core)
 
 /// A structure containing the glyphs used for the result reporter
 struct ResultGlyphs {
-  string error = "✖";
+  version(Windows) {
+    ///
+    string error = "x";
+  } else {
+    ///
+    string error = "✖";
+  }
 }
 
 ///
