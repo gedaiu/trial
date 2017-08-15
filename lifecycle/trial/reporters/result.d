@@ -1,6 +1,6 @@
 /++
   A module containing the ResultReporter
-  
+
   This is an example of how this reporter looks
   <script type="text/javascript" src="https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw.js" id="asciicast-12x1mkxfmsj1j0f7qqwarkiyw" async></script>
 
@@ -24,13 +24,17 @@ version (Have_fluent_asserts_core)
   import fluentasserts.core.results;
 }
 
+struct ResultGlyphs {
+  string error = "✖";
+}
+
 /// The "Result" reporter will print an overview of your test run
 class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
   ISuiteLifecycleListener, IStepLifecycleListener
 {
   private
   {
-    immutable wchar error = '✖';
+    ResultGlyphs glyphs;
 
     int suites;
     int tests;
@@ -140,7 +144,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
       if (failedTests > 0)
       {
-        writer.write("✖ The test failed in " ~ timeDiff.to!string ~ ":",
+        writer.write(glyphs.error ~ " The test failed in " ~ timeDiff.to!string ~ ":",
             ReportWriter.Context.danger);
         return;
       }
