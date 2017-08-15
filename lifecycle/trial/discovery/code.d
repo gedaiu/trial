@@ -7,6 +7,7 @@ import std.file;
 import std.stdio;
 import std.conv;
 
+/// Get the module name of a DLang source file
 string getModuleName(string fileName) {
 	if(!exists(fileName)) {
 		return "";

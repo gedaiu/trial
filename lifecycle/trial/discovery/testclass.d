@@ -18,6 +18,7 @@ import std.random;
 import trial.interfaces;
 import trial.attributes;
 
+/// A structure that stores data about the setup events(methods)
 struct SetupEvent {
   string name;
 
@@ -151,6 +152,7 @@ class TestClassDiscovery : ITestDiscovery {
   }
 }
 
+///
 string getTestName(string ModuleName, string className, string member)() {
   mixin("import " ~ ModuleName ~ ";");
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
@@ -172,6 +174,7 @@ string getTestName(string ModuleName, string className, string member)() {
   }
 }
 
+///
 auto getSetup(string ModuleName, string className, string member)() {
   mixin("import " ~ ModuleName ~ ";");
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
@@ -194,6 +197,7 @@ string camelToSentence(const string name) pure {
   return sentence.capitalize;
 }
 
+///
 bool isTestMember(string ModuleName, string className, string member)() {
   mixin("import " ~ ModuleName ~ ";");
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
@@ -201,6 +205,7 @@ bool isTestMember(string ModuleName, string className, string member)() {
   return testAttributes!attributes.length > 0;
 }
 
+///
 bool isSetupMember(string ModuleName, string className, string member)() {
   mixin("import " ~ ModuleName ~ ";");
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
@@ -208,6 +213,7 @@ bool isSetupMember(string ModuleName, string className, string member)() {
   return setupAttributes!attributes.length > 0;
 }
 
+///
 template isClass(string name)
 {
   mixin("
@@ -217,6 +223,7 @@ template isClass(string name)
       enum bool isClass = false;");
 }
 
+///
 template isTestAttribute(alias Attribute)
 {
   import trial.attributes;
@@ -227,12 +234,15 @@ template isTestAttribute(alias Attribute)
     enum bool isTestAttribute = false;
   }
 }
+
+///
 template isRightParameter(string parameterName) {
   template isRightParameter(alias Attribute) {
     enum isRightParameter = Attribute.parameterName == parameterName;
   }
 }
 
+///
 template isSetupAttribute(alias Attribute)
 {
   static if(!is(CommonType!(Attribute, TestSetupAttribute) == void)) {
@@ -242,6 +252,7 @@ template isSetupAttribute(alias Attribute)
   }
 }
 
+///
 template isValueProvider(alias Attribute) {
   static if(__traits(hasMember, Attribute, "provide") && __traits(hasMember, Attribute, "parameterName")) {
     enum bool isValueProvider = true;
@@ -250,26 +261,31 @@ template isValueProvider(alias Attribute) {
   }
 }
 
+///
 template extractClasses(string moduleName, members...)
 {
   alias Filter!(isClass,members) extractClasses;
 }
 
+///
 template extractValueProviders(Elements...)
 {
   alias Filter!(isValueProvider, Elements) extractValueProviders;
 }
 
+///
 template testAttributes(attributes...)
 {
   alias Filter!(isTestAttribute, attributes) testAttributes;
 }
 
+///
 template setupAttributes(attributes...)
 {
   alias Filter!(isSetupAttribute, attributes) setupAttributes;
 }
 
+///
 template classMembers(string moduleName)
 {
   mixin("alias extractClasses!(moduleName, __traits(allMembers, " ~ moduleName ~ ")) classMembers;");
