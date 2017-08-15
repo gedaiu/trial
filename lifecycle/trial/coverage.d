@@ -1,3 +1,10 @@
+/++
+  A module containing the logic for parsing and analysing the code coverage
+
+  Copyright: © 2017 Szabo Bogdan
+  License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+  Authors: Szabo Bogdan
++/
 module trial.coverage;
 
 import std.algorithm;

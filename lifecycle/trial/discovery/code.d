@@ -15,7 +15,7 @@ string getModuleName(string fileName) {
 	if(isDir(fileName)) {
 		return "";
 	}
-	
+
 	auto file = File(fileName);
 
 	auto moduleLine = file.byLine()
