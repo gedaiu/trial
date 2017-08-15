@@ -19,10 +19,10 @@ in the `trial.json` file. The `testDiscovery` list should contain all the test d
 
 The default value is:
 
-```
-    "testDiscovery": [
-        "trial.discovery.unit.UnitTestDiscovery"
-    ],
+```json
+"testDiscovery": [
+    "trial.discovery.unit.UnitTestDiscovery"
+],
 ```
 
 which will use the `UnitTestDiscovery` class from the `trial.discovery.unit` module.
@@ -33,7 +33,7 @@ This is the default test discovery. It will search inside your modules for `unit
 to your tests by adding a comment before the `unittest` keyword or you annotate
 the test with a string [UDA](http://dlang.org/spec/attribute.html#uda) that string will be used as the test name.
 
-```
+```d
 /// This is my awesome test
 unittest {
 
@@ -42,7 +42,7 @@ unittest {
 
 or
 
-```
+```d
 @("This is my awesome test")
 unittest {
 
@@ -55,53 +55,53 @@ Test class discovery search for classes annotated with `@Test()`. This discovery
 
 In order to use this discovery method, you need to add `"trial.discovery.discovery.TestClassDiscovery"` to the `trial.json` file.
 
+```json
+"testDiscovery": [
+    "trial.discovery.discovery.TestClassDiscovery"
+],
 ```
-    "testDiscovery": [
-        "trial.discovery.discovery.TestClassDiscovery"
-    ],
-```
 
-There are a bunch of other (annotations)[http://trial.szabobogdan.com/api/trial/discovery/testclass.html] that are useful.
+There are a bunch of other [annotations](http://trial.szabobogdan.com/api/trial/discovery/testclass.html) that are useful.
 
-```
-    class OtherTestSuite {
-        @BeforeEach()
-        void beforeEach() {
-            ...
-        }
-
-        @AfterEach()
-        void afterEach() {
-            ...
-        }
-
-        @BeforeAll()
-        void beforeAll() {
-            ...
-        }
-
-        @AfterAll()
-        void afterAll() {
-            ...
-        }
-
-        @Test()
-        @("Some other name")
-        void aCustomTest() {
-            ...
-        }
+```d
+class OtherTestSuite {
+    @BeforeEach()
+    void beforeEach() {
+        ...
     }
+
+    @AfterEach()
+    void afterEach() {
+        ...
+    }
+
+    @BeforeAll()
+    void beforeAll() {
+        ...
+    }
+
+    @AfterAll()
+    void afterAll() {
+        ...
+    }
+
+    @Test()
+    @("Some other name")
+    void aCustomTest() {
+        ...
+    }
+}
 ```
 
 ## Extending
 
 If you want to write your custom TestDiscovery, your class must implement
-the (ITestDiscovery)[http://trial.szabobogdan.com/api/trial/interfaces/ITestDiscovery.html] interface and
+the [ITestDiscovery](http://trial.szabobogdan.com/api/trial/interfaces/ITestDiscovery.html) interface and
 the `void addModule(string file, string name)()` method which will be called by the runner to help you to search inside modules.
 
 At the compile time, the runner will generate a code similar to this:
 
-```
+```d
 void main() {
     ...
 
