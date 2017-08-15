@@ -232,22 +232,11 @@ class StackResult : IResult
       {
         if (validator.isExternal(frame.name))
         {
-          printer.info(leftJustifier(frame.index.to!string, 4).to!string);
-          printer.info(frame.address ~ " ");
+          printer.primary(frame.toString);
         }
         else
         {
-          printer.info(leftJustifier(frame.index.to!string, 4).to!string);
-          printer.info(frame.address ~ " ");
-        }
-
-        if (validator.isExternal(frame.name))
-        {
-          printer.info(frame.name);
-        }
-        else
-        {
-          printer.danger(frame.name);
+          frame.print(printer);
         }
 
         printer.primary("\n");
@@ -332,6 +321,38 @@ struct Frame
 
     return result;
   }
+
+  void print(ResultPrinter printer)
+  {
+    if(index >= 0) {
+      printer.info(leftJustifier(index.to!string, 4).to!string);
+    }
+
+    printer.primary(address ~ " ");
+    printer.info(name == "" ? "????" : name);
+
+    if(moduleName != "") {
+      printer.primary(" at ");
+      printer.info(moduleName);
+    }
+
+    if(offset != "") {
+      printer.primary(" + ");
+      printer.info(offset);
+    }
+
+    if(file != "") {
+      printer.primary(" (");
+      printer.info(file);
+
+      if(line > 0) {
+        printer.primary(":");
+        printer.info(line.to!string);
+      }
+
+      printer.primary(")");
+    }
+  }
 }
 
 /// The frame should convert a frame to string
@@ -379,6 +400,102 @@ unittest
 {
   Frame(-1, "", "0xffffff", "", "", "", 10).toString.should.equal(
     `0xffffff ????`
+  );
+}
+
+version(unittest) {
+  class MockPrinter : ResultPrinter {
+    string buffer;
+
+    void primary(string val) {
+      buffer ~= val;
+    }
+
+    void info(string val) {
+      buffer ~= "[info:" ~ val ~ "]";
+    }
+
+    void danger(string val) {
+      buffer ~= "[danger:" ~ val ~ "]";
+    }
+
+    void success(string val) {
+      buffer ~= "[success:" ~ val ~ "]";
+    }
+
+    void dangerReverse(string val) {
+      buffer ~= "[dangerReverse:" ~ val ~ "]";
+    }
+
+    void successReverse(string val) {
+      buffer ~= "[successReverse:" ~ val ~ "]";
+    }
+  }
+}
+
+/// The frame should print all fields
+unittest
+{
+  auto printer = new MockPrinter;
+  Frame(10, "some.module", "0xffffff", "name", "offset", "file.d", 120).print(printer);
+
+  printer.buffer.should.equal(
+    `[info:10  ]0xffffff [info:name] at [info:some.module] + [info:offset] ([info:file.d]:[info:120])`
+  );
+}
+
+/// The frame should not print an index < 0 or a line < 0
+unittest
+{
+  auto printer = new MockPrinter;
+  Frame(-1, "some.module", "0xffffff", "name", "offset", "file.d", -1).print(printer);
+
+  printer.buffer.should.equal(
+    `0xffffff [info:name] at [info:some.module] + [info:offset] ([info:file.d])`
+  );
+}
+
+/// The frame should not print the file if it's missing
+unittest
+{
+  auto printer = new MockPrinter;
+  Frame(-1, "some.module", "0xffffff", "name", "offset", "", 10).print(printer);
+
+  printer.buffer.should.equal(
+    `0xffffff [info:name] at [info:some.module] + [info:offset]`
+  );
+}
+
+/// The frame should not print the module if it's missing
+unittest
+{
+  auto printer = new MockPrinter;
+  Frame(-1, "", "0xffffff", "name", "offset", "", 10).print(printer);
+
+  printer.buffer.should.equal(
+    `0xffffff [info:name] + [info:offset]`
+  );
+}
+
+/// The frame should not print the offset if it's missing
+unittest
+{
+  auto printer = new MockPrinter;
+  Frame(-1, "", "0xffffff", "name", "", "", 10).print(printer);
+
+  printer.buffer.should.equal(
+    `0xffffff [info:name]`
+  );
+}
+
+/// The frame should print ???? when the name is missing
+unittest
+{
+  auto printer = new MockPrinter;
+  Frame(-1, "", "0xffffff", "", "", "", 10).print(printer);
+
+  printer.buffer.should.equal(
+    `0xffffff [info:????]`
   );
 }
 
