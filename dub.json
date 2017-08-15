@@ -29,6 +29,7 @@
 			"targetName": "trial",
 			"sourcePaths": ["runner"],
 			"importPaths": ["runner"],
+			"stringImportPaths": ["lifecycle/trial"],
 
 			"dependencies": {
 				"dub": "~>1.4.1",
@@ -36,8 +37,6 @@
 				"fluent-asserts": "*",
 				"arsd-official:terminal": "~>1.2.1"
 			},
-
-			"dflags": [ "-Jlifecycle/trial" ]
 		}
 	]
 }

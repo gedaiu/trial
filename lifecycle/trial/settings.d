@@ -24,19 +24,6 @@ struct Settings
   bool sort;
   bool bail;*/
 
-  /** The reporter list that will be added by the runner at startup
-  * You can use here only the embeded reporters.
-  * If you want to use a custom reporter you can use `static this` constructor
-  *
-  * Examples:
-  * ------------------------
-  * static this
-  * {
-  *    LifeCycleListeners.instance.add(myCustomReporter);
-  * }
-  * ------------------------
-  */
-
   version(Have_dub) {
     @optional {
       string[] reporters = ["spec", "result"];
@@ -46,21 +33,30 @@ struct Settings
       GlyphSettings glyphs;
     }
   } else {
-    string[] reporters = ["spec", "result"];
+  /** The reporter list that will be added by the runner at startup
+   * You can use here only the embeded reporters.
+   * If you want to use a custom reporter you can use `static this` constructor
+   *
+   * Examples:
+   * ------------------------
+   * static this
+   * {
+   *    LifeCycleListeners.instance.add(myCustomReporter);
+   * }
+   * ------------------------
+   */
+  string[] reporters = ["spec", "result"];
 
-    /// The test discovery classes that you want to use
-    string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
+  /// The test discovery classes that you want to use
+  string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
 
-    /// The default executor is `SingleRunner`. If you want to use the
-    /// `ParallelExecutor` set this flag true.
-    bool runInParallel = false;
+  /// The default executor is `SingleRunner`. If you want to use the
+  /// `ParallelExecutor` set this flag true.
+  bool runInParallel = false;
 
-    /// The number of threads tha you want to use
-    /// `0` means the number of cores that your processor has
-    uint maxThreads = 0;
-
-    /// The glyph settings
-    GlyphSettings glyphs;
+  /// The number of threads tha you want to use
+  /// `0` means the number of cores that your processor has
+  uint maxThreads = 0;
   }
 }
 

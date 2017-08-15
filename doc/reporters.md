@@ -23,7 +23,7 @@ Here are informations about the supported reporters and how you can create your 
 
 ## About
 
-The Trial reporters are used to get informations about your tests result. The library comes with a vast 
+The Trial reporters are used to get informations about your tests result. The library comes with a vast
 collection of reporters, and if none of these suits your needs you can easily add your own.
 
 A `Reporter` is a class that presents some information to the user about a test run. Most of the time the user is
@@ -33,17 +33,17 @@ be able to easily extend or create your custom reporters.
 In order to use the embedded reporters, you have to add them to the `reporters` list inside your `trial.json` file.
 Here is an example.
 
-```
-    ...
+```json
+...
 
-    reporters": [
-        "list",
-        "result",
-        "stats",
-        "html"
-    ],
+reporters": [
+    "list",
+    "result",
+    "stats",
+    "html"
+],
 
-    ...
+...
 ```
 
 ## Spec
@@ -114,12 +114,13 @@ To use it, add `html` to the reporters list inisde `trial.json`.
 
 ## Allure
 
-The Allure reporter outputs the test results in an xml file that can be used to 
+The Allure reporter outputs the test results in an xml file that can be used to
 generate nice [Allure](https://docs.qameta.io/allure/2.0/) reports.
 
 To convert the xml files to html, you can use inside your project, the allure commandline:
-```
-  allure generate -o allure-html allure
+
+```bash
+allure generate -o allure-html allure
 ```
 
 In this case, the xml files are located in `allure` folder
@@ -145,14 +146,14 @@ To use it, add `spec-progress` to the reporters list inisde `trial.json`.
 
 ## Extending
 
-If you want to write a custom reporter, have a look at the Lifecycle interface that trial provides and implement the methods that you need. 
+If you want to write a custom reporter, have a look at the Lifecycle interface that trial provides and implement the methods that you need.
 
 [Interfaces list](http://trial.szabobogdan.com/api/trial/interfaces.html)
 
 If you want to use your custom reporter, you can add it to the `LifeCycleListeners`:
 
-```
-  static this() {
+```d
+static this() {
     LifeCycleListeners.instance.add(new MyCustomReporter);
-  }
+}
 ```
