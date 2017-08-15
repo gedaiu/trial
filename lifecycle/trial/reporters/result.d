@@ -61,6 +61,12 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
     writer = defaultWriter;
   }
 
+  this(ResultGlyphs glyphs)
+  {
+    writer = defaultWriter;
+    this.glyphs = glyphs;
+  }
+
   this(ReportWriter writer)
   {
     this.writer = writer;

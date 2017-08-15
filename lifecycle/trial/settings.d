@@ -12,6 +12,10 @@ import trial.reporters.result;
 import trial.reporters.spec;
 import trial.reporters.specsteps;
 
+version(Have_dub) {
+  import dub.internal.vibecompat.data.serialization;
+}
+
 /// A structure representing the `trial.json` file
 struct Settings
 {
@@ -21,46 +25,63 @@ struct Settings
   bool bail;*/
 
   /** The reporter list that will be added by the runner at startup
-   * You can use here only the embeded reporters.
-   * If you want to use a custom reporter you can use `static this` constructor
-   *
-   * Examples:
-   * ------------------------
-   * static this
-   * {
-   *    LifeCycleListeners.instance.add(myCustomReporter);
-   * }
-   * ------------------------
-   */
-  string[] reporters = ["spec", "result"];
+  * You can use here only the embeded reporters.
+  * If you want to use a custom reporter you can use `static this` constructor
+  *
+  * Examples:
+  * ------------------------
+  * static this
+  * {
+  *    LifeCycleListeners.instance.add(myCustomReporter);
+  * }
+  * ------------------------
+  */
 
-  /// The test discovery classes that you want to use
-  string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
+  version(Have_dub) {
+    @optional {
+      string[] reporters = ["spec", "result"];
+      string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
+      bool runInParallel = false;
+      uint maxThreads = 0;
+      GlyphSettings glyphs;
+    }
+  } else {
+    string[] reporters = ["spec", "result"];
 
-  /// The default executor is `SingleRunner`. If you want to use the
-  /// `ParallelExecutor` set this flag true.
-  bool runInParallel = false;
+    /// The test discovery classes that you want to use
+    string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
 
-  /// The number of threads tha you want to use
-  /// `0` means the number of cores that your processor has
-  uint maxThreads = 0;
+    /// The default executor is `SingleRunner`. If you want to use the
+    /// `ParallelExecutor` set this flag true.
+    bool runInParallel = false;
 
-  /// The glyph settings
-  GlyphSettings glyphs;
+    /// The number of threads tha you want to use
+    /// `0` means the number of cores that your processor has
+    uint maxThreads = 0;
+
+    /// The glyph settings
+    GlyphSettings glyphs;
+  }
 }
-
 
 /// The gliph settings
 struct GlyphSettings {
+  version(Have_dub) {
+    @optional {
+      SpecGlyphs spec;
+      SpecStepsGlyphs specSteps;
+      ResultGlyphs result;
+    }
+  } else {
+    ///
+    SpecGlyphs spec;
 
-  ///
-  SpecGlyphs spec;
+    ///
+    SpecStepsGlyphs specSteps;
 
-  ///
-  SpecStepsGlyphs specSteps;
-
-  ///
-  ResultGlyphs result;
+    ///
+    ResultGlyphs result;
+  }
 }
 
 /// Converts the settings object to DLang code. It's used by the generator
@@ -94,7 +115,6 @@ unittest {
   mixin("auto settings = " ~ Settings().toCode ~ ";");
 }
 
-
 /// Should be able to transform  the Settings to code.
 unittest
 {
@@ -105,4 +125,3 @@ unittest
   ", GlyphSettings(SpecGlyphs(`✓`), SpecStepsGlyphs(`┌`, `└`, `│`), ResultGlyphs(`✖`))"
   ~`)`);
 }
-

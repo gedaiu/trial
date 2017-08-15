@@ -22,7 +22,7 @@ import trial.executor.parallel;
 /// setup the LifeCycle collection
 void setupLifecycle(Settings settings) {
   LifeCycleListeners.instance = new LifeCycleListeners;
-  settings.reporters.map!(a => a.toLower).each!addReporter;
+  settings.reporters.map!(a => a.toLower).each!(a => addReporter(a, settings));
 
   if(settings.runInParallel) {
     LifeCycleListeners.instance.add(new ParallelExecutor(settings.maxThreads));
@@ -32,7 +32,7 @@ void setupLifecycle(Settings settings) {
 }
 
 /// Adds an embeded reporter listener to the LifeCycle listeners collection
-void addReporter(string name) {
+void addReporter(string name, Settings settings) {
     import trial.reporters.spec;
     import trial.reporters.specprogress;
     import trial.reporters.specsteps;
@@ -47,7 +47,7 @@ void addReporter(string name) {
 
     switch(name) {
       case "spec":
-        LifeCycleListeners.instance.add(new SpecReporter);
+        LifeCycleListeners.instance.add(new SpecReporter(settings.glyphs.spec));
         break;
 
       case "spec-progress":
@@ -56,7 +56,7 @@ void addReporter(string name) {
         break;
 
       case "spec-steps":
-        LifeCycleListeners.instance.add(new SpecStepsReporter);
+        LifeCycleListeners.instance.add(new SpecStepsReporter(settings.glyphs.specSteps));
         break;
 
       case "dot-matrix":
@@ -84,7 +84,7 @@ void addReporter(string name) {
         break;
 
       case "result":
-        LifeCycleListeners.instance.add(new ResultReporter);
+        LifeCycleListeners.instance.add(new ResultReporter(settings.glyphs.result));
         break;
 
       case "stats":

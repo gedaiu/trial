@@ -64,6 +64,12 @@ class SpecReporter : ITestCaseLifecycleListener
     writer = defaultWriter;
   }
 
+  this(SpecGlyphs glyphs)
+  {
+    writer = defaultWriter;
+    this.glyphs = glyphs;
+  }
+
   this(ReportWriter writer)
   {
     this.writer = writer;

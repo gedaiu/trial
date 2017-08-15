@@ -42,9 +42,10 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
   }
 
 
-  this()
+  this(SpecStepsGlyphs glyphs)
   {
     super();
+    this.glyphs = glyphs;
   }
 
   this(ReportWriter writer)
