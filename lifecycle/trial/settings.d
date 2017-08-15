@@ -1,12 +1,16 @@
 /++
   Settings parser and structures
-  
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
 +/
 module trial.settings;
 import std.conv;
+
+import trial.reporters.result;
+import trial.reporters.spec;
+import trial.reporters.specsteps;
 
 /// A structure representing the `trial.json` file
 struct Settings
@@ -17,12 +21,12 @@ struct Settings
   bool bail;*/
 
   /** The reporter list that will be added by the runner at startup
-   * You can use here only the embeded reporters. 
+   * You can use here only the embeded reporters.
    * If you want to use a custom reporter you can use `static this` constructor
    *
    * Examples:
    * ------------------------
-   * static this 
+   * static this
    * {
    *    LifeCycleListeners.instance.add(myCustomReporter);
    * }
@@ -33,20 +37,51 @@ struct Settings
   /// The test discovery classes that you want to use
   string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
 
-  /// The default executor is `SingleRunner`. If you want to use the 
+  /// The default executor is `SingleRunner`. If you want to use the
   /// `ParallelExecutor` set this flag true.
   bool runInParallel = false;
 
   /// The number of threads tha you want to use
   /// `0` means the number of cores that your processor has
   uint maxThreads = 0;
+
+  /// The glyph settings
+  GlyphSettings glyphs;
+}
+
+
+/// The gliph settings
+struct GlyphSettings {
+
+  ///
+  SpecGlyphs spec;
+
+  ///
+  SpecStepsGlyphs specSteps;
+
+  ///
+  ResultGlyphs result;
 }
 
 /// Converts the settings object to DLang code. It's used by the generator
 string toCode(Settings settings)
 {
-	return "Settings(" ~ settings.reporters.to!string ~ ", " ~ settings.testDiscovery.to!string ~ ", "
-		~ settings.runInParallel.to!string ~ ", " ~ settings.maxThreads.to!string ~ ")";
+  return "Settings(" ~
+    settings.reporters.to!string ~ ", " ~
+    settings.testDiscovery.to!string ~ ", " ~
+    settings.runInParallel.to!string ~ ", " ~
+    settings.maxThreads.to!string ~ ", " ~
+    settings.glyphs.toCode ~
+    ")";
+}
+
+/// Converts the GlyphSettings object to DLang code. It's used by the generator
+string toCode(GlyphSettings settings) {
+  return "GlyphSettings(" ~
+    trial.reporters.spec.toCode(settings.spec) ~ ", " ~
+    trial.reporters.specsteps.toCode(settings.specSteps) ~ ", " ~
+    trial.reporters.result.toCode(settings.result) ~
+    ")";
 }
 
 version (unittest)
@@ -54,11 +89,20 @@ version (unittest)
 	import fluent.asserts;
 }
 
-@("Should be able to transform  the Settings to code.")
+/// Should be able to compile the settings code
+unittest {
+  mixin("auto settings = " ~ Settings().toCode ~ ";");
+}
+
+
+/// Should be able to transform  the Settings to code.
 unittest
 {
 	Settings settings;
 
-	settings.toCode.should.equal(`Settings(["spec", "result"], ["trial.discovery.unit.UnitTestDiscovery"], false, 0)`);
+	settings.toCode.should.equal(`Settings(["spec", "result"], ` ~
+  `["trial.discovery.unit.UnitTestDiscovery"], false, 0` ~
+  ", GlyphSettings(SpecGlyphs(`✓`), SpecStepsGlyphs(`┌`, `└`, `│`), ResultGlyphs(`✖`))"
+  ~`)`);
 }
 

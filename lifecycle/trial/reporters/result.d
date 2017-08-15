@@ -29,6 +29,12 @@ struct ResultGlyphs {
   string error = "✖";
 }
 
+///
+string toCode(ResultGlyphs glyphs) {
+  return "ResultGlyphs(`" ~ glyphs.error ~ "`)";
+}
+
+
 /// The "Result" reporter will print an overview of your test run
 class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
   ISuiteLifecycleListener, IStepLifecycleListener
