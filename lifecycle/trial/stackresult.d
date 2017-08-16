@@ -585,6 +585,7 @@ Frame toGLibCFrame(string line)
 
   enforce(frame.address != "", "address not found");
   enforce(frame.name != "", "name not found");
+  enforce(frame.name.indexOf("(") == -1, "name should not contain `(`");
   enforce(frame.moduleName != "", "module not found");
 
   return frame;
@@ -606,6 +607,25 @@ Frame toNetBsdFrame(string line)
   enforce(frame.name != "", "name not found");
   enforce(frame.moduleName != "", "module not found");
   enforce(frame.offset != "", "offset not found");
+
+  return frame;
+}
+
+/// Parse a Linux frame
+Frame toLinuxFrame(string line) {
+  Frame frame;
+
+  auto matched = matchFirst(line, file ~ `:` ~ linePattern ~ `\s+` ~ name ~ `\s+\[` ~ address ~ `\]`);
+
+  frame.file = matched["file"];
+  frame.name = matched["name"];
+  frame.address = matched["address"];
+  frame.line = matched["line"].to!int;
+
+  enforce(frame.address != "", "address not found");
+  enforce(frame.name != "", "name not found");
+  enforce(frame.file != "", "file not found");
+  enforce(frame.line > 0, "line not found");
 
   return frame;
 }
@@ -650,6 +670,14 @@ Frame toFrame(string line)
   try
   {
     return line.toNetBsdFrame;
+  }
+  catch (Exception e)
+  {
+  }
+
+  try
+  {
+    return line.toLinuxFrame;
   }
   catch (Exception e)
   {
@@ -740,5 +768,64 @@ unittest
   frame.index.should.equal(-1);
   frame.offset.should.equal("0x78");
 }
+
+/// Get the main frame info from linux format
+unittest {
+  auto line = `generated.d:45 _Dmain [0x8e80c4]`;
+
+  auto frame = line.toFrame;
+
+  frame.moduleName.should.equal("");
+  frame.file.should.equal("generated.d");
+  frame.line.should.equal(45);
+  frame.name.should.equal("_Dmain");
+  frame.address.should.equal("0x8e80c4");
+  frame.index.should.equal(-1);
+  frame.offset.should.equal("");
+}
+
+/// Get a function frame info from linux format
+unittest {
+  auto line = `lifecycle/trial/runner.d:106 trial.interfaces.SuiteResult[] trial.runner.runTests(const(trial.interfaces.TestCase)[], immutable(char)[]) [0x8b0ec1]`;
+  auto frame = line.toFrame;
+
+  frame.moduleName.should.equal("");
+  frame.file.should.equal("lifecycle/trial/runner.d");
+  frame.line.should.equal(106);
+  frame.name.should.equal("trial.interfaces.SuiteResult[] trial.runner.runTests(const(trial.interfaces.TestCase)[], immutable(char)[])");
+  frame.address.should.equal("0x8b0ec1");
+  frame.index.should.equal(-1);
+  frame.offset.should.equal("");
+}
+
+/// Get an external function frame info from linux format
+unittest {
+  auto line = `../../.dub/packages/fluent-asserts-0.6.6/fluent-asserts/core/fluentasserts/core/base.d:39 void fluentasserts.core.base.Result.perform() [0x8f4b47]`;
+  auto frame = line.toFrame;
+
+  frame.moduleName.should.equal("");
+  frame.file.should.equal("../../.dub/packages/fluent-asserts-0.6.6/fluent-asserts/core/fluentasserts/core/base.d");
+  frame.line.should.equal(39);
+  frame.name.should.equal("void fluentasserts.core.base.Result.perform()");
+  frame.address.should.equal("0x8f4b47");
+  frame.index.should.equal(-1);
+  frame.offset.should.equal("");
+}
+
+/// Get an external function frame info from linux format
+unittest {
+  auto line = `lifecycle/trial/discovery/unit.d:268 _D5trial9discovery4unit17UnitTestDiscovery231__T12addTestCasesVAyaa62_2f686f6d652f626f737a2f776f726b73706163652f64746573742f6c6966656379636c652f747269616c2f6578656375746f722f706172616c6c656c2e64VAyaa23_747269616c2e6578656375746f722e706172616c6c656cS245trial8executor8parallelZ12addTestCasesMFZ9__lambda4FZv [0x872000]`;
+  auto frame = line.toFrame;
+
+  frame.moduleName.should.equal("");
+  frame.file.should.equal("lifecycle/trial/discovery/unit.d");
+  frame.line.should.equal(268);
+  frame.name.should.equal("_D5trial9discovery4unit17UnitTestDiscovery231__T12addTestCasesVAyaa62_2f686f6d652f626f737a2f776f726b73706163652f64746573742f6c6966656379636c652f747269616c2f6578656375746f722f706172616c6c656c2e64VAyaa23_747269616c2e6578656375746f722e706172616c6c656cS245trial8executor8parallelZ12addTestCasesMFZ9__lambda4FZv");
+  frame.address.should.equal("0x872000");
+  frame.index.should.equal(-1);
+  frame.offset.should.equal("");
+}
+
+
 
 }
