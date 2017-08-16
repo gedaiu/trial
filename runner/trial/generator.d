@@ -99,6 +99,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
       import trial.reporters.stats;
       import trial.reporters.spec;
       import trial.reporters.specsteps;
+      import trial.reporters.dotmatrix;
       import trial.reporters.result;\n";
   } else {
     writeln("We will embed the `trial:lifecycle` code inside the project.");

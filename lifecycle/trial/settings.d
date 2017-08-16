@@ -11,6 +11,7 @@ import std.conv;
 import trial.reporters.result;
 import trial.reporters.spec;
 import trial.reporters.specsteps;
+import trial.reporters.dotmatrix;
 
 version(Have_dub) {
   import dub.internal.vibecompat.data.serialization;
@@ -74,6 +75,9 @@ mixin template GlyphSettingsFields()
 
   ///
   ResultGlyphs result;
+
+  ///
+  DotMatrixGlyphs dotMatrix;
 }
 
 /// The gliph settings
@@ -104,7 +108,8 @@ string toCode(GlyphSettings settings) {
   return "GlyphSettings(" ~
     trial.reporters.spec.toCode(settings.spec) ~ ", " ~
     trial.reporters.specsteps.toCode(settings.specSteps) ~ ", " ~
-    trial.reporters.result.toCode(settings.result) ~
+    trial.reporters.result.toCode(settings.result) ~ ", " ~
+    trial.reporters.dotmatrix.toCode(settings.dotMatrix) ~
     ")";
 }
 
@@ -125,6 +130,6 @@ unittest
 
 	settings.toCode.should.equal(`Settings(["spec", "result"], ` ~
   `["trial.discovery.unit.UnitTestDiscovery"], false, 0` ~
-  ", GlyphSettings(SpecGlyphs(`✓`), SpecStepsGlyphs(`┌`, `└`, `│`), ResultGlyphs(`✖`))"
+  ", GlyphSettings(SpecGlyphs(`✓`), SpecStepsGlyphs(`┌`, `└`, `│`), ResultGlyphs(`✖`), DotMatrixGlyphs(`.`,`!`,`?`))"
   ~`)`);
 }

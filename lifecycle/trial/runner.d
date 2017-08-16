@@ -60,7 +60,7 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "dot-matrix":
-        LifeCycleListeners.instance.add(new DotMatrixReporter);
+        LifeCycleListeners.instance.add(new DotMatrixReporter(settings.glyphs.dotMatrix));
         break;
 
       case "landing":
