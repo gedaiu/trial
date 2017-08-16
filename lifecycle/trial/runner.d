@@ -68,7 +68,7 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "list":
-        LifeCycleListeners.instance.add(new ListReporter);
+        LifeCycleListeners.instance.add(new ListReporter(settings.glyphs.spec));
         break;
 
       case "progress":
