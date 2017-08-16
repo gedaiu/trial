@@ -8,8 +8,18 @@
 module trial.settings;
 import std.conv;
 
-/// A structure representing the `trial.json` file
-struct Settings
+import trial.reporters.result;
+import trial.reporters.spec;
+import trial.reporters.specsteps;
+import trial.reporters.dotmatrix;
+import trial.reporters.landing;
+import trial.reporters.progress;
+
+version(Have_dub) {
+  import dub.internal.vibecompat.data.serialization;
+}
+///
+mixin template SettingsFields()
 {
   /*
   bool colors;
@@ -40,13 +50,77 @@ struct Settings
   /// The number of threads tha you want to use
   /// `0` means the number of cores that your processor has
   uint maxThreads = 0;
+
+  ///
+  GlyphSettings glyphs;
+}
+
+/// A structure representing the `trial.json` file
+struct Settings
+{
+  version(Have_dub) {
+    @optional {
+      mixin SettingsFields;
+    }
+  } else {
+    mixin SettingsFields;
+  }
+}
+
+mixin template GlyphSettingsFields()
+{
+  ///
+  SpecGlyphs spec;
+
+  ///
+  SpecStepsGlyphs specSteps;
+
+  ///
+  ResultGlyphs result;
+
+  ///
+  DotMatrixGlyphs dotMatrix;
+
+  ///
+  LandingGlyphs landing;
+
+  ///
+  ProgressGlyphs progress;
+}
+
+/// The gliph settings
+struct GlyphSettings {
+  version(Have_dub) {
+    @optional {
+      mixin GlyphSettingsFields;
+    }
+  } else {
+    mixin GlyphSettingsFields;
+  }
 }
 
 /// Converts the settings object to DLang code. It's used by the generator
 string toCode(Settings settings)
 {
-	return "Settings(" ~ settings.reporters.to!string ~ ", " ~ settings.testDiscovery.to!string ~ ", "
-		~ settings.runInParallel.to!string ~ ", " ~ settings.maxThreads.to!string ~ ")";
+  return "Settings(" ~
+    settings.reporters.to!string ~ ", " ~
+    settings.testDiscovery.to!string ~ ", " ~
+    settings.runInParallel.to!string ~ ", " ~
+    settings.maxThreads.to!string ~ ", " ~
+    settings.glyphs.toCode ~
+    ")";
+}
+
+/// Converts the GlyphSettings object to DLang code. It's used by the generator
+string toCode(GlyphSettings settings) {
+  return "GlyphSettings(" ~
+      specGlyphsToCode(settings.spec) ~ ", " ~
+      specStepsGlyphsToCode(settings.specSteps) ~ ", " ~
+      resultGlyphsToCode(settings.result) ~ ", " ~
+      dotMatrixGlyphsToCode(settings.dotMatrix) ~ ", " ~
+      landingGlyphsToCode(settings.landing) ~ ", " ~
+      progressGlyphsToCode(settings.progress) ~
+    ")";
 }
 
 version (unittest)
@@ -54,11 +128,23 @@ version (unittest)
 	import fluent.asserts;
 }
 
-@("Should be able to transform  the Settings to code.")
+/// Should be able to compile the settings code
+unittest {
+  mixin("auto settings = " ~ Settings().toCode ~ ";");
+}
+
+/// Should be able to transform  the Settings to code.
 unittest
 {
 	Settings settings;
 
-	settings.toCode.should.equal(`Settings(["spec", "result"], ["trial.discovery.unit.UnitTestDiscovery"], false, 0)`);
+	settings.toCode.should.equal(`Settings(["spec", "result"], ` ~
+  `["trial.discovery.unit.UnitTestDiscovery"], false, 0` ~
+  ", GlyphSettings(SpecGlyphs(`✓`), " ~
+  "SpecStepsGlyphs(`┌`, `└`, `│`), "~
+  "ResultGlyphs(`✖`), " ~
+  "DotMatrixGlyphs(`.`,`!`,`?`), " ~
+  "LandingGlyphs(`✈`,`━`,`⋅`), " ~
+  "ProgressGlyphs(`░`,`▓`)"
+  ~`))`);
 }
-

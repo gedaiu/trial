@@ -20,6 +20,22 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
+/// A structure containing the glyphs used for the spec reporter
+struct SpecGlyphs {
+  version(Windows) {
+    ///
+    string ok = "+";
+  } else {
+    ///
+    string ok = "✓";
+  }
+}
+
+///
+string specGlyphsToCode(SpecGlyphs glyphs) {
+  return "SpecGlyphs(`" ~ glyphs.ok ~ "`)";
+}
+
 /// This is the default reporter. The "spec" reporter outputs a hierarchical view nested just as the test cases are.
 class SpecReporter : ITestCaseLifecycleListener
 {
@@ -44,15 +60,18 @@ class SpecReporter : ITestCaseLifecycleListener
 
   private
   {
-    immutable string ok = "✓";
-    immutable string current = "┌";
-    immutable string line = "│";
-    immutable string result = "└";
+    SpecGlyphs glyphs;
   }
 
   this()
   {
     writer = defaultWriter;
+  }
+
+  this(SpecGlyphs glyphs)
+  {
+    writer = defaultWriter;
+    this.glyphs = glyphs;
   }
 
   this(ReportWriter writer)
@@ -79,7 +98,7 @@ class SpecReporter : ITestCaseLifecycleListener
       break;
 
     case Type.success:
-      writer.write(ok, ReportWriter.Context.success);
+      writer.write(glyphs.ok, ReportWriter.Context.success);
       writer.write(" " ~ text, ReportWriter.Context.inactive);
       break;
 

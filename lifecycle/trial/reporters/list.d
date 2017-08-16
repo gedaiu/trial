@@ -21,13 +21,13 @@ import trial.interfaces;
 import trial.reporters.spec;
 import trial.reporters.writer;
 
-/// The list reporter outputs a simple specifications list as test cases pass or 
+/// The list reporter outputs a simple specifications list as test cases pass or
 /// fail
 class ListReporter : SpecReporter
 {
-  this()
+  this(SpecGlyphs glyphs)
   {
-    super();
+    super(glyphs);
   }
 
   this(ReportWriter writer)

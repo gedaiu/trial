@@ -20,16 +20,32 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
-/// The dot matrix reporter is simply a series of characters which represent test cases. 
+///
+struct DotMatrixGlyphs {
+  string success = ".";
+  string failure = "!";
+  string unknown = "?";
+}
+
+///
+string dotMatrixGlyphsToCode(DotMatrixGlyphs glyphs) {
+  return "DotMatrixGlyphs(`"~ glyphs.success ~"`,`"~ glyphs.failure ~"`,`"~ glyphs.unknown ~"`)";
+}
+
+/// The dot matrix reporter is simply a series of characters which represent test cases.
 /// Failures highlight in red exclamation marks (!).
 /// Good if you prefer minimal output.
 class DotMatrixReporter : ITestCaseLifecycleListener
 {
-  private ReportWriter writer;
+  private {
+    ReportWriter writer;
+    DotMatrixGlyphs glyphs;
+  }
 
-  this()
+  this(DotMatrixGlyphs glyphs)
   {
     writer = defaultWriter;
+    this.glyphs = glyphs;
   }
 
   this(ReportWriter writer)
@@ -46,15 +62,15 @@ class DotMatrixReporter : ITestCaseLifecycleListener
     switch (test.status)
     {
     case TestResult.Status.success:
-      writer.write(".", ReportWriter.Context.inactive);
+      writer.write(glyphs.success, ReportWriter.Context.inactive);
       break;
 
     case TestResult.Status.failure:
-      writer.write("!", ReportWriter.Context.danger);
+      writer.write(glyphs.failure, ReportWriter.Context.danger);
       break;
 
     default:
-      writer.write("?", ReportWriter.Context.warning);
+      writer.write(glyphs.unknown, ReportWriter.Context.warning);
     }
   }
 }

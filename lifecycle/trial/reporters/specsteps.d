@@ -14,6 +14,34 @@ import trial.interfaces;
 import trial.reporters.spec;
 import trial.reporters.writer;
 
+/// A structure containing the glyphs used for the spec steps reporter
+struct SpecStepsGlyphs {
+  version(Windows) {
+    ///
+    string testBegin = "/";
+
+    ///
+    string testEnd = "\\";
+
+    ///
+    string step = "|";
+  } else {
+    ///
+    string testBegin = "┌";
+
+    ///
+    string testEnd = "└";
+
+    ///
+    string step = "│";
+  }
+}
+
+///
+string specStepsGlyphsToCode(SpecStepsGlyphs glyphs) {
+  return "SpecStepsGlyphs(`" ~ glyphs.testBegin ~ "`, `" ~ glyphs.testEnd ~ "`, `" ~ glyphs.step ~ "`)";
+}
+
 /// A flavour of the "spec" reporter that show the tests and the steps of your tests.
 class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleListener
 {
@@ -21,15 +49,14 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
     size_t indents;
     size_t stepIndents;
 
-    string testBegin = "┌";
-    string testEnd = "└";
-    string step = "│";
+    SpecStepsGlyphs glyphs;
   }
 
 
-  this()
+  this(SpecStepsGlyphs glyphs)
   {
     super();
+    this.glyphs = glyphs;
   }
 
   this(ReportWriter writer)
@@ -49,12 +76,12 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
     void begin(string suite, ref TestResult test)
     {
       stepIndents = 0;
-      write!(Type.none)(testBegin ~ " " ~ test.name ~ "\n", indents);
+      write!(Type.none)(glyphs.testBegin ~ " " ~ test.name ~ "\n", indents);
     }
 
     void end(string suite, ref TestResult test)
     {
-      write!(Type.none)(testEnd ~ " ", indents);
+      write!(Type.none)(glyphs.testEnd ~ " ", indents);
 
       if(test.status == TestResult.Status.success) {
         write!(Type.success)("Success\n", 0);
@@ -70,7 +97,7 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
   void begin(string suite, string test, ref StepResult s)
   {
     stepIndents++;
-    write!(Type.none)(step, indents);
+    write!(Type.none)(glyphs.step, indents);
     write!(Type.none)(" " ~ s.name ~ "\n", stepIndents);
 
   }
