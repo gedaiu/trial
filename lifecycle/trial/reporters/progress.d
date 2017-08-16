@@ -32,7 +32,7 @@ struct ProgressGlyphs {
 }
 
 ///
-string toCode(ProgressGlyphs glyphs) {
+string progressGlyphsToCode(ProgressGlyphs glyphs) {
   return "ProgressGlyphs(`" ~ glyphs.empty ~ "`,`" ~ glyphs.fill ~ "`)";
 }
 

@@ -114,12 +114,12 @@ string toCode(Settings settings)
 /// Converts the GlyphSettings object to DLang code. It's used by the generator
 string toCode(GlyphSettings settings) {
   return "GlyphSettings(" ~
-    trial.reporters.spec.toCode(settings.spec) ~ ", " ~
-    trial.reporters.specsteps.toCode(settings.specSteps) ~ ", " ~
-    trial.reporters.result.toCode(settings.result) ~ ", " ~
-    trial.reporters.dotmatrix.toCode(settings.dotMatrix) ~ ", " ~
-    trial.reporters.landing.toCode(settings.landing) ~ ", " ~
-    trial.reporters.progress.toCode(settings.progress) ~
+      specGlyphsToCode(settings.spec) ~ ", " ~
+      specStepsGlyphsToCode(settings.specSteps) ~ ", " ~
+      resultGlyphsToCode(settings.result) ~ ", " ~
+      dotMatrixGlyphsToCode(settings.dotMatrix) ~ ", " ~
+      landingGlyphsToCode(settings.landing) ~ ", " ~
+      progressGlyphsToCode(settings.progress) ~
     ")";
 }
 

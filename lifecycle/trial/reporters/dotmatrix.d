@@ -28,7 +28,7 @@ struct DotMatrixGlyphs {
 }
 
 ///
-string toCode(DotMatrixGlyphs glyphs) {
+string dotMatrixGlyphsToCode(DotMatrixGlyphs glyphs) {
   return "DotMatrixGlyphs(`"~ glyphs.success ~"`,`"~ glyphs.failure ~"`,`"~ glyphs.unknown ~"`)";
 }
 

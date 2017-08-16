@@ -38,7 +38,7 @@ struct SpecStepsGlyphs {
 }
 
 ///
-string toCode(SpecStepsGlyphs glyphs) {
+string specStepsGlyphsToCode(SpecStepsGlyphs glyphs) {
   return "SpecStepsGlyphs(`" ~ glyphs.testBegin ~ "`, `" ~ glyphs.testEnd ~ "`, `" ~ glyphs.step ~ "`)";
 }
 

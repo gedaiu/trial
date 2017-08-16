@@ -36,7 +36,7 @@ struct ResultGlyphs {
 }
 
 ///
-string toCode(ResultGlyphs glyphs) {
+string resultGlyphsToCode(ResultGlyphs glyphs) {
   return "ResultGlyphs(`" ~ glyphs.error ~ "`)";
 }
 

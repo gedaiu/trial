@@ -28,7 +28,7 @@ struct LandingGlyphs {
 }
 
 ///
-string toCode(LandingGlyphs glyphs) {
+string landingGlyphsToCode(LandingGlyphs glyphs) {
   return "LandingGlyphs(`"~ glyphs.plane ~"`,`"~ glyphs.margin ~"`,`"~ glyphs.lane ~"`)";
 }
 

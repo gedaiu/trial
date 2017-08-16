@@ -32,7 +32,7 @@ struct SpecGlyphs {
 }
 
 ///
-string toCode(SpecGlyphs glyphs) {
+string specGlyphsToCode(SpecGlyphs glyphs) {
   return "SpecGlyphs(`" ~ glyphs.ok ~ "`)";
 }
 
