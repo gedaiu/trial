@@ -20,25 +20,38 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
+///
+struct ProgressGlyphs {
+  version(Windows) {
+    string empty = ".";
+    string fill = "#";
+  } else {
+    string empty = "░";
+    string fill = "▓";
+  }
+}
+
+///
+string toCode(ProgressGlyphs glyphs) {
+  return "ProgressGlyphs(`" ~ glyphs.empty ~ "`,`" ~ glyphs.fill ~ "`)";
+}
+
 /// The “progress” reporter implements a simple progress-bar
 class ProgressReporter : ITestCaseLifecycleListener, ILifecycleListener
 {
   private
   {
     ReportWriter writer;
-    const
-    {
-      string empty = "░";
-      string fill = "▓";
-    }
+    ProgressGlyphs glyphs;
 
     ulong testCount;
     ulong currentTest;
     bool success = true;
   }
-  this()
+  this(ProgressGlyphs glyphs)
   {
     writer = defaultWriter;
+    this.glyphs = glyphs;
   }
 
   this(ReportWriter writer)
@@ -84,8 +97,8 @@ class ProgressReporter : ITestCaseLifecycleListener, ILifecycleListener
     writer.write(currentTest.to!string ~ "/" ~ testCount.to!string ~ " ",
         success ? ReportWriter.Context.active : ReportWriter.Context.danger);
 
-    writer.write(fill.replicate(position), ReportWriter.Context.active);
-    writer.writeln(empty.replicate(size - position), ReportWriter.Context.inactive);
+    writer.write(glyphs.fill.replicate(position), ReportWriter.Context.active);
+    writer.writeln(glyphs.empty.replicate(size - position), ReportWriter.Context.inactive);
   }
 }
 

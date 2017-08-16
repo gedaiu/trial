@@ -20,12 +20,14 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
+///
 struct LandingGlyphs {
   string plane = "✈";
   string margin = "━";
   string lane = "⋅";
 }
 
+///
 string toCode(LandingGlyphs glyphs) {
   return "LandingGlyphs(`"~ glyphs.plane ~"`,`"~ glyphs.margin ~"`,`"~ glyphs.lane ~"`)";
 }

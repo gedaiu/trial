@@ -18,10 +18,10 @@ import trial.reporters.writer;
 struct SpecStepsGlyphs {
   version(Windows) {
     ///
-    string testBegin = "+";
+    string testBegin = "/";
 
     ///
-    string testEnd = "+";
+    string testEnd = "\\";
 
     ///
     string step = "|";

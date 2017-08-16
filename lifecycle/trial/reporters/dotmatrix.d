@@ -27,6 +27,7 @@ struct DotMatrixGlyphs {
   string unknown = "?";
 }
 
+///
 string toCode(DotMatrixGlyphs glyphs) {
   return "DotMatrixGlyphs(`"~ glyphs.success ~"`,`"~ glyphs.failure ~"`,`"~ glyphs.unknown ~"`)";
 }

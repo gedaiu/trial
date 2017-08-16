@@ -72,7 +72,7 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "progress":
-        LifeCycleListeners.instance.add(new ProgressReporter);
+        LifeCycleListeners.instance.add(new ProgressReporter(settings.glyphs.progress));
         break;
 
       case "html":
