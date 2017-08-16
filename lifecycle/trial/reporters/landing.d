@@ -20,26 +20,33 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
+struct LandingGlyphs {
+  string plane = "✈";
+  string margin = "━";
+  string lane = "⋅";
+}
+
+string toCode(LandingGlyphs glyphs) {
+  return "LandingGlyphs(`"~ glyphs.plane ~"`,`"~ glyphs.margin ~"`,`"~ glyphs.lane ~"`)";
+}
+
 /// The Landing Strip (landing) reporter is a gimmicky test reporter simulating a plane landing unicode ftw
 class LandingReporter : ITestCaseLifecycleListener, ILifecycleListener
 {
   private
   {
     ReportWriter writer;
-    const
-    {
-      string plane = "✈";
-      string margin = "━";
-      string lane = "⋅";
-    }
+    LandingGlyphs glyphs;
 
     ulong testCount;
     ulong currentTest;
     bool success = true;
   }
-  this()
+
+  this(LandingGlyphs glyphs)
   {
     writer = defaultWriter;
+    this.glyphs = glyphs;
   }
 
   this(ReportWriter writer)
@@ -81,21 +88,21 @@ class LandingReporter : ITestCaseLifecycleListener, ILifecycleListener
     size_t position = ((cast(double) currentTest / cast(double) testCount) * size).to!size_t;
 
     writer.goTo(3);
-    writer.writeln(margin.replicate(size), ReportWriter.Context.inactive);
+    writer.writeln(glyphs.margin.replicate(size), ReportWriter.Context.inactive);
 
     if (currentTest < testCount)
     {
-      writer.write(lane.replicate(position), ReportWriter.Context.inactive);
-      writer.write(plane, success ? ReportWriter.Context.active : ReportWriter.Context.danger);
-      writer.writeln(lane.replicate(size - position - 1), ReportWriter.Context.inactive);
+      writer.write(glyphs.lane.replicate(position), ReportWriter.Context.inactive);
+      writer.write(glyphs.plane, success ? ReportWriter.Context.active : ReportWriter.Context.danger);
+      writer.writeln(glyphs.lane.replicate(size - position - 1), ReportWriter.Context.inactive);
     }
     else
     {
-      writer.write(lane.replicate(size), ReportWriter.Context.inactive);
-      writer.writeln(plane, success ? ReportWriter.Context.active : ReportWriter.Context.danger);
+      writer.write(glyphs.lane.replicate(size), ReportWriter.Context.inactive);
+      writer.writeln(glyphs.plane, success ? ReportWriter.Context.active : ReportWriter.Context.danger);
     }
 
-    writer.writeln(margin.replicate(size), ReportWriter.Context.inactive);
+    writer.writeln(glyphs.margin.replicate(size), ReportWriter.Context.inactive);
   }
 }
 

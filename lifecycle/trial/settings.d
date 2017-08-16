@@ -12,6 +12,7 @@ import trial.reporters.result;
 import trial.reporters.spec;
 import trial.reporters.specsteps;
 import trial.reporters.dotmatrix;
+import trial.reporters.landing;
 
 version(Have_dub) {
   import dub.internal.vibecompat.data.serialization;
@@ -78,6 +79,9 @@ mixin template GlyphSettingsFields()
 
   ///
   DotMatrixGlyphs dotMatrix;
+
+  ///
+  LandingGlyphs landing;
 }
 
 /// The gliph settings
@@ -109,7 +113,8 @@ string toCode(GlyphSettings settings) {
     trial.reporters.spec.toCode(settings.spec) ~ ", " ~
     trial.reporters.specsteps.toCode(settings.specSteps) ~ ", " ~
     trial.reporters.result.toCode(settings.result) ~ ", " ~
-    trial.reporters.dotmatrix.toCode(settings.dotMatrix) ~
+    trial.reporters.dotmatrix.toCode(settings.dotMatrix) ~ ", " ~
+    trial.reporters.landing.toCode(settings.landing) ~
     ")";
 }
 
@@ -130,6 +135,6 @@ unittest
 
 	settings.toCode.should.equal(`Settings(["spec", "result"], ` ~
   `["trial.discovery.unit.UnitTestDiscovery"], false, 0` ~
-  ", GlyphSettings(SpecGlyphs(`✓`), SpecStepsGlyphs(`┌`, `└`, `│`), ResultGlyphs(`✖`), DotMatrixGlyphs(`.`,`!`,`?`))"
+  ", GlyphSettings(SpecGlyphs(`✓`), SpecStepsGlyphs(`┌`, `└`, `│`), ResultGlyphs(`✖`), DotMatrixGlyphs(`.`,`!`,`?`), LandingGlyphs(`✈`,`━`,`⋅`))"
   ~`)`);
 }

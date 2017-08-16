@@ -64,7 +64,7 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "landing":
-        LifeCycleListeners.instance.add(new LandingReporter);
+        LifeCycleListeners.instance.add(new LandingReporter(settings.glyphs.landing));
         break;
 
       case "list":
