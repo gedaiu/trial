@@ -15,6 +15,7 @@ import std.conv;
 import std.exception;
 import std.file;
 import std.path;
+import std.math;
 
 import trial.discovery.code;
 
@@ -482,20 +483,23 @@ unittest {
 
 /// Calculate the coverage percent from the current project
 double coveragePercent(CoveredFile[] coveredFiles) {
-  int count;
-
   if(coveredFiles.length == 0) {
     return 100;
   }
 
-  double percent = 0;
+  double total = 0;
+  double covered = 0;
 
   foreach(file; coveredFiles.filter!"a.isInCurrentProject") {
-    percent += file.coveragePercent;
-    count++;
+    total += file.lines.map!(a => a.hasCode ? 1 : 0).sum;
+    covered += file.lines.filter!(a => a.hasCode).map!(a => a.hits > 0 ? 1 : 0).sum;
   }
 
-  return percent / count;
+  if(total == 0) {
+    return 100;
+  }
+
+  return round((covered / total) * 10000) / 100;
 }
 
 /// No files are always 100% covered
@@ -503,30 +507,16 @@ unittest {
   [].coveragePercent.should.equal(100);
 }
 
-/// Should calculate the coverage based on the current files
+/// check a 50% covered file
 unittest {
-  CoveredFile coveredFile1;
-  coveredFile1.isInCurrentProject = true;
-  coveredFile1.coveragePercent = 30;
-
-  CoveredFile coveredFile2;
-  coveredFile2.isInCurrentProject = true;
-  coveredFile2.coveragePercent = 40;
-
-  [coveredFile1, coveredFile2].coveragePercent.should.equal(35);
+  auto coveredFile = CoveredFile("", true, "", 50, [ LineCoverage("     75|  this(File f)"), LineCoverage("     0|  this(File f)") ]);
+  [coveredFile].coveragePercent.should.equal(50);
 }
 
-/// Should ignore the coverage from the external files
+/// check a 50% external covered file
 unittest {
-  CoveredFile coveredFile1;
-  coveredFile1.isInCurrentProject = true;
-  coveredFile1.coveragePercent = 30;
-
-  CoveredFile coveredFile2;
-  coveredFile2.isInCurrentProject = false;
-  coveredFile2.coveragePercent = 40;
-
-  [coveredFile1, coveredFile2].coveragePercent.should.equal(30);
+  auto coveredFile = CoveredFile("", false, "", 0, [ LineCoverage("     0|  this(File f)"), LineCoverage("     0|  this(File f)") ]);
+  [coveredFile].coveragePercent.should.equal(100);
 }
 
 string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
