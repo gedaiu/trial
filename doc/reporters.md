@@ -17,6 +17,7 @@ Here are informations about the supported reporters and how you can create your 
   - [Result](#result)
   - [HTML](#html)
   - [Allure](#allure)
+  - [XUnit](#xunit)
   - [Stats](#stats)
   - [Spec Progress](#spec-progress)
   - [Extending](#extending)
@@ -128,6 +129,12 @@ In this case, the xml files are located in `allure` folder
 To use it, add `allure` to the reporters list inisde `trial.json`.
 
 [example](http://trial.szabobogdan.com/artifacts/allure/)
+
+## XUnit
+
+The `xunit` outputs the results using xml JUnit format.
+
+To use it, add `xunit` to the reporters list inisde `trial.json`.
 
 ## Stats
 
