@@ -99,20 +99,18 @@ version(unitttest) {} else {
 		}
 
 		arguments = arguments[1..$];
+
+		if(arguments.length > 0 && arguments[0] == "--version") {
+			showVersion();
+			return 0;
+		}
+
 		auto subPackage = arguments.find!(a => a[0] == ':');
 		auto subPackageName = subPackage.empty ? "" : subPackage.front;
 
 		auto options = parseGeneralOptions(arguments);
 		auto commandArgs = new CommandArgs(arguments);
 
-		auto dub = createDub(options);
-		auto description = new PackageDescriptionCommand(options, subPackageName);
-
-		options = parseGeneralOptions(arguments);
-		commandArgs = new CommandArgs(arguments);
-		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
-
-		/// run the trial command
 		auto cmd = new TrialCommand;
 		cmd.prepare(commandArgs);
 
@@ -121,6 +119,16 @@ version(unitttest) {} else {
 			return 0;
 		}
 
+
+		auto dub = createDub(options);
+		auto description = new PackageDescriptionCommand(options, subPackageName);
+
+		options = parseGeneralOptions(arguments);
+
+		commandArgs = new CommandArgs(arguments);
+		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
+
+		/// run the trial command
 		cmd.setDescription(description);
 		auto remainingArgs = commandArgs.extractRemainingArgs();
 
