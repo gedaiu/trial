@@ -128,12 +128,12 @@ version (unittest)
 	import fluent.asserts;
 }
 
-/// Should be able to compile the settings code
+/// it should be able to compile the settings code
 unittest {
   mixin("auto settings = " ~ Settings().toCode ~ ";");
 }
 
-/// Should be able to transform  the Settings to code.
+/// it should be able to transform  the Settings to code.
 unittest
 {
 	Settings settings;
