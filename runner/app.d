@@ -119,13 +119,11 @@ version(unitttest) {} else {
 			return 0;
 		}
 
-
 		auto dub = createDub(options);
 		auto description = new PackageDescriptionCommand(options, subPackageName);
 
 		options = parseGeneralOptions(arguments);
 
-		commandArgs = new CommandArgs(arguments);
 		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
 
 		/// run the trial command
@@ -138,7 +136,7 @@ version(unitttest) {} else {
 		}
 
 		try {
-			cmd.execute(dub, remainingArgs, []);
+			cmd.execute(dub, remainingArgs);
 		} catch(Exception e) {
 			return 1;
 		} finally {

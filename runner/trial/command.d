@@ -91,11 +91,15 @@ class TrialCommand : PackageBuildCommand {
 		super.prepare(args);
 	}
 
-	override int execute(Dub dub, string[] free_args, string[] app_args)
+	override int execute(Dub dub, string[] free_args, string[] app_args = [])
 	{
 		string package_name;
+
 		enforce(free_args.length <= 1, "Expected one or zero arguments.");
-		if (free_args.length >= 1) package_name = free_args[0];
+
+		if (free_args.length >= 1) {
+			package_name = free_args[0];
+		}
 
 		logInfo("Generate main file: " ~ m_description.mainFile);
 		m_description.writeTestFile(m_testName);
