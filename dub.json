@@ -8,9 +8,27 @@
 	"license": "MIT",
 	"homepage": "http://trial.szabobogdan.com/",
 
-	"dependencies": {
-		"trial:lifecycle": "*"
-	},
+	"configurations": [
+		{
+			"name": "executable"
+		},
+
+		{
+			"name": "trial",
+			"excludedSourceFiles": ["source/app.d", "runner/app.d"],
+			"sourcePaths": ["lifecycle", "runner"],
+			"stringImportPaths": ["lifecycle/trial"],
+			"importPaths": ["lifecycle", "runner"],
+			"mainSourceFile": "source/app.d",
+
+			"dependencies": {
+				"arsd-official:terminal": "~>1.2.1",
+				"dub": "~>1.4.1",
+				"fluent-asserts": "*",
+				"trial:lifecycle": "*"
+			}
+		}
+	],
 
 	"subPackages": [
 		{

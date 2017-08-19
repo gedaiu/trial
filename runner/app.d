@@ -31,21 +31,9 @@ import dub.internal.utils;
 
 import trial.generator;
 import trial.settings;
-import trial.discovery.code;
 import trial.coverage;
-
-Settings readSettings(Path root) {
-	string path = (root ~ Path("trial.json")).to!string;
-
-	if(!path.exists) {
-		Settings def;
-		std.file.write(path, def.serializeToJson.toPrettyString);
-	}
-
-	Settings settings = readText(path).deserializeJson!Settings;
-
-	return settings;
-}
+import trial.command;
+import trial.description;
 
 auto parseGeneralOptions(string[] args) {
 	CommonOptions options;
@@ -66,176 +54,82 @@ auto parseGeneralOptions(string[] args) {
 	return options;
 }
 
-class PackageDescription : PackageBuildCommand {
 
-	private {
-		Dub dub;
-		ProjectDescription desc;
-		string subPackageName;
-		string rootPackage;
-		TargetDescription[] neededTarget;
-	}
+private void writeOptions(CommandArgs args)
+{
+	foreach (arg; args.recognizedArgs) {
+		auto names = arg.names.split("|").map!(a => a.length == 1 ? "-" ~ a : "--" ~ a).array;
 
-	this(CommonOptions options, string subPackageName) {
-		dub = createDub(options);
-
-		logInfo("setup package: " ~ subPackageName);
-		setupPackage(dub, subPackageName);
-
-		m_defaultConfig = dub.project.getDefaultConfiguration(m_buildPlatform);
-
-		auto config = m_buildConfig.length ? m_buildConfig : m_defaultConfig;
-
-		GeneratorSettings settings;
-		settings.platform = m_buildPlatform;
-		settings.config = config;
-		settings.buildType = m_buildType;
-		settings.compiler = m_compiler;
-
-		this.subPackageName = subPackageName;
-		this.desc = dub.project.describe(settings);
-		this.rootPackage = this.desc.rootPackage;
-
-		this.neededTarget = this.desc.targets
-			.filter!(a => a.rootPackage.canFind(rootPackage))
-			.filter!(a => a.rootPackage.canFind(subPackageName)).array;
-	}
-
-	auto targets() {
-		return this.desc.targets;
-	}
-
-	auto modules() {
-		logInfo("Looking for files inside `" ~ rootPackage ~ "`");
-
-		auto currentPackage = this.desc.packages
-			.filter!(a => a.name == rootPackage)
-			.front;
-
-		auto packagePath = currentPackage.path;
-
-		if(neededTarget.empty) {
-			string[2][] val;
-			return val;
-		}
-
-		return neededTarget.front.buildSettings.sourceFiles
-			.map!(a => a.to!string)
-			.filter!(a => a.startsWith(packagePath))
-			.map!(a => [a, getModuleName(a)])
-			.filter!(a => a[1] != "")
-				.array.to!(string[2][]);
-	}
-
-	string[] externalModules() {
-		auto neededTargets = this.desc.targets.filter!(a => !a.rootPackage.canFind(rootPackage));
-
-		if(neededTargets.empty) {
-			return [];
-		}
-
-		auto files = cast(string[]) reduce!((a, b) => a ~ b)([], neededTargets.map!(a => a.buildSettings.sourceFiles));
-
-		return files
-			.map!(a => getModuleName(a))
-			.filter!(a => a != "")
-				.array;
-	}
-
-	bool hasTrial() {
-		if(neededTarget.empty) {
-			return false;
-		}
-
-		return !neededTarget[0].buildSettings.versions.filter!(a => a == "Have_trial_lifecycle").empty;
-	}
-
-	override int execute(Dub dub, string[] free_args, string[] app_args) {
-		assert(false);
-	}
-
-	void writeTestFile(string content) {
-		std.file.write(mainFile, content);
-	}
-
-	string mainFile() {
-		return (dub.rootPath ~ Path("generated.d")).to!string;
+		writeln("  ", names.join(" "));
+		writeln(arg.helpText.map!(a => "     " ~ a).join("\n"));
+		writeln;
 	}
 }
 
-Dub createDub(CommonOptions options) {
-	Dub dub;
+private void showHelp(in TrialCommand command, CommandArgs common_args)
+{
+	writeln(`USAGE: trial [--version] [subPackage] [<options...>]
 
-	if (options.bare) {
-		dub = new Dub(Path(getcwd()));
-		dub.rootPath = Path(options.root_path);
-		dub.defaultPlacementLocation = options.placementLocation;
+Run the tests using the trial runner. It will parse your source files and it will
+generate the "generated.d" file. This file contains a custom main function that will
+discover and execute your tests.
 
-		return dub;
-	}
+Available options
+==================`);
+	writeln();
+	writeOptions(common_args);
+	writeln();
 
-	// initialize DUB
-	auto package_suppliers = options.registry_urls.map!(url => cast(PackageSupplier)new RegistryPackageSupplier(URL(url))).array;
-	dub = new Dub(options.root_path, package_suppliers, options.skipRegistry);
+	showVersion();
+}
 
-	dub.dryRun = options.annotate;
-	dub.defaultPlacementLocation = options.placementLocation;
-
-	// make the CWD package available so that for example sub packages can reference their
-	// parent package.
-	try {
-		dub.packageManager.getOrLoadPackage(Path(options.root_path));
-	} catch (Exception e) {
-		logDiagnostic("No package found in current working directory.");
-	}
-
-	return dub;
+void showVersion() {
+	import trial.version_;
+	writefln("Trial %s, based on DUB version %s, built on %s", trialVersion, getDUBVersion(), __DATE__);
 }
 
 version(unitttest) {} else {
 	int main(string[] arguments) {
-		string testName = "";
-
-		getopt(arguments, config.passThrough,
-			"test|t", "the suite or package that you want to test", &testName);
-
 		version(Have_arsd_official_terminal) {} else {
 			logInfo("\nYou can add `arsd-official:terminal` as a dependency to get coloured output\n");
 		}
 
-		version(Windows){
+		version(Windows) {
 			environment["TEMP"] = environment["TEMP"].replace("/", "\\");
 		}
 
 		arguments = arguments[1..$];
+
+		if(arguments.length > 0 && arguments[0] == "--version") {
+			showVersion();
+			return 0;
+		}
+
 		auto subPackage = arguments.find!(a => a[0] == ':');
 		auto subPackageName = subPackage.empty ? "" : subPackage.front;
 
-		arguments = arguments.filter!(a => a.indexOf("--main-file=") != 0).array;
 		auto options = parseGeneralOptions(arguments);
 		auto commandArgs = new CommandArgs(arguments);
 
+		auto cmd = new TrialCommand;
+		cmd.prepare(commandArgs);
+
+		if (options.help) {
+			showHelp(cmd, commandArgs);
+			return 0;
+		}
+
+
 		auto dub = createDub(options);
-
-		auto description = new PackageDescription(options, subPackageName);
-
-		Settings settings = readSettings(dub.rootPath);
-
-		auto modules = description.modules;
-		auto externalModules = description.externalModules;
-		auto hasTrialDependency = description.hasTrial;
-
-		logInfo("Generate main file: " ~ description.mainFile);
-		description.writeTestFile(generateTestFile(settings, hasTrialDependency, modules, externalModules, testName));
-		arguments ~= ["--main-file=" ~ description.mainFile];
+		auto description = new PackageDescriptionCommand(options, subPackageName);
 
 		options = parseGeneralOptions(arguments);
+
 		commandArgs = new CommandArgs(arguments);
 		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
 
-		auto cmd = new TestCommand;
-		cmd.prepare(commandArgs);
-
+		/// run the trial command
+		cmd.setDescription(description);
 		auto remainingArgs = commandArgs.extractRemainingArgs();
 
 		if (remainingArgs.any!(a => a.startsWith("-"))) {
