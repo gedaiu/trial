@@ -12,6 +12,30 @@
 		"trial:lifecycle": "*"
 	},
 
+	"configurations": [
+		{ "name": "executable",
+			"dependencies": {
+				"trial:runner": "*"
+			}
+		},
+
+		{
+			"name": "trial",
+			"targetType": "executable",
+			"excludedSourceFiles": ["source/app.d", "runner/app.d"],
+			"sourcePaths": ["lifecycle", "runner"],
+			"stringImportPaths": ["lifecycle/trial"],
+			"mainSourceFile": "generated.d",
+			"buildOptions": ["unittests", "debugMode", "debugInfo"],
+
+			"dependencies": {
+				"arsd-official:terminal": "~>1.2.1",
+				"dub": "~>1.4.1",
+				"fluent-asserts": "*"
+			}
+		}
+	],
+
 	"subPackages": [
 		{
 			"name": "lifecycle",
@@ -32,7 +56,7 @@
 			"stringImportPaths": ["lifecycle/trial"],
 
 			"dependencies": {
-				"dub": "~>1.4.1",
+				"dub": "~>1.5.0",
 				"trial:lifecycle": "*",
 				"fluent-asserts": "*",
 				"arsd-official:terminal": "~>1.2.1"
