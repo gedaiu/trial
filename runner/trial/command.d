@@ -66,6 +66,8 @@ class TrialCommand : PackageBuildCommand {
 
 	override void prepare(scope CommandArgs args)
 	{
+		m_buildType = "unittest";
+
 		args.getopt("combined", &m_combined, [
 			"Tries to build the whole project in a single compiler run."
 		]);
@@ -103,6 +105,7 @@ class TrialCommand : PackageBuildCommand {
 		m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
 
 		GeneratorSettings settings;
+		settings.config = m_description.configuration;
 		settings.platform = m_buildPlatform;
 		settings.compiler = getCompiler(m_buildPlatform.compilerBinary);
 		settings.buildType = m_buildType;
@@ -115,7 +118,7 @@ class TrialCommand : PackageBuildCommand {
 		settings.run = true;
 		settings.runArgs = app_args;
 
-		dub.testProject(settings, m_buildConfig, dub.rootPath ~ Path("generated.d"));
+		dub.testProject(settings, settings.config, dub.rootPath ~ Path("generated.d"));
 		return 0;
 	}
 }

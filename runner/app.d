@@ -105,8 +105,6 @@ version(unitttest) {} else {
 		auto options = parseGeneralOptions(arguments);
 		auto commandArgs = new CommandArgs(arguments);
 
-		setLogLevel(LogLevel.diagnostic);
-
 		auto dub = createDub(options);
 		auto description = new PackageDescriptionCommand(options, subPackageName);
 
