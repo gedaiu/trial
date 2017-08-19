@@ -46,6 +46,24 @@ The trial command can be configured through the `trial.json` file. This file wil
 For the first time. All the root properties are optional. For more details about this file look at the
 [Settings](http://trial.szabobogdan.com/api/trial/settings/Settings.html) structure.
 
+By default `trial` will use the `unittest` configuration. If you need to use test dependencies or other special
+setup for the test build, you can add a `trial` configuration inside your package file:
+
+```json
+  ...
+  "configurations": [ {
+      "name": "trial",
+      "dependencies": {
+        "arsd-official:terminal": "~>1.2.2",
+        "fluent-asserts": "~>0.6.0"
+      }
+    }
+  ]
+  ...
+```
+
+Read [more](https://code.dlang.org/package-format?lang=json#configurations) about dub configurations.
+
 ## Hacking
 
 Please have a look at [trial.interfaces](http://trial.szabobogdan.com/api/trial/interfaces.html)
