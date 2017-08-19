@@ -44,6 +44,7 @@ void addReporter(string name, Settings settings) {
     import trial.reporters.allure;
     import trial.reporters.stats;
     import trial.reporters.result;
+    import trial.reporters.xunit;
 
     switch(name) {
       case "spec":
@@ -81,6 +82,10 @@ void addReporter(string name, Settings settings) {
 
       case "allure":
         LifeCycleListeners.instance.add(new AllureReporter);
+        break;
+
+      case "xunit":
+        LifeCycleListeners.instance.add(new XUnitReporter);
         break;
 
       case "result":

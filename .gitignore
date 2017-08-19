@@ -28,3 +28,5 @@ trial.exe
 trial_lifecycle.lib
 trial-test-executable
 trial-test-trial
+libtrial.a
+xunit/
