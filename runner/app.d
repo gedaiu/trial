@@ -54,6 +54,40 @@ auto parseGeneralOptions(string[] args) {
 	return options;
 }
 
+
+private void writeOptions(CommandArgs args)
+{
+	foreach (arg; args.recognizedArgs) {
+		auto names = arg.names.split("|").map!(a => a.length == 1 ? "-" ~ a : "--" ~ a).array;
+
+		writeln("  ", names.join(" "));
+		writeln(arg.helpText.map!(a => "     " ~ a).join("\n"));
+		writeln;
+	}
+}
+
+private void showHelp(in TrialCommand command, CommandArgs common_args)
+{
+	writeln(`USAGE: trial [--version] [subPackage] [<options...>]
+
+Run the tests using the trial runner. It will parse your source files and it will
+generate the "generated.d" file. This file contains a custom main function that will
+discover and execute your tests.
+
+Available options
+==================`);
+	writeln();
+	writeOptions(common_args);
+	writeln();
+
+	showVersion();
+}
+
+void showVersion() {
+	import trial.version_;
+	writefln("Trial %s, based on DUB version %s, built on %s", trialVersion, getDUBVersion(), __DATE__);
+}
+
 version(unitttest) {} else {
 	int main(string[] arguments) {
 		version(Have_arsd_official_terminal) {} else {
@@ -71,10 +105,10 @@ version(unitttest) {} else {
 		auto options = parseGeneralOptions(arguments);
 		auto commandArgs = new CommandArgs(arguments);
 
+		setLogLevel(LogLevel.diagnostic);
+
 		auto dub = createDub(options);
 		auto description = new PackageDescriptionCommand(options, subPackageName);
-
-		description.configurations.writeln("!!");
 
 		options = parseGeneralOptions(arguments);
 		commandArgs = new CommandArgs(arguments);
@@ -82,13 +116,12 @@ version(unitttest) {} else {
 
 		/// run the trial command
 		auto cmd = new TrialCommand;
+		cmd.prepare(commandArgs);
 
 		if (options.help) {
-			writeln("Need help?");
+			showHelp(cmd, commandArgs);
 			return 0;
 		}
-
-		cmd.prepare(commandArgs);
 
 		cmd.setDescription(description);
 		auto remainingArgs = commandArgs.extractRemainingArgs();

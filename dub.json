@@ -8,25 +8,17 @@
 	"license": "MIT",
 	"homepage": "http://trial.szabobogdan.com/",
 
-	"dependencies": {
-		"trial:lifecycle": "*"
-	},
-
 	"configurations": [
-		{ "name": "executable",
-			"dependencies": {
-				"trial:runner": "*"
-			}
+		{
+			"name": "executable"
 		},
 
 		{
 			"name": "trial",
-			"targetType": "executable",
 			"excludedSourceFiles": ["source/app.d", "runner/app.d"],
 			"sourcePaths": ["lifecycle", "runner"],
 			"stringImportPaths": ["lifecycle/trial"],
-			"mainSourceFile": "generated.d",
-			"buildOptions": ["unittests", "debugMode", "debugInfo"],
+			"mainSourceFile": "source/app.d",
 
 			"dependencies": {
 				"arsd-official:terminal": "~>1.2.1",

@@ -73,31 +73,43 @@ class PackageDescriptionCommand : PackageBuildCommand
     this(CommonOptions options, string subPackageName)
     {
         dub = createDub(options);
-
-        logInfo("setup package: " ~ subPackageName);
         setupPackage(dub, subPackageName);
 
-        m_defaultConfig = dub.project.getDefaultConfiguration(m_buildPlatform);
-
-        auto config = m_buildConfig.length ? m_buildConfig : m_defaultConfig;
-
-        GeneratorSettings settings;
-        settings.platform = m_buildPlatform;
-        settings.config = config;
-        settings.buildType = m_buildType;
-        settings.compiler = m_compiler;
-
         this.subPackageName = subPackageName;
-        this.desc = dub.project.describe(settings);
+        this.desc = dub.project.describe(getSettings);
         this.rootPackage = this.desc.rootPackage;
 
         this.neededTarget = this.desc.targets.filter!(a => a.rootPackage.canFind(rootPackage))
             .filter!(a => a.rootPackage.canFind(subPackageName)).array;
     }
 
-    string[] configurations()
+    GeneratorSettings getSettings() {
+        GeneratorSettings settings;
+        settings.platform = m_buildPlatform;
+        settings.config = configuration;
+        settings.buildType = m_buildType;
+        settings.compiler = m_compiler;
+        settings.buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
+
+        return settings;
+    }
+
+    string configuration()
     {
-        return dub.configurations;
+        if(m_buildConfig.length) {
+            return m_buildConfig;
+        }
+
+        if(hasTrialConfiguration) {
+            return "trial";
+        }
+
+        return m_defaultConfig;
+    }
+
+    bool hasTrialConfiguration()
+    {
+        return dub.configurations.canFind("trial");
     }
 
     auto targets()

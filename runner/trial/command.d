@@ -98,7 +98,9 @@ class TrialCommand : PackageBuildCommand {
 		logInfo("Generate main file: " ~ m_description.mainFile);
 		m_description.writeTestFile(m_testName);
 
-		setupPackage(dub, package_name, "unittest");
+		setupPackage(dub, package_name, m_buildType);
+
+		m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
 
 		GeneratorSettings settings;
 		settings.platform = m_buildPlatform;
