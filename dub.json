@@ -56,7 +56,7 @@
 			"stringImportPaths": ["lifecycle/trial"],
 
 			"dependencies": {
-				"dub": "~>1.5.0",
+				"dub": "~>1.4.1",
 				"trial:lifecycle": "*",
 				"fluent-asserts": "*",
 				"arsd-official:terminal": "~>1.2.1"
