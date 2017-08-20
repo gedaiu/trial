@@ -109,6 +109,7 @@ Example:
 version (unittest)
 {
   import fluent.asserts;
+  import trial.discovery.spec;
 
   private static string trace;
 
