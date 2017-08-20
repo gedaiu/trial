@@ -80,6 +80,8 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     import("executor/single.d") ~
     import("discovery/unit.d") ~
     import("discovery/code.d") ~
+    import("discovery/spec.d") ~
+    import("discovery/testclass.d") ~
     import("settings.d") ~
     import("step.d") ~
     import("coverage.d") ~
@@ -92,6 +94,8 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
 
     code = "
       import trial.discovery.unit;
+      import trial.discovery.spec;
+      import trial.discovery.testclass;
       import trial.runner;
       import trial.interfaces;
       import trial.settings;

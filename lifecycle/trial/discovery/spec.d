@@ -14,11 +14,13 @@ import std.traits;
 
 import trial.interfaces;
 
-alias SetupFunction = void delegate() nothrow @safe;
+alias SetupFunction = void delegate() @safe;
 
 private string[] suitePath;
+private ulong[string] testsPerSuite;
 private TestCase[] testCases;
 private SetupFunction[] beforeList;
+private SetupFunction[] afterList;
 
 void describe(T)(string name, T description)
 {
@@ -26,19 +28,20 @@ void describe(T)(string name, T description)
     suitePath = [ moduleName!description ];
   }
 
+  auto beforeListIndex = beforeList.length;
+  auto afterListIndex = afterList.length;
+
   suitePath ~= name;
 
-  import std.stdio;
-  1.writeln("!!!", name);
-
   description();
+
+  beforeList = beforeList[0..beforeListIndex];
+  afterList = afterList[0..afterListIndex];
 
   suitePath = suitePath[0 .. $-1];
 }
 
 void before(T)(T setup) {
-  pragma(msg, "==> ? ", T);
-
   bool wasRun;
   beforeList ~= {
     if(!wasRun) {
@@ -48,13 +51,65 @@ void before(T)(T setup) {
   };
 }
 
+void beforeEach(T)(T setup) {
+  beforeList ~= {
+    setup();
+  };
+}
+
+void afterEach(T)(T setup) {
+  afterList ~= {
+    setup();
+  };
+}
+
+void after(T)(T setup) {
+  string suiteName = suitePath.join(".");
+  long executedTests;
+  bool wasRun;
+
+  afterList ~= {
+    if(wasRun) {
+      return;
+    }
+
+    executedTests++;
+
+    if(testsPerSuite[suiteName] < executedTests) {
+      setup();
+      wasRun = true;
+    }
+  };
+}
+
+void updateTestCounter(string[] path, long value) {
+  string tmp;
+  string glue;
+
+  foreach(key; path) {
+    tmp ~= glue ~ key;
+    glue = ".";
+
+    testsPerSuite[tmp] += value;
+  }
+}
+
 void it(T)(string name, T test)
 {
   auto before = beforeList.dup;
+  auto after = afterList.dup;
+  auto path = suitePath.dup;
+
+  reverse(after);
+
+  updateTestCounter(path, 1);
 
   testCases ~= TestCase(suitePath.join("."), name, ({
     before.each!"a()";
     test();
+
+    updateTestCounter(path, -1);
+    after.each!"a()";
   }));
 }
 
@@ -71,6 +126,8 @@ class SpecTestDiscovery : ITestDiscovery
   TestCase[] getTestCases() {
     return testCases;
   }
+
+  void addModule(string file, string moduleName)() {}
 }
 
 version (unittest)
@@ -112,7 +169,11 @@ version (unittest)
         });
 
         it("should run the hooks", {
-          trace ~= " test";
+          trace ~= " test1";
+        });
+
+        it("should run the hooks", {
+          trace ~= " test2";
         });
       });
 
@@ -122,12 +183,101 @@ version (unittest)
         });
 
         it("should run the hooks", {
+          trace ~= " test3";
+        });
+      });
+    });
+
+    describe("Before each", {
+      beforeEach({
+        trace ~= "before1 ";
+      });
+
+      it("should run the hooks", {
+        trace ~= "test1 ";
+      });
+
+      describe("level 2", {
+        beforeEach({
+          trace ~= "before2 ";
+        });
+
+        it("should run the hooks", {
+          trace ~= "test2 ";
+        });
+      });
+
+      describe("level 2 bis", {
+        beforeEach({
+          trace ~= "before2-bis ";
+        });
+
+        it("should run the hooks", {
+          trace ~= "test3";
+        });
+      });
+    });
+
+    describe("After all", {
+      after({
+        trace ~= "after1";
+      });
+
+      describe("level 2", {
+        after({
+          trace ~= " after2 ";
+        });
+
+        it("should run the hooks", {
+          trace ~= "test1";
+        });
+
+        it("should run the hooks", {
           trace ~= " test2";
+        });
+      });
+
+      describe("level 2 bis", {
+        after({
+          trace ~= "after2-bis";
+        });
+
+        it("should run the hooks", {
+          trace ~= "test3 ";
+        });
+      });
+    });
+
+    describe("After each", {
+      afterEach({
+        trace ~= " after1";
+      });
+
+      it("should run the hooks", {
+        trace ~= "test1";
+      });
+
+      describe("level 2", {
+        afterEach({
+          trace ~= " after2";
+        });
+
+        it("should run the hooks", {
+          trace ~= " test2";
+        });
+      });
+
+      describe("level 2 bis", {
+        afterEach({
+          trace ~= " after2-bis";
+        });
+
+        it("should run the hooks", {
+          trace ~= "test3";
         });
       });
     });
   });
-
 }
 
 /// It should find the spec suite
@@ -159,11 +309,64 @@ unittest {
 
   trace = "";
   tests[0].func();
-
-  trace.should.equal("before1 before2 test");
-
-  trace = "";
   tests[1].func();
 
-  trace.should.equal("before2-bis test2");
+  trace.should.equal("before1 before2 test1 test2");
+
+  trace = "";
+  tests[2].func();
+
+  trace.should.equal("before2-bis test3");
 }
+
+/// It should execute the spec after all hooks
+unittest {
+  auto specDiscovery = new SpecTestDiscovery;
+  auto tests = specDiscovery.getTestCases.filter!(a => a.suiteName.startsWith("trial.discovery.spec.After all")).array;
+
+  trace = "";
+  tests[0].func();
+  tests[1].func();
+
+  trace.should.equal("test1 test2 after2 after1");
+
+  trace = "";
+  tests[2].func();
+
+  trace.should.equal("test3 after2-bis");
+}
+
+/// It should execute the spec before hooks
+unittest {
+  auto specDiscovery = new SpecTestDiscovery;
+  auto tests = specDiscovery.getTestCases.filter!(a => a.suiteName.startsWith("trial.discovery.spec.Before each")).array;
+
+  trace = "";
+  tests[0].func();
+  tests[1].func();
+
+  trace.should.equal("before1 test1 before1 before2 test2 ");
+
+  trace = "";
+  tests[2].func();
+
+  trace.should.equal("before1 before2-bis test3");
+}
+
+/// It should execute the spec after hooks
+unittest {
+  auto specDiscovery = new SpecTestDiscovery;
+  auto tests = specDiscovery.getTestCases.filter!(a => a.suiteName.startsWith("trial.discovery.spec.After each")).array;
+
+  trace = "";
+  tests[0].func();
+  tests[1].func();
+
+  trace.should.equal("test1 after1 test2 after2 after1");
+
+  trace = "";
+  tests[2].func();
+
+  trace.should.equal("test3 after2-bis after1");
+}
+
