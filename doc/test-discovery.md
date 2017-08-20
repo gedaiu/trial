@@ -62,7 +62,7 @@ In order to use this discovery method, you need to add `"trial.discovery.testcla
 ],
 ```
 
-There are a bunch of other [annotations](http://trial.szabobogdan.com/api/trial/discovery/testclass.html) that are useful.
+There are a bunch of other [annotations](http://trial.szabobogdan.com/api/trial/attributes.html) that are useful.
 
 ```d
 class OtherTestSuite {
