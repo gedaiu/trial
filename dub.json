@@ -24,8 +24,7 @@
 			"dependencies": {
 				"arsd-official:terminal": "~>1.2.1",
 				"dub": "~>1.4.1",
-				"fluent-asserts": "*",
-				"trial:lifecycle": "*"
+				"fluent-asserts": "*"
 			}
 		}
 	],

@@ -29,8 +29,9 @@ shared static this() {
   dmd_coverDestPath(buildPath("coverage", "raw"));
 }
 
+
 /// Converts coverage lst files to html
-void convertLstFiles(string packagePath, string packageName) {
+double convertLstFiles(string packagePath, string packageName) {
   if(!exists(buildPath("coverage", "html"))) {
     mkdirRecurse(buildPath("coverage", "html"));
   }
@@ -52,6 +53,8 @@ void convertLstFiles(string packagePath, string packageName) {
 
     std.file.write(buildPath("coverage", "html", htmlFile), data.toHtml);
   }
+
+  return coverageData.coveragePercent;
 }
 
 string toCoverageHtmlFileName(string fileName) {

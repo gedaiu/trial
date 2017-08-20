@@ -140,7 +140,9 @@ version(unitttest) {} else {
 		} catch(Exception e) {
 			return 1;
 		} finally {
-			convertLstFiles(dub.rootPath.toString, dub.projectName);
+			if(arguments.canFind("--coverage")) {
+				writeln("Line coverage: ", convertLstFiles(dub.rootPath.toString, dub.projectName), "%");
+			}
 		}
 
 		return 0;
