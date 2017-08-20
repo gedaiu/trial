@@ -103,6 +103,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
       }
 
       testResult.end = Clock.currTime;
+
       LifeCycleListeners.instance.end(testCase.suiteName, testResult);
     }
   }

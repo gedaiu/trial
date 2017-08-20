@@ -21,7 +21,7 @@ import std.range;
 import trial.interfaces;
 import trial.reporters.writer;
 
-private string escape(string data) {
+private string escapeXUnit(string data) {
   string escapedData = data.dup;
 
   escapedData = escapedData.replace(`&`, `&amp;`);
@@ -113,7 +113,7 @@ unittest
 
   auto xunit = XUnitSuiteXml(result);
 
-  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escape ~ `" errors="0" skipped="0" tests="1" failures="0" time="0" timestamp="`~result.begin.toISOExtString~`">
+  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escapeXUnit ~ `" errors="0" skipped="0" tests="1" failures="0" time="0" timestamp="`~result.begin.toISOExtString~`">
       <testcase name="Test">
       </testcase>
   </testsuite>`);
@@ -137,7 +137,7 @@ unittest
 
   auto xunit = XUnitSuiteXml(result);
 
-  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escape ~ `" errors="0" skipped="0" tests="1" failures="1" time="0" timestamp="`~result.begin.toISOExtString~`">
+  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escapeXUnit ~ `" errors="0" skipped="0" tests="1" failures="1" time="0" timestamp="`~result.begin.toISOExtString~`">
       <testcase name="Test">
       <failure/>
       </testcase>
@@ -162,7 +162,7 @@ unittest
 
   auto xunit = XUnitSuiteXml(result);
 
-  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escape ~ `" errors="0" skipped="1" tests="1" failures="0" time="0" timestamp="`~result.begin.toISOExtString~`">
+  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escapeXUnit ~ `" errors="0" skipped="1" tests="1" failures="0" time="0" timestamp="`~result.begin.toISOExtString~`">
       <testcase name="Test">
       <skipped/>
       </testcase>
@@ -188,7 +188,7 @@ unittest
 
   auto xunit = XUnitSuiteXml(result);
 
-  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escape ~ `" errors="1" skipped="0" tests="1" failures="0" time="0" timestamp="`~result.begin.toISOExtString~`">
+  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escapeXUnit ~ `" errors="1" skipped="0" tests="1" failures="0" time="0" timestamp="`~result.begin.toISOExtString~`">
       <testcase name="Test">
       <error message="unknown status">unknown</error>
       </testcase>
@@ -205,7 +205,7 @@ unittest
 
   auto xunit = XUnitSuiteXml(result);
 
-  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escape ~ `" errors="0" skipped="0" tests="0" failures="0" time="0" timestamp="` ~ result.begin.toISOExtString ~ `">
+  xunit.toString.should.equal(`  <testsuite name="` ~ result.name.escapeXUnit ~ `" errors="0" skipped="0" tests="0" failures="0" time="0" timestamp="` ~ result.begin.toISOExtString ~ `">
   </testsuite>`);
 }
 
@@ -219,20 +219,20 @@ struct XUnitTestXml {
   /// Return the string representation of the test
   string toString() {
     auto time = (result.end -result.begin).total!"msecs";
-    string xml = `      <testcase name="` ~ result.name.escape ~ `">` ~ "\n";
+    string xml = `      <testcase name="` ~ result.name.escapeXUnit ~ `">` ~ "\n";
 
     if(result.status == TestResult.Status.failure) {
       if(result.throwable !is null) {
         auto lines = result.throwable.msg.split("\n") ~ "no message";
 
-        xml ~= `      <failure message="` ~ lines[0].escape ~ `">` ~ result.throwable.to!string.escape ~ `</failure>` ~ "\n";
+        xml ~= `      <failure message="` ~ lines[0].escapeXUnit ~ `">` ~ result.throwable.to!string.escapeXUnit ~ `</failure>` ~ "\n";
       } else {
         xml ~= `      <failure/>` ~ "\n";
       }
     } else if(result.status == TestResult.Status.skip) {
       xml ~= `      <skipped/>` ~ "\n";
     } else if(result.status != TestResult.Status.success) {
-        xml ~= `      <error message="unknown status">` ~ result.status.to!string.escape ~ `</error>` ~ "\n";
+        xml ~= `      <error message="unknown status">` ~ result.status.to!string.escapeXUnit ~ `</error>` ~ "\n";
     }
 
     xml ~= `      </testcase>`;

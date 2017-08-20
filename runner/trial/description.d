@@ -153,6 +153,10 @@ class PackageDescriptionCommand : PackageBuildCommand
 
     bool hasTrial()
     {
+        if(rootPackage == "trial") {
+            return true;
+        }
+
         if (neededTarget.empty)
         {
             return false;
