@@ -184,7 +184,7 @@ At the compile time, the runner will generate a code similar to this:
 void main() {
     ...
 
-    auto testDiscovery0 = new UnitTestDiscovery;8
+    auto testDiscovery0 = new UnitTestDiscovery;
 
     testDiscovery0.addModule!("/Users/doe/project/some/module.d", "some.module");
     testDiscovery0.addModule!("/Users/doe/project/other/module.d", "other.module");
