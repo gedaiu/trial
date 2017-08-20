@@ -139,13 +139,6 @@ To help a test suite DRY up any duplicated setup and teardown code, You can use 
 
 Example:
 ```d
-
-version (unittest)
-{
-  import fluent.asserts;
-
-  private static string trace;
-
   private alias suite = Spec!({
     describe("My suite", {
         before({
@@ -169,7 +162,6 @@ version (unittest)
         });
     });
   });
-}
 ```
 
 In order to use this discovery method, you need to add `"trial.discovery.spec.SpecTestDiscovery"` to the `trial.json` file.
