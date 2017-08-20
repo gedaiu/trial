@@ -163,7 +163,7 @@ class PackageDescriptionCommand : PackageBuildCommand
         }
 
         return !neededTarget[0].buildSettings.versions.filter!(
-                a => a == "Have_trial_lifecycle").empty;
+                a => a.canFind("Have_trial")).empty;
     }
 
     override int execute(Dub dub, string[] free_args, string[] app_args)

@@ -22,9 +22,11 @@ import trial.discovery.code;
 shared static this() {
   import core.runtime;
 
-  if(!exists(buildPath("coverage", "raw"))) {
-    mkdirRecurse(buildPath("coverage", "raw"));
+  if(exists("coverage")) {
+    rmdirRecurse("coverage");
   }
+
+  mkdirRecurse(buildPath("coverage", "raw"));
 
   dmd_coverDestPath(buildPath("coverage", "raw"));
 }

@@ -89,6 +89,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
 
   string code;
 
+
   if(hasTrialDependency) {
     writeln("We are using the project `trial:lifecycle` dependency.");
 
