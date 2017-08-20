@@ -14,8 +14,11 @@ import std.traits;
 
 import trial.interfaces;
 
+alias SetupFunction = void delegate() nothrow @safe;
+
 private string[] suitePath;
 private TestCase[] testCases;
+private SetupFunction[] beforeList;
 
 void describe(T)(string name, T description)
 {
@@ -33,12 +36,26 @@ void describe(T)(string name, T description)
   suitePath = suitePath[0 .. $-1];
 }
 
+void before(T)(T setup) {
+  pragma(msg, "==> ? ", T);
+
+  bool wasRun;
+  beforeList ~= {
+    if(!wasRun) {
+      setup();
+      wasRun = true;
+    }
+  };
+}
+
 void it(T)(string name, T test)
 {
-  auto modName = moduleName!test;
-  1.writeln("!!! =>", modName, ":", name);
+  auto before = beforeList.dup;
 
-  testCases ~= TestCase(suitePath.join("."), name, { });
+  testCases ~= TestCase(suitePath.join("."), name, ({
+    before.each!"a()";
+    test();
+  }));
 }
 
 template Spec(alias definition)
@@ -61,14 +78,7 @@ version (unittest)
 
   import fluent.asserts;
 
-  /*
-Describe!("Algorithm", {
-    Describe("canFind", {
-        It("should return false when the value is not present", {
-            [1,2,3].canFind(4).should.equal(false);
-        });
-    });
-});*/
+  private static string trace;
 
   private alias suite = Spec!({
     describe("Algorithm", {
@@ -91,7 +101,31 @@ Describe!("Algorithm", {
       });
     });
 
-    describe("Before all", {  });
+    describe("Before all", {
+      before({
+        trace ~= "before1";
+      });
+
+      describe("level 2", {
+        before({
+          trace ~= " before2";
+        });
+
+        it("should run the hooks", {
+          trace ~= " test";
+        });
+      });
+
+      describe("level 2 bis", {
+        before({
+          trace ~= "before2-bis";
+        });
+
+        it("should run the hooks", {
+          trace ~= " test2";
+        });
+      });
+    });
   });
 
 }
@@ -116,4 +150,20 @@ unittest
     "trial.discovery.spec.Nested describes.level 1.level 2",
     "trial.discovery.spec.Nested describes.other level 1.level 2" ])
     .because("the Spec suites are defined in this file");
+}
+
+/// It should execute the spec before all hooks
+unittest {
+  auto specDiscovery = new SpecTestDiscovery;
+  auto tests = specDiscovery.getTestCases.filter!(a => a.suiteName.startsWith("trial.discovery.spec.Before all")).array;
+
+  trace = "";
+  tests[0].func();
+
+  trace.should.equal("before1 before2 test");
+
+  trace = "";
+  tests[1].func();
+
+  trace.should.equal("before2-bis test2");
 }
