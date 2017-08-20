@@ -8,6 +8,10 @@
 	"license": "MIT",
 	"homepage": "http://trial.szabobogdan.com/",
 
+	"dependencies": {
+		"trial:lifecycle": "*"
+	},
+
 	"configurations": [
 		{
 			"name": "executable"
@@ -53,7 +57,7 @@
 				"trial:lifecycle": "*",
 				"fluent-asserts": "*",
 				"arsd-official:terminal": "~>1.2.1"
-			},
+			}
 		}
 	]
 }

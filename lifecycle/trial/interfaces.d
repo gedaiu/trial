@@ -10,8 +10,10 @@ module trial.interfaces;
 import std.datetime;
 import std.algorithm;
 import std.array;
+import std.functional;
 
 /// Alias to a Test Case function type
+alias TestCaseDelegate = void delegate() @system;
 alias TestCaseFunction = void function() @system;
 
 /// A Listener for the main test events
@@ -134,7 +136,7 @@ struct TestCase
    The function that must be executed to check if the test passes or not.
    In case of failure, an exception is thrown.
   */
-  TestCaseFunction func;
+  TestCaseDelegate func;
 
   /**
     A list of labels that will be added to the final report
@@ -153,14 +155,12 @@ struct TestCase
   }
 
   ///
-  this(string suiteName, string name, TestCaseFunction func) {
-    this.suiteName = suiteName;
-    this.name = name;
-    this.func = func;
+  this(string suiteName, string name, TestCaseFunction func, Label[] labels = []) {
+    this(suiteName, name, func.toDelegate, labels);
   }
 
   ///
-  this(string suiteName, string name, TestCaseFunction func, Label[] labels) {
+  this(string suiteName, string name, TestCaseDelegate func, Label[] labels = []) {
     this.suiteName = suiteName;
     this.name = name;
     this.func = func;
