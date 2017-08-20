@@ -74,6 +74,8 @@ code.hljs {
     font-size: inherit;
     line-height: inherit;
     width: calc(100% - 100px);
+
+    white-space: pre;
 }
 
 pre .line {
@@ -81,7 +83,7 @@ pre .line {
   color: #777;
   overflow: hidden;
   position: relative;
-  
+
   border-right: 3px solid #ccc;
   padding-left: 5px;
 }
