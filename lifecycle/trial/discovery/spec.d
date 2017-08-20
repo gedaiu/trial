@@ -22,6 +22,7 @@ private TestCase[] testCases;
 private SetupFunction[] beforeList;
 private SetupFunction[] afterList;
 
+/// Define a Spec test suite
 void describe(T)(string name, T description)
 {
   if(suitePath.length == 0) {
@@ -41,6 +42,7 @@ void describe(T)(string name, T description)
   suitePath = suitePath[0 .. $-1];
 }
 
+/// Define a function that will be ran before all the tests
 void before(T)(T setup) {
   bool wasRun;
   beforeList ~= {
@@ -51,18 +53,21 @@ void before(T)(T setup) {
   };
 }
 
+/// Define a function that will be ran before each test
 void beforeEach(T)(T setup) {
   beforeList ~= {
     setup();
   };
 }
 
+/// Define a function that will be ran after each test
 void afterEach(T)(T setup) {
   afterList ~= {
     setup();
   };
 }
 
+/// Define a function that will be ran after all the tests were ran
 void after(T)(T setup) {
   string suiteName = suitePath.join(".");
   long executedTests;
@@ -82,7 +87,7 @@ void after(T)(T setup) {
   };
 }
 
-void updateTestCounter(string[] path, long value) {
+private void updateTestCounter(string[] path, long value) {
   string tmp;
   string glue;
 
@@ -94,6 +99,7 @@ void updateTestCounter(string[] path, long value) {
   }
 }
 
+/// Define a Spec
 void it(T)(string name, T test)
 {
   auto before = beforeList.dup;
@@ -113,6 +119,7 @@ void it(T)(string name, T test)
   }));
 }
 
+/// The main spec container
 template Spec(alias definition)
 {
   shared static this() {
@@ -123,10 +130,13 @@ template Spec(alias definition)
 /// The default test discovery looks for unit test sections and groups them by module
 class SpecTestDiscovery : ITestDiscovery
 {
+  /// Returns all the Specs as TestCase structure
   TestCase[] getTestCases() {
     return testCases;
   }
 
+
+  /// It does nothing...
   void addModule(string file, string moduleName)() {}
 }
 
