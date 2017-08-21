@@ -104,7 +104,7 @@ class PackageDescriptionCommand : PackageBuildCommand
             return "trial";
         }
 
-        return m_defaultConfig;
+        return dub.project.getDefaultConfiguration(m_buildPlatform);
     }
 
     bool hasTrialConfiguration()
