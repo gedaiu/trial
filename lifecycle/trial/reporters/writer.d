@@ -100,164 +100,158 @@ class ConsoleWriter : ReportWriter {
   }
 }
 
-version(Have_arsd_official_terminal) {
-  static import arsd.terminal;
+static import trial.terminal;
 
-  shared static this() {
-    version(windows) {
-      import core.sys.windows.windows;
+shared static this() {
+  version(windows) {
+    import core.sys.windows.windows;
 
-      SetConsoleCP(65001);
-      SetConsoleOutputCP(65001);
-    }
-
-    defaultWriter = new ColorConsoleWriter;
+    SetConsoleCP(65001);
+    SetConsoleOutputCP(65001);
   }
 
-  /// This writer uses arsd.terminal and it's used if you add this dependency to your project
-  /// It supports all the features and you should use it if you want to get the best experience
-  /// from this project
-  class ColorConsoleWriter : ReportWriter {
-    private {
-      int[string] cues;
-      arsd.terminal.Terminal terminal;
-      alias Color = arsd.terminal.Color;
-      alias Bright = arsd.terminal.Bright;
-      alias ForceOption = arsd.terminal.ForceOption;
+  defaultWriter = new ColorConsoleWriter;
+}
 
-      int lines = 0;
-      bool movedToBottom = false;
+/// This writer uses arsd.terminal and it's used if you add this dependency to your project
+/// It supports all the features and you should use it if you want to get the best experience
+/// from this project
+class ColorConsoleWriter : ReportWriter {
+  private {
+    int[string] cues;
+    trial.terminal.Terminal terminal;
+    alias Color = trial.terminal.Color;
+    alias Bright = trial.terminal.Bright;
+    alias ForceOption = trial.terminal.ForceOption;
 
-      void setColor(Context context) {
-        switch(context) {
-          case Context.active:
-            terminal.color(Color.white | Bright, Color.DEFAULT);
-            break;
+    int lines = 0;
+    bool movedToBottom = false;
 
-          case Context.inactive:
-            terminal.color(Color.black | Bright, Color.DEFAULT);
-            break;
+    void setColor(Context context) {
+      switch(context) {
+        case Context.active:
+          terminal.color(Color.white | Bright, Color.DEFAULT);
+          break;
 
-          case Context.success:
-            terminal.color(Color.green | Bright, Color.DEFAULT);
-            break;
+        case Context.inactive:
+          terminal.color(Color.black | Bright, Color.DEFAULT);
+          break;
 
-          case Context.info:
-            terminal.color(Color.cyan, Color.DEFAULT);
-            break;
+        case Context.success:
+          terminal.color(Color.green | Bright, Color.DEFAULT);
+          break;
 
-          case Context.warning:
-            terminal.color(Color.yellow, Color.DEFAULT);
-            break;
+        case Context.info:
+          terminal.color(Color.cyan, Color.DEFAULT);
+          break;
 
-          case Context.danger:
-            terminal.color(Color.red, Color.DEFAULT);
-            break;
+        case Context.warning:
+          terminal.color(Color.yellow, Color.DEFAULT);
+          break;
 
-          default:
-            terminal.reset();
-        }
-      }
+        case Context.danger:
+          terminal.color(Color.red, Color.DEFAULT);
+          break;
 
-
-      void setColorReverse(Context context) {
-        switch(context) {
-          case Context.active:
-            terminal.color(Color.DEFAULT, Color.white | Bright);
-            break;
-
-          case Context.inactive:
-            terminal.color(Color.DEFAULT, Color.black | Bright);
-            break;
-
-          case Context.success:
-            terminal.color(Color.DEFAULT, Color.green | Bright);
-            break;
-
-          case Context.info:
-            terminal.color(Color.DEFAULT, Color.cyan);
-            break;
-
-          case Context.warning:
-            terminal.color(Color.DEFAULT, Color.yellow);
-            break;
-
-          case Context.danger:
-            terminal.color(Color.DEFAULT, Color.red);
-            break;
-
-          default:
-            terminal.reset();
-        }
-      }
-
-      void resetColor() {
-        setColor(Context._default);
+        default:
+          terminal.reset();
       }
     }
 
-    this() {
-      this.terminal = arsd.terminal.Terminal(arsd.terminal.ConsoleOutputType.linear);
-      this.terminal._suppressDestruction = true;
 
-      lines = this.terminal.cursorY;
-    }
+    void setColorReverse(Context context) {
+      switch(context) {
+        case Context.active:
+          terminal.color(Color.DEFAULT, Color.white | Bright);
+          break;
 
-    /// Go up `y` lines
-    void goTo(int y) {
-      if(!movedToBottom) {
-        movedToBottom = true;
-        terminal.moveTo(0, terminal.height - 1);
+        case Context.inactive:
+          terminal.color(Color.DEFAULT, Color.black | Bright);
+          break;
+
+        case Context.success:
+          terminal.color(Color.DEFAULT, Color.green | Bright);
+          break;
+
+        case Context.info:
+          terminal.color(Color.DEFAULT, Color.cyan);
+          break;
+
+        case Context.warning:
+          terminal.color(Color.DEFAULT, Color.yellow);
+          break;
+
+        case Context.danger:
+          terminal.color(Color.DEFAULT, Color.red);
+          break;
+
+        default:
+          terminal.reset();
       }
-      terminal.moveTo(0, terminal.cursorY - y, ForceOption.alwaysSend);
     }
 
-    /// writes a string
-    void write(string text, Context context) {
-      lines += text.count!(a => a == '\n');
-
-      setColor(context);
-
-      terminal.write(text);
-      terminal.flush;
-      resetColor;
-      terminal.flush;
-    }
-
-    /// writes a string with reversed colors
-    void writeReverse(string text, Context context) {
-      lines += text.count!(a => a == '\n');
-
-      setColorReverse(context);
-
-      terminal.write(text);
-      resetColor;
-      terminal.flush;
-    }
-
-    /// writes a string and go to a new line
-    void writeln(string text, Context context) {
-      this.write(text ~ "\n", context);
-    }
-
-    /// show the terminal cursor
-    void showCursor() {
-      terminal.showCursor;
-    }
-
-    /// hide the terminal cursor
-    void hideCursor() {
-      terminal.hideCursor;
-    }
-
-    /// returns the terminal width
-    uint width() {
-      return terminal.width;
+    void resetColor() {
+      setColor(Context._default);
     }
   }
-} else {
-  shared static this() {
-    defaultWriter = new ConsoleWriter;
+
+  this() {
+    this.terminal = trial.terminal.Terminal(trial.terminal.ConsoleOutputType.linear);
+    this.terminal._suppressDestruction = true;
+
+    lines = this.terminal.cursorY;
+  }
+
+  /// Go up `y` lines
+  void goTo(int y) {
+    if(!movedToBottom) {
+      movedToBottom = true;
+      terminal.moveTo(0, terminal.height - 1);
+    }
+    terminal.moveTo(0, terminal.cursorY - y, ForceOption.alwaysSend);
+  }
+
+  /// writes a string
+  void write(string text, Context context) {
+    lines += text.count!(a => a == '\n');
+
+    setColor(context);
+
+    terminal.write(text);
+    terminal.flush;
+    resetColor;
+    terminal.flush;
+  }
+
+  /// writes a string with reversed colors
+  void writeReverse(string text, Context context) {
+    lines += text.count!(a => a == '\n');
+
+    setColorReverse(context);
+
+    terminal.write(text);
+    resetColor;
+    terminal.flush;
+  }
+
+  /// writes a string and go to a new line
+  void writeln(string text, Context context) {
+    this.write(text ~ "\n", context);
+  }
+
+  /// show the terminal cursor
+  void showCursor() {
+    terminal.showCursor;
+  }
+
+  /// hide the terminal cursor
+  void hideCursor() {
+    terminal.hideCursor;
+  }
+
+  /// returns the terminal width
+  uint width() {
+    return terminal.width;
   }
 }
 
