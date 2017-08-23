@@ -90,10 +90,6 @@ void showVersion() {
 
 version(unitttest) {} else {
 	int main(string[] arguments) {
-		version(Have_arsd_official_terminal) {} else {
-			logInfo("\nYou can add `arsd-official:terminal` as a dependency to get coloured output\n");
-		}
-
 		version(Windows) {
 			environment["TEMP"] = environment["TEMP"].replace("/", "\\");
 		}
