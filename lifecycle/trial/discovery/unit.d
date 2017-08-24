@@ -247,6 +247,27 @@ class UnitTestDiscovery : ITestDiscovery {
 			return name;
 		}
 
+		SourceLocation testSourceLocation(alias test)(string fileName) {
+			string name = test.stringof.to!string;
+
+			enum key = "__un" ~ "ittestL";
+			enum len = key.length;
+			long line;
+
+			try {
+				auto postFix = name[len..$];
+				auto idx = postFix.indexOf("_");
+
+				if(idx != -1) {
+					line = postFix[0..idx].to!long;
+				}
+			} catch(Exception e) {
+				return SourceLocation();
+			}
+
+			return SourceLocation(fileName, line);
+		}
+
 		Label[] testLabels(alias test)() {
 			Label[] labels;
 
@@ -264,9 +285,13 @@ class UnitTestDiscovery : ITestDiscovery {
 			Comment[] comments = file.readText.compressComments;
 
 			foreach (test; __traits(getUnitTests, composite)) {
-				testCases[moduleName][test.mangleof] = TestCase(moduleName, testName!(test)(comments), {
+				auto testCase = TestCase(moduleName, testName!(test)(comments), {
 					test();
 				}, testLabels!(test));
+
+				testCase.location = testSourceLocation!test(file);
+
+				testCases[moduleName][test.mangleof] = testCase;
 			}
 		}
 
@@ -387,6 +412,22 @@ unittest {
 	r.empty.should.equal(false).because("a flaky test is in this module");
 	r.front.labels.map!(a => a.name).should.equal(["status_details"]);
 	r.front.labels[0].value.should.equal("flaky");
+}
+
+/// It should find the line of this test
+unittest {
+	enum line = __LINE__;
+	auto testDiscovery = new UnitTestDiscovery;
+
+	testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
+
+	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
+
+	auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(a => a.name == "It should find the line of this test");
+
+	r.empty.should.equal(false).because("the location should be present");
+	r.front.location.fileName.should.endWith("unit.d");
+	r.front.location.line.should.equal(line - 1);
 }
 
 /// It should find this test with issues attributes
