@@ -120,6 +120,15 @@ struct Attachment {
   }
 }
 
+/// Represents a line of code in a certain file.
+struct SourceLocation {
+  ///
+  string fileName;
+
+  //
+  size_t line;
+}
+
 /// A test case that will be executed
 struct TestCase
 {
@@ -142,6 +151,9 @@ struct TestCase
     A list of labels that will be added to the final report
   */
   Label[] labels;
+
+  /// The test location
+  SourceLocation location;
 
   ///
   this(const TestCase testCase) {
