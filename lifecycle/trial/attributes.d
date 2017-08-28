@@ -9,6 +9,11 @@ module trial.attributes;
 
 /// This struct is used to mark some test functions
 struct TestAttribute {
+  ///
+  string file;
+
+  ///
+  size_t line;
 }
 
 /// This specifies when a setup method must be called
@@ -27,8 +32,8 @@ struct TestSetupAttribute {
 }
 
 /// Mark a test
-TestAttribute Test() {
-  return TestAttribute();
+TestAttribute Test(string file = __FILE__, size_t line = __LINE__) {
+  return TestAttribute(file, line);
 }
 
 /// Mark a function to be executed before each test

@@ -124,7 +124,7 @@ class TestClassDiscovery : ITestDiscovery {
             testMethodCount[key]++;
             string testName = getTestName!(ModuleName, className, member);
 
-            list ~= TestCase(ModuleName ~ "." ~ className, testName, ({
+            auto testCase = TestCase(ModuleName ~ "." ~ className, testName, ({
               auto instance = getTestClassInstance!(ModuleName, className);
 
               enum key = ModuleName ~ "." ~ className;
@@ -145,6 +145,10 @@ class TestClassDiscovery : ITestDiscovery {
 
               methodDone!(ModuleName, className);
             }), [ ]);
+
+            testCase.location = getTestLocation!(ModuleName, className, member);
+
+            list ~= testCase;
           }
         }
       }
@@ -172,6 +176,17 @@ string getTestName(string ModuleName, string className, string member)() {
   } else {
     return name;
   }
+}
+
+
+///
+SourceLocation getTestLocation(string ModuleName, string className, string member)() {
+  mixin("import " ~ ModuleName ~ ";");
+  mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
+
+  enum testAttributes = testAttributes!attributes;
+
+  return SourceLocation(testAttributes[0].file, testAttributes[0].line);
 }
 
 ///
