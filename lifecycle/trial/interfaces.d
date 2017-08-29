@@ -11,6 +11,7 @@ import std.datetime;
 import std.algorithm;
 import std.array;
 import std.functional;
+import std.conv;
 
 /// Alias to a Test Case function type
 alias TestCaseDelegate = void delegate() @system;
@@ -100,7 +101,7 @@ struct Label {
   string value;
 
   /// Convert the struct to a JSON string
-  string toString() {
+  string toString() inout {
     return `{ "name": "` ~ name ~ `", "value": "` ~ value ~ `" }`;
   }
 }
@@ -139,7 +140,7 @@ struct SourceLocation {
   size_t line;
 
   /// Converts the structure to a JSON string
-  string toString() {
+  string toString() inout {
     return `{ "fileName": "` ~ fileName ~ `", "line": ` ~ line.to!string ~ ` }`;
   }
 }
@@ -200,7 +201,7 @@ struct TestCase
     this.labels = labels;
   }
 
-  string toString() {
+  string toString() const {
     string jsonRepresentation = "{ ";
 
     jsonRepresentation ~= `"suiteName": "` ~ suiteName ~ `", `;

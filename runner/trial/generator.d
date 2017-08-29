@@ -139,7 +139,8 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
 
   code ~= `
       if(arguments.length > 1 && arguments[1] == "describe") {
-        describeTests();
+        import std.stdio;
+        describeTests.toJSONHierarchy.write;
         return 0;
       } else {
         return runTests(` ~ "`" ~ testName ~ "`" ~ `).isSuccess ? 0 : 1;

@@ -14,6 +14,7 @@ import std.datetime;
 import std.range;
 import std.traits;
 import std.string;
+import std.conv;
 
 import trial.settings;
 import trial.executor.single;
@@ -117,6 +118,80 @@ const(TestCase)[][string] describeTests(const(TestCase)[] tests) {
   }
 
   return groupedTests;
+}
+
+string toJSONHierarchy(T)(const(T)[][string] items) {
+  struct Node {
+    Node[string] nodes;
+    const(T)[] values;
+
+    void add(string[] path, const(T)[] values) {
+      if(path.length == 0) {
+        this.values = values;
+        return;
+      }
+
+      if(path[0] !in nodes) {
+        nodes[path[0]] = Node();
+      }
+
+      nodes[path[0]].add(path[1..$], values);
+    }
+
+    string toString(int spaces = 2) {
+      string prefix = leftJustify("", spaces);
+      string endPrefix = leftJustify("", spaces - 2);
+
+      if(nodes.length == 0) {
+        return "[\n" ~ values
+          .map!(a => a.toString)
+          .map!(a => prefix ~ a)
+          .join(",\n") ~ "\n" ~ endPrefix ~ "]";
+      }
+
+      return "{\n" ~ nodes
+            .byKeyValue
+            .map!(a => `"` ~ a.key ~ `": ` ~ a.value.toString(spaces + 2))
+            .map!(a => prefix ~ a)
+            .join(",\n") ~ "\n" ~ endPrefix ~ "}";
+    }
+  }
+
+  Node root;
+
+  foreach(key; items.keys) {
+    root.add(key.split("."), items[key]);
+  }
+
+  return root.toString;
+}
+
+/// convert an assoc array to JSON hierarchy
+unittest {
+  struct Mock {
+    string val;
+
+    string toString() inout {
+      return `"` ~ val ~ `"`;
+    }
+  }
+
+  const(Mock)[][string] mocks;
+
+  mocks["a.b"] = [ Mock("val1"), Mock("val2") ];
+  mocks["a.c"] = [ Mock("val3") ];
+
+  mocks.toJSONHierarchy.should.equal(`{
+  "a": {
+    "b": [
+      "val1",
+      "val2"
+    ],
+    "c": [
+      "val3"
+    ]
+  }
+}`);
 }
 
 /// describeTests should return the tests cases serialised in json format
