@@ -141,13 +141,20 @@ class PackageDescriptionCommand : PackageBuildCommand
 
     string[] subPackages() {
         import std.stdio;
-        auto packages = dub.packageManager
-            .getOrLoadPackage(Path(options.root_path))
-            .subPackages
-            .map!(a => a.recipe.name.strip)
-            .filter!(a => a != "")
+
+        auto subpackages = dub.packageManager
+            .getOrLoadPackage(Path(options.root_path), Path.init, true)
+            .subPackages;
+
+        auto outsidePackages = subpackages.filter!(a => a.path != "").array;
+        auto embeddedPackages = subpackages.filter!(a => a.path == "").array;
+
+        auto packages = embeddedPackages
+            .map!(a => a.recipe.name)
             .map!(a => ":" ~ a)
                 .array;
+
+        packages ~= outsidePackages.map!(a => ":" ~ dub.packageManager.getOrLoadPackage(Path(a.path)).name).array;
 
         return packages;
     }
