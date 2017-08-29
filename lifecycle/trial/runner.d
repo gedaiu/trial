@@ -101,6 +101,40 @@ void addReporter(string name, Settings settings) {
     }
 }
 
+/// Returns an associative array of the detected tests,
+/// where the key is the suite name and the value is the TestCase
+const(TestCase)[][string] describeTests() {
+  return describeTests(LifeCycleListeners.instance.getTestCases);
+}
+
+/// Returns an associative array of the detected tests,
+/// where the key is the suite name and the value is the TestCase
+const(TestCase)[][string] describeTests(const(TestCase)[] tests) {
+  const(TestCase)[][string] groupedTests;
+
+  foreach(test; tests) {
+    groupedTests[test.suiteName] ~= test;
+  }
+
+  return groupedTests;
+}
+
+/// describeTests should return the tests cases serialised in json format
+unittest {
+  void TestMock() @system { }
+
+  TestCase[] tests;
+  tests ~= TestCase("a.b", "some test", &TestMock, [ Label("some label", "label value") ]);
+  tests ~= TestCase("a.c", "other test", &TestMock);
+
+  auto result = describeTests(tests);
+
+  result.values.length.should.equal(2);
+  result.keys.should.containOnly([ "a.b", "a.c" ]);
+  result["a.b"].length.should.equal(1);
+  result["a.c"].length.should.equal(1);
+}
+
 /// Runs the tests and returns the results
 auto runTests(const(TestCase)[] tests, string testName = "") {
   LifeCycleListeners.instance.begin(tests.length);

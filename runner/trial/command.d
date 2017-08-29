@@ -25,7 +25,7 @@ import dub.internal.utils;
 import trial.generator;
 
 class TrialCommand : PackageBuildCommand {
-	private {
+	protected {
 		bool m_combined = false;
 		bool m_parallel = false;
 		bool m_force = false;
@@ -35,29 +35,18 @@ class TrialCommand : PackageBuildCommand {
 
 	this()
 	{
-		this.name = "test";
+		this.name = "trial";
 		this.argumentsPattern = "[<package>]";
 		this.description = "Executes the tests of the selected package";
 		this.helpText = [
-			`Builds the package and executes all contained unit tests.`,
+			`Builds the package and executes all contained test.`,
 			``,
-			`If no explicit configuration is given, an existing "unittest" ` ~
+			`If no explicit configuration is given, an existing "trial" ` ~
 			`configuration will be preferred for testing. If none exists, the ` ~
 			`first library type configuration will be used, and if that doesn't ` ~
-			`exist either, the first executable configuration is chosen.`,
-			``,
-			`When a custom main file (--main-file) is specified, only library ` ~
-			`configurations can be used. Otherwise, depending on the type of ` ~
-			`the selected configuration, either an existing main file will be ` ~
-			`used (and needs to be properly adjusted to just run the unit ` ~
-			`tests for 'version(unittest)'), or DUB will generate one for ` ~
-			`library type configurations.`,
-			``,
-			`Finally, if the package contains a dependency to the "tested" ` ~
-			`package, the automatically generated main file will use it to ` ~
-			`run the unit tests.`
+			`exist either, the first executable configuration is chosen.`
 		];
-		this.acceptsAppArgs = true;
+		this.acceptsAppArgs = false;
 	}
 
 	void setDescription(PackageDescriptionCommand description) {
@@ -108,6 +97,14 @@ class TrialCommand : PackageBuildCommand {
 
 		m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
 
+		auto settings = getSettings;
+
+		dub.testProject(settings, settings.config, dub.rootPath ~ Path("generated.d"));
+
+		return 0;
+	}
+
+	protected GeneratorSettings getSettings() {
 		GeneratorSettings settings;
 		settings.config = m_description.configuration;
 		settings.platform = m_buildPlatform;
@@ -120,9 +117,64 @@ class TrialCommand : PackageBuildCommand {
 		settings.force = m_force;
 		settings.tempBuild = m_single;
 		settings.run = true;
-		settings.runArgs = app_args;
+		settings.runArgs = [];
 
-		dub.testProject(settings, settings.config, dub.rootPath ~ Path("generated.d"));
-		return 0;
+		return settings;
+	}
+}
+
+class TrialDescribeCommand : TrialCommand {
+
+	this() {
+		this.name = "describe";
+		this.argumentsPattern = "[<package>]";
+		this.description = "lists the tests of the selected package";
+		this.helpText = [
+			`Builds the package and lists all contained tests.`,
+			``,
+			`If no explicit configuration is given, an existing "trial" ` ~
+			`configuration will be preferred for testing. If none exists, the ` ~
+			`first library type configuration will be used, and if that doesn't ` ~
+			`exist either, the first executable configuration is chosen.`
+		];
+
+		this.acceptsAppArgs = true;
+	}
+
+	override {
+		void setDescription(PackageDescriptionCommand description) {
+			m_description = description;
+		}
+
+		override void prepare(scope CommandArgs args)
+		{
+			m_buildType = "unittest";
+			super.prepare(args);
+		}
+
+		override int execute(Dub dub, string[] free_args, string[] app_args = [])
+		{
+			string package_name;
+
+			enforce(free_args.length <= 1, "Expected one or zero arguments.");
+
+			if (free_args.length >= 1) {
+				package_name = free_args[0];
+			}
+
+			logInfo("Generate main file: " ~ m_description.mainFile);
+			m_description.writeTestFile(m_testName);
+
+			setupPackage(dub, package_name, m_buildType);
+
+			m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
+
+			GeneratorSettings settings = getSettings;
+
+			settings.runArgs = [ "describe" ];
+
+			dub.testProject(settings, settings.config, dub.rootPath ~ Path("generated.d"));
+			return 0;
+		}
 	}
 }

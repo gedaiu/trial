@@ -100,7 +100,7 @@ private void updateTestCounter(string[] path, long value) {
 }
 
 /// Define a Spec
-void it(T)(string name, T test)
+void it(T)(string name, T test, string file = __FILE__, size_t line = __LINE__)
 {
   auto before = beforeList.dup;
   auto after = afterList.dup;
@@ -110,13 +110,17 @@ void it(T)(string name, T test)
 
   updateTestCounter(path, 1);
 
-  testCases ~= TestCase(suitePath.join("."), name, ({
+  auto testCase = TestCase(suitePath.join("."), name, ({
     before.each!"a()";
     test();
 
     updateTestCounter(path, -1);
     after.each!"a()";
   }));
+
+  testCase.location = SourceLocation(file, line);
+
+  testCases ~= testCase;
 }
 
 /// The main spec container

@@ -98,6 +98,16 @@ struct Label {
 
   /// The label value
   string value;
+
+  /// Convert the struct to a JSON string
+  string toString() {
+    return `{ "name": "` ~ name ~ `", "value": "` ~ value ~ `" }`;
+  }
+}
+
+/// Label string representation should be in Json format
+unittest {
+  Label("name", "value").toString.should.equal(`{ "name": "name", "value": "value" }`);
 }
 
 /// A struct representing an attachment for test steps
@@ -125,8 +135,19 @@ struct SourceLocation {
   ///
   string fileName;
 
-  //
+  ///
   size_t line;
+
+  /// Converts the structure to a JSON string
+  string toString() {
+    return `{ "fileName": "` ~ fileName ~ `", "line": ` ~ line.to!string ~ ` }`;
+  }
+}
+
+
+/// SourceLocation string representation should be a JSON string
+unittest {
+  SourceLocation("file.d", 10).toString.should.equal(`{ "fileName": "file.d", "line": 10 }`);
 }
 
 /// A test case that will be executed
@@ -178,6 +199,29 @@ struct TestCase
     this.func = func;
     this.labels = labels;
   }
+
+  string toString() {
+    string jsonRepresentation = "{ ";
+
+    jsonRepresentation ~= `"suiteName": "` ~ suiteName ~ `", `;
+    jsonRepresentation ~= `"name": "` ~ name ~ `", `;
+    jsonRepresentation ~= `"labels": [ ` ~ labels.map!(a => a.toString).join(", ") ~ ` ], `;
+    jsonRepresentation ~= `"location": ` ~ location.toString;
+
+    return jsonRepresentation ~ " }";
+  }
+}
+
+/// TestCase string representation should be a JSON string
+unittest {
+  void MockTest() {}
+
+  auto testCase = TestCase("some suite", "some name", &MockTest, [ Label("label1", "value1"), Label("label2", "value2") ]);
+  testCase.location = SourceLocation("file.d", 42);
+
+  testCase.toString.should.equal(`{ "suiteName": "some suite", "name": "some name", ` ~
+    `"labels": [ { "name": "label1", "value": "value1" }, { "name": "label2", "value": "value2" } ], ` ~
+    `"location": { "fileName": "file.d", "line": 42 } }`);
 }
 
 ///

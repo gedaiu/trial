@@ -112,7 +112,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
       import trial.reporters.xunit;
       import trial.reporters.result;\n";
   } else {
-    writeln("We will embed the `trial:lifecycle` code inside the project.");
+    logInfo("We will embed the `trial:lifecycle` code inside the project.");
 
     code = "version = is_trial_embeded;\n" ~ d.split("\n")
             .filter!(a => !a.startsWith("module"))
@@ -124,7 +124,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   }
 
   code ~= `
-  int main() {
+  int main(string[] arguments) {
       setupLifecycle(` ~ settings.toCode ~ `);` ~ "\n\n";
 
   if(hasTrialDependency) {
@@ -138,7 +138,12 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   code ~= generateDiscoveries(settings.testDiscovery, modules, hasTrialDependency);
 
   code ~= `
-      return runTests(` ~ "`" ~ testName ~ "`" ~ `).isSuccess ? 0 : 1;
+      if(arguments.length > 1 && arguments[1] == "describe") {
+        describeTests();
+        return 0;
+      } else {
+        return runTests(` ~ "`" ~ testName ~ "`" ~ `).isSuccess ? 0 : 1;
+      }
   }
 
   version (unittest) shared static this()

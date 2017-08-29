@@ -54,7 +54,6 @@ auto parseGeneralOptions(string[] args) {
 	return options;
 }
 
-
 private void writeOptions(CommandArgs args)
 {
 	foreach (arg; args.recognizedArgs) {
@@ -105,13 +104,21 @@ version(unitttest) {} else {
 			return 0;
 		}
 
+		TrialCommand cmd;
+
+		if(arguments.length > 0 && arguments[0] == "describe") {
+			cmd = new TrialDescribeCommand;
+			arguments = arguments[1..$];
+		} else {
+			cmd = new TrialCommand;
+		}
+
 		auto subPackage = arguments.find!(a => a[0] == ':');
 		auto subPackageName = subPackage.empty ? "" : subPackage.front;
 
 		auto options = parseGeneralOptions(arguments);
 		auto commandArgs = new CommandArgs(arguments);
 
-		auto cmd = new TrialCommand;
 		cmd.prepare(commandArgs);
 
 		if (options.help) {
