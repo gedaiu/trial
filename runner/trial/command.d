@@ -1,6 +1,9 @@
 module trial.command;
 
 import std.exception;
+import std.algorithm;
+import std.stdio;
+import std.string;
 import trial.description;
 
 import dub.internal.vibecompat.data.json;
@@ -146,13 +149,13 @@ class TrialDescribeCommand : TrialCommand {
 			m_description = description;
 		}
 
-		override void prepare(scope CommandArgs args)
+		void prepare(scope CommandArgs args)
 		{
 			m_buildType = "unittest";
 			super.prepare(args);
 		}
 
-		override int execute(Dub dub, string[] free_args, string[] app_args = [])
+		int execute(Dub dub, string[] free_args, string[] app_args = [])
 		{
 			string package_name;
 
@@ -176,5 +179,24 @@ class TrialDescribeCommand : TrialCommand {
 			dub.testProject(settings, settings.config, dub.rootPath ~ Path("generated.d"));
 			return 0;
 		}
+	}
+}
+
+class TrialSubpackagesCommand : TrialCommand {
+	this() {
+		this.name = "subpackages";
+		this.argumentsPattern = "";
+		this.description = "lists the project subpackages";
+		this.helpText = [
+			`Searches trough the dub package and lists all the defined sub packages`
+		];
+
+		this.acceptsAppArgs = false;
+	}
+
+	override int execute(Dub dub, string[] free_args, string[] app_args = [])
+	{
+		m_description.subPackages.join("\n").writeln;
+		return 0;
 	}
 }

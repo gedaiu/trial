@@ -35,7 +35,7 @@ import trial.coverage;
 import trial.command;
 import trial.description;
 
-auto parseGeneralOptions(string[] args) {
+auto parseGeneralOptions(string[] args, bool isSilent) {
 	CommonOptions options;
 
 	LogLevel loglevel = LogLevel.info;
@@ -49,7 +49,7 @@ auto parseGeneralOptions(string[] args) {
 	else if (options.vquiet) loglevel = LogLevel.none;
 	else if (options.quiet) loglevel = LogLevel.warn;
 
-	setLogLevel(loglevel);
+	setLogLevel(isSilent ? LogLevel.none : loglevel);
 
 	return options;
 }
@@ -105,8 +105,14 @@ version(unitttest) {} else {
 		}
 
 		TrialCommand cmd;
+		bool silent;
 
-		if(arguments.length > 0 && arguments[0] == "describe") {
+		if(arguments.length > 0 && arguments[0] == "subpackages") {
+			silent = true;
+			cmd = new TrialSubpackagesCommand;
+			arguments = [];
+		} else if(arguments.length > 0 && arguments[0] == "describe") {
+			silent = true;
 			cmd = new TrialDescribeCommand;
 			arguments = arguments[1..$];
 		} else {
@@ -116,7 +122,7 @@ version(unitttest) {} else {
 		auto subPackage = arguments.find!(a => a[0] == ':');
 		auto subPackageName = subPackage.empty ? "" : subPackage.front;
 
-		auto options = parseGeneralOptions(arguments);
+		auto options = parseGeneralOptions(arguments, silent);
 		auto commandArgs = new CommandArgs(arguments);
 
 		cmd.prepare(commandArgs);
@@ -128,8 +134,6 @@ version(unitttest) {} else {
 
 		auto dub = createDub(options);
 		auto description = new PackageDescriptionCommand(options, subPackageName);
-
-		options = parseGeneralOptions(arguments);
 
 		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
 

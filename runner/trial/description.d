@@ -5,6 +5,7 @@ import std.algorithm;
 import std.file;
 import std.path;
 import std.conv;
+import std.string;
 
 import dub.internal.vibecompat.data.json;
 
@@ -68,10 +69,12 @@ class PackageDescriptionCommand : PackageBuildCommand
         string subPackageName;
         string rootPackage;
         TargetDescription[] neededTarget;
+        CommonOptions options;
     }
 
     this(CommonOptions options, string subPackageName)
     {
+        this.options = options;
         dub = createDub(options);
         setupPackage(dub, subPackageName);
 
@@ -134,6 +137,19 @@ class PackageDescriptionCommand : PackageBuildCommand
         return neededTarget.front.buildSettings.sourceFiles.map!(a => a.to!string)
             .filter!(a => a.startsWith(packagePath)).map!(a => [a,
                     getModuleName(a)]).filter!(a => a[1] != "").array.to!(string[2][]);
+    }
+
+    string[] subPackages() {
+        import std.stdio;
+        auto packages = dub.packageManager
+            .getOrLoadPackage(Path(options.root_path))
+            .subPackages
+            .map!(a => a.recipe.name.strip)
+            .filter!(a => a != "")
+            .map!(a => ":" ~ a)
+                .array;
+
+        return packages;
     }
 
     string[] externalModules()

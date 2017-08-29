@@ -92,8 +92,6 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
 
 
   if(hasTrialDependency) {
-    writeln("We are using the project `trial:lifecycle` dependency.");
-
     code = "
       import trial.discovery.unit;
       import trial.discovery.spec;
