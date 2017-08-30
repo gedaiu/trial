@@ -246,8 +246,6 @@ unittest{
   }`);
 }
 
-
-
 @("It should ignore strings inside unit tests")
 unittest{
   `module test;

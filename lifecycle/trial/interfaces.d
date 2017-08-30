@@ -102,7 +102,7 @@ struct Label {
 
   /// Convert the struct to a JSON string
   string toString() inout {
-    return `{ "name": "` ~ name ~ `", "value": "` ~ value ~ `" }`;
+    return `{ "name": "` ~ name.escapeJson ~ `", "value": "` ~ value.escapeJson ~ `" }`;
   }
 }
 
@@ -141,7 +141,7 @@ struct SourceLocation {
 
   /// Converts the structure to a JSON string
   string toString() inout {
-    return `{ "fileName": "` ~ fileName ~ `", "line": ` ~ line.to!string ~ ` }`;
+    return `{ "fileName": "` ~ fileName.escapeJson ~ `", "line": ` ~ line.to!string ~ ` }`;
   }
 }
 
@@ -149,6 +149,10 @@ struct SourceLocation {
 /// SourceLocation string representation should be a JSON string
 unittest {
   SourceLocation("file.d", 10).toString.should.equal(`{ "fileName": "file.d", "line": 10 }`);
+}
+
+private string escapeJson(string value) {
+  return value.replace(`"`, `\"`);
 }
 
 /// A test case that will be executed
@@ -204,8 +208,8 @@ struct TestCase
   string toString() const {
     string jsonRepresentation = "{ ";
 
-    jsonRepresentation ~= `"suiteName": "` ~ suiteName ~ `", `;
-    jsonRepresentation ~= `"name": "` ~ name ~ `", `;
+    jsonRepresentation ~= `"suiteName": "` ~ suiteName.escapeJson ~ `", `;
+    jsonRepresentation ~= `"name": "` ~ name.escapeJson ~ `", `;
     jsonRepresentation ~= `"labels": [ ` ~ labels.map!(a => a.toString).join(", ") ~ ` ], `;
     jsonRepresentation ~= `"location": ` ~ location.toString;
 

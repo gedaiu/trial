@@ -196,7 +196,9 @@ class TrialSubpackagesCommand : TrialCommand {
 
 	override int execute(Dub dub, string[] free_args, string[] app_args = [])
 	{
-		m_description.subPackages.join("\n").writeln;
+		auto list = [ m_description.getRootPackage ] ~ m_description.subPackages;
+		list.join("\n").writeln;
+
 		return 0;
 	}
 }

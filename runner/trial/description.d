@@ -174,6 +174,10 @@ class PackageDescriptionCommand : PackageBuildCommand
         return files.map!(a => getModuleName(a)).filter!(a => a != "").array;
     }
 
+    string getRootPackage() {
+        return rootPackage;
+    }
+
     bool hasTrial()
     {
         if(rootPackage == "trial") {
