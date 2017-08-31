@@ -1,11 +1,6 @@
 {
 	"reporters": [
-		"spec",
-		"result",
-		"stats",
-		"html",
-		"allure",
-		"xunit"
+		"tap"
 	],
 
 	"testDiscovery": [

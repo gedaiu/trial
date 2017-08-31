@@ -1,6 +1,9 @@
 /++
   A module containing the TAP13 reporter https://testanything.org/
 
+  This is an example of how this reporter looks
+  <script type="text/javascript" src="https://asciinema.org/a/135734.js" id="asciicast-135734" async></script>
+
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
@@ -17,39 +20,49 @@ import fluentasserts.core.results;
 import trial.interfaces;
 import trial.reporters.writer;
 
+/// This reporter will print the results using thr Test anything protocol version 13
 class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
 {
   private {
     ReportWriter writer;
   }
 
+  ///
+  this()
+  {
+    writer = defaultWriter;
+  }
+
+  ///
   this(ReportWriter writer)
   {
     this.writer = writer;
   }
 
+  ///
   void begin(ulong testCount) {
     writer.writeln("TAP version 13", ReportWriter.Context._default);
     writer.writeln("1.." ~ testCount.to!string, ReportWriter.Context._default);
   }
 
+  ///
   void update() { }
 
+  ///
   void end(SuiteResult[]) { }
 
-  void begin(string suite, ref TestResult)
+  ///
+  void begin(string, ref TestResult)
   {
   }
 
+  ///
   void end(string suite, ref TestResult test)
   {
     if(test.status == TestResult.Status.success) {
       writer.writeln("ok - " ~ suite ~ "." ~ test.name, ReportWriter.Context._default);
     } else {
       writer.writeln("not ok - " ~ suite ~ "." ~ test.name, ReportWriter.Context._default);
-
-      import std.stdio;
-      writeln(test.throwable.to!string);
 
       if(test.throwable !is null) {
         if(cast(TestException) test.throwable !is null) {
@@ -61,10 +74,8 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
     }
   }
 
-  void printTestException(ref TestResult test) {
+  private void printTestException(ref TestResult test) {
     auto diagnostic = test.throwable.msg.split("\n").map!(a => "# " ~ a).join("\n");
-
-
 
     auto msg = test.throwable.msg.split("\n")[0];
 
@@ -77,7 +88,7 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
     writer.writeln("    line: " ~ test.throwable.line.to!string, ReportWriter.Context._default);
   }
 
-  void printThrowable(ref TestResult test) {
+  private void printThrowable(ref TestResult test) {
     writer.writeln("  ---", ReportWriter.Context._default);
     writer.writeln("  message: '" ~ test.throwable.msg ~ "'", ReportWriter.Context._default);
     writer.writeln("  severity: " ~ test.status.to!string, ReportWriter.Context._default);
