@@ -213,9 +213,14 @@ class PackageDescriptionCommand : PackageBuildCommand
         return settings;
     }
 
-    void writeTestFile(string testName = "")
+    void writeTestFile(string testName = "", string reporters = "")
     {
-        auto content = generateTestFile(readSettings(dub.rootPath), hasTrial, modules, externalModules, testName);
+        auto settings = readSettings(dub.rootPath);
+        if(reporters != "") {
+            settings.reporters = reporters.split(",").map!(a => a.strip).array;
+        }
+
+        auto content = generateTestFile(settings, hasTrial, modules, externalModules, testName);
         std.file.write(mainFile, content);
     }
 

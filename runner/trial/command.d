@@ -99,7 +99,7 @@ class TrialCommand : PackageBuildCommand {
 		}
 
 		logInfo("Generate main file: " ~ m_description.mainFile);
-		m_description.writeTestFile(m_testName);
+		m_description.writeTestFile(m_testName, m_reporters);
 
 		setupPackage(dub, package_name, m_buildType);
 
