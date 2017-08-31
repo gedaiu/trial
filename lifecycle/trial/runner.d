@@ -217,11 +217,17 @@ unittest {
 
 /// Runs the tests and returns the results
 auto runTests(const(TestCase)[] tests, string testName = "") {
-  LifeCycleListeners.instance.begin(tests.length);
+  const(TestCase)[] filteredTests = tests;
 
-  SuiteResult[] results = LifeCycleListeners.instance.beginExecution(tests);
+  if(testName != "") {
+    filteredTests = tests.filter!(a => a.name.indexOf(testName) != -1).array;
+  }
 
-  foreach(test; tests.filter!(a => a.name.indexOf(testName) != -1)) {
+  LifeCycleListeners.instance.begin(filteredTests.length);
+
+  SuiteResult[] results = LifeCycleListeners.instance.beginExecution(filteredTests);
+
+  foreach(test; filteredTests) {
     results ~= LifeCycleListeners.instance.execute(test);
   }
 

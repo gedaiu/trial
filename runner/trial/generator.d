@@ -265,7 +265,7 @@ unittest{
 }
 
 
-@("It should remove unittest versions")
+@("It should remove unittest versions 2")
 unittest{
   `module test;
 
