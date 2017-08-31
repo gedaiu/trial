@@ -11,6 +11,9 @@ import std.conv;
 import std.string;
 import std.algorithm;
 
+import fluentasserts.core.base;
+import fluentasserts.core.results;
+
 import trial.interfaces;
 import trial.reporters.writer;
 
@@ -43,8 +46,44 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
     if(test.status == TestResult.Status.success) {
       writer.writeln("ok - " ~ suite ~ "." ~ test.name, ReportWriter.Context._default);
     } else {
+      writer.writeln("not ok - " ~ suite ~ "." ~ test.name, ReportWriter.Context._default);
 
+      import std.stdio;
+      writeln(test.throwable.to!string);
+
+      if(test.throwable !is null) {
+        if(cast(TestException) test.throwable !is null) {
+          printTestException(test);
+        } else {
+          printThrowable(test);
+        }
+      }
     }
+  }
+
+  void printTestException(ref TestResult test) {
+    auto diagnostic = test.throwable.msg.split("\n").map!(a => "# " ~ a).join("\n");
+
+
+
+    auto msg = test.throwable.msg.split("\n")[0];
+
+    writer.writeln(diagnostic, ReportWriter.Context._default);
+    writer.writeln("  ---", ReportWriter.Context._default);
+    writer.writeln("  message: '" ~ msg ~ "'", ReportWriter.Context._default);
+    writer.writeln("  severity: " ~ test.status.to!string, ReportWriter.Context._default);
+    writer.writeln("  location:", ReportWriter.Context._default);
+    writer.writeln("    fileName: '" ~ test.throwable.file.replace("'", "\'") ~ "'", ReportWriter.Context._default);
+    writer.writeln("    line: " ~ test.throwable.line.to!string, ReportWriter.Context._default);
+  }
+
+  void printThrowable(ref TestResult test) {
+    writer.writeln("  ---", ReportWriter.Context._default);
+    writer.writeln("  message: '" ~ test.throwable.msg ~ "'", ReportWriter.Context._default);
+    writer.writeln("  severity: " ~ test.status.to!string, ReportWriter.Context._default);
+    writer.writeln("  location:", ReportWriter.Context._default);
+    writer.writeln("    fileName: '" ~ test.throwable.file.replace("'", "\'") ~ "'", ReportWriter.Context._default);
+    writer.writeln("    line: " ~ test.throwable.line.to!string, ReportWriter.Context._default);
   }
 }
 
@@ -59,7 +98,7 @@ unittest {
   writer.buffer.should.equal("TAP version 13\n1..10\n");
 }
 
-// it should print a sucess test
+/// it should print a sucess test
 unittest
 {
   auto writer = new BufferedWriter;
@@ -71,4 +110,70 @@ unittest
   reporter.end("some suite", test);
 
   writer.buffer.should.equal("ok - some suite.other test\n");
+}
+
+/// it should print a failing test with a basic throwable
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new TapReporter(writer);
+
+  auto test = new TestResult("other's test");
+  test.status = TestResult.Status.failure;
+  test.throwable = new Exception("Test's failure", "file.d", 42);
+
+  reporter.end("some suite", test);
+
+  writer.buffer.should.equal("not ok - some suite.other's test\n" ~
+  "  ---\n" ~
+  "  message: 'Test\'s failure'\n" ~
+  "  severity: failure\n" ~
+  "  location:\n" ~
+  "    fileName: 'file.d'\n" ~
+  "    line: 42\n");
+}
+
+/// it should not print the YAML if the throwable is missing
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new TapReporter(writer);
+
+  auto test = new TestResult("other's test");
+  test.status = TestResult.Status.failure;
+
+  reporter.end("some suite", test);
+
+  writer.buffer.should.equal("not ok - some suite.other's test\n");
+}
+
+/// it should print the results of a TestException
+unittest {
+  IResult[] results = [
+    cast(IResult) new MessageResult("message"),
+    cast(IResult) new ExtraMissingResult("a", "b") ];
+
+  auto exception = new TestException(results, "unknown", 0);
+
+  auto writer = new BufferedWriter;
+  auto reporter = new TapReporter(writer);
+
+  auto test = new TestResult("other's test");
+  test.status = TestResult.Status.failure;
+  test.throwable = exception;
+
+  reporter.end("some suite", test);
+
+  writer.buffer.should.equal("not ok - some suite.other's test\n" ~
+  "# message\n" ~
+  "# \n" ~
+  "#     Extra:a\n" ~
+  "#   Missing:b\n" ~
+  "# \n" ~
+  "  ---\n" ~
+  "  message: 'message'\n" ~
+  "  severity: failure\n" ~
+  "  location:\n" ~
+  "    fileName: 'unknown'\n" ~
+  "    line: 0\n");
 }
