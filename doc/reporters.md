@@ -15,6 +15,7 @@ Here are informations about the supported reporters and how you can create your 
   - [List](#list)
   - [Progress](#progress)
   - [Result](#result)
+  - [TAP](#tap)
   - [HTML](#html)
   - [Allure](#allure)
   - [XUnit](#xunit)
@@ -103,6 +104,12 @@ mandatory to use if you want to see the details of the failed tests.
 To use it, add `result` to the reporters list inisde `trial.json`.
 
 [![asciicast](https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw.png)](https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw)
+
+## TAP
+
+The TAP reporter emits lines for a [Test-Anything-Protocol](https://en.wikipedia.org/wiki/Test_Anything_Protocol) consumer.
+
+[![asciicast](https://asciinema.org/a/135734.png)](https://asciinema.org/a/135734)
 
 ## HTML
 
