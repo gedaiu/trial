@@ -33,6 +33,7 @@ class TrialCommand : PackageBuildCommand {
 		bool m_parallel = false;
 		bool m_force = false;
 		string m_testName = "";
+		string m_reporters = "";
 		PackageDescriptionCommand m_description;
 	}
 
@@ -72,6 +73,10 @@ class TrialCommand : PackageBuildCommand {
 
 		args.getopt("t|test", &m_testName, [
 			"It will run all the tests that contain this text in the name."
+		]);
+
+		args.getopt("r|reporters", &m_reporters, [
+			"Override the reporters from the `trial.json` file. eg. -r spec,result,stats"
 		]);
 
 		bool coverage = false;
