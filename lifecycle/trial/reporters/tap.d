@@ -70,6 +70,8 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
         } else {
           printThrowable(test);
         }
+
+        writer.writeln("");
       }
     }
   }
@@ -141,7 +143,7 @@ unittest
   "  severity: failure\n" ~
   "  location:\n" ~
   "    fileName: 'file.d'\n" ~
-  "    line: 42\n");
+  "    line: 42\n\n");
 }
 
 /// it should not print the YAML if the throwable is missing
@@ -186,5 +188,5 @@ unittest {
   "  severity: failure\n" ~
   "  location:\n" ~
   "    fileName: 'unknown'\n" ~
-  "    line: 0\n");
+  "    line: 0\n\n");
 }
