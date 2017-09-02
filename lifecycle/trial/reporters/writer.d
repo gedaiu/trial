@@ -128,7 +128,14 @@ version(Have_arsd_official_terminal) {
       int lines = 0;
       bool movedToBottom = false;
 
+      Context currentContext = Context._default;
+      bool isReversed = false;
+
       void setColor(Context context) {
+        if(!isReversed && context == currentContext) {
+          return;
+        }
+
         switch(context) {
           case Context.active:
             terminal.color(Color.white | Bright, Color.DEFAULT);
@@ -161,6 +168,10 @@ version(Have_arsd_official_terminal) {
 
 
       void setColorReverse(Context context) {
+        if(isReversed && context == currentContext) {
+          return;
+        }
+
         switch(context) {
           case Context.active:
             terminal.color(Color.DEFAULT, Color.white | Bright);
