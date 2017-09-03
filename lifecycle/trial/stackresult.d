@@ -42,7 +42,7 @@ class TestExceptionWrapper : TestException {
 
     super(results, fileName, line, next);
 
-    this.msg = super.msg ~ results.map!(a => a.toString).join("\n").to!string;
+    this.msg = exception.msg ~ "\n" ~ this.msg;
   }
 
   ///
@@ -56,6 +56,14 @@ class TestExceptionWrapper : TestException {
   override string toString() {
     return exception.toString ~ results.map!(a => a.toString).join("\n").to!string;
   }
+}
+
+/// The message of a wrapped exception should contain the original exception
+unittest {
+  auto exception = new TestException([ new MessageResult("first message") ], "", 0);
+  auto wrappedException = new TestExceptionWrapper(exception, [ new MessageResult("second message") ], "", 0);
+
+  wrappedException.msg.should.equal("first message\n\nsecond message\n");
 }
 
 /// Converts a Throwable to a TestException which improves the failure verbosity
