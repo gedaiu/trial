@@ -74,6 +74,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     import("reporters/spec.d") ~
     import("reporters/xunit.d") ~
     import("reporters/tap.d") ~
+    import("reporters/visualtrial.d") ~
 
     import("runner.d") ~
     import("interfaces.d") ~
@@ -110,6 +111,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
       import trial.reporters.progress;
       import trial.reporters.xunit;
       import trial.reporters.tap;
+      import trial.reporters.visualtrial;
       import trial.reporters.result;\n";
   } else {
     logInfo("We will embed the `trial:lifecycle` code inside the project.");

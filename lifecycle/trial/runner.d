@@ -47,6 +47,7 @@ void addReporter(string name, Settings settings) {
     import trial.reporters.result;
     import trial.reporters.xunit;
     import trial.reporters.tap;
+    import trial.reporters.visualtrial;
 
     switch(name) {
       case "spec":
@@ -100,6 +101,10 @@ void addReporter(string name, Settings settings) {
 
       case "tap":
         LifeCycleListeners.instance.add(new TapReporter);
+        break;
+
+      case "visualtrial":
+        LifeCycleListeners.instance.add(new VisualTrialReporter);
         break;
 
       default:

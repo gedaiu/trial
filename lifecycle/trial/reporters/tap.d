@@ -100,7 +100,9 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
   }
 }
 
-version(unittest) import fluent.asserts;
+version(unittest) {
+  import fluent.asserts;
+}
 
 /// it should print "The Plan" at the beginning
 unittest {
