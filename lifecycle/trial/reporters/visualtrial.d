@@ -39,7 +39,8 @@ class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
 
   ///
   void begin(ulong testCount) {
-    
+    writer.writeln("");
+    writer.writeln("");
   }
 
   ///

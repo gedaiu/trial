@@ -145,7 +145,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
         describeTests.toJSONHierarchy.write;
         return 0;
       } else {
-        return runTests(` ~ "`" ~ testName ~ "`" ~ `).isSuccess ? 0 : 1;
+        return runTests("` ~ testName.replace(`"`,`\"`) ~ `").isSuccess ? 0 : 1;
       }
   }
 
