@@ -41,6 +41,8 @@ class TestExceptionWrapper : TestException {
     this.results = results;
 
     super(results, fileName, line, next);
+
+    this.msg = super.msg ~ results.map!(a => a.toString).join("\n").to!string;
   }
 
   ///
@@ -48,6 +50,11 @@ class TestExceptionWrapper : TestException {
     exception.print(printer);
 
     results.each!(a => a.print(printer));
+  }
+
+  ///
+  override string toString() {
+    return exception.toString ~ results.map!(a => a.toString).join("\n").to!string;
   }
 }
 

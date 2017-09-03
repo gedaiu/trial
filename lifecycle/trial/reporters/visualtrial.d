@@ -68,7 +68,7 @@ class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
         writer.writeln("line:" ~ test.throwable.line.to!string);
         writer.writeln("message:" ~ test.throwable.msg.split("\n")[0]);
         writer.write("error:");
-        writer.writeln(test.throwable.toString());
+        writer.writeln(test.throwable.toString);
       }
     }
 
