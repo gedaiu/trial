@@ -25,46 +25,46 @@ version (Have_fluent_asserts_core) { } else {
 
 version (Have_fluent_asserts_core) {
 
-import fluentasserts.core.base;
-import fluentasserts.core.results;
-
-///
-class TestExceptionWrapper : TestException {
-  private {
-    TestException exception;
-    IResult[] results;
-  }
+  import fluentasserts.core.base;
+  import fluentasserts.core.results;
 
   ///
-  this(TestException exception, IResult[] results, string fileName, size_t line, Throwable next = null) {
-    this.exception = exception;
-    this.results = results;
+  class TestExceptionWrapper : TestException {
+    private {
+      TestException exception;
+      IResult[] results;
+    }
 
-    super(results, fileName, line, next);
+    ///
+    this(TestException exception, IResult[] results, string fileName, size_t line, Throwable next = null) {
+      this.exception = exception;
+      this.results = results;
 
-    this.msg = exception.msg ~ "\n" ~ this.msg;
+      super(results, fileName, line, next);
+
+      this.msg = exception.msg ~ "\n" ~ this.msg;
+    }
+
+    ///
+    override void print(ResultPrinter printer) {
+      exception.print(printer);
+
+      results.each!(a => a.print(printer));
+    }
+
+    ///
+    override string toString() {
+      return exception.toString ~ results.map!(a => a.toString).join("\n").to!string;
+    }
   }
 
-  ///
-  override void print(ResultPrinter printer) {
-    exception.print(printer);
+  /// The message of a wrapped exception should contain the original exception
+  unittest {
+    auto exception = new TestException([ new MessageResult("first message") ], "", 0);
+    auto wrappedException = new TestExceptionWrapper(exception, [ new MessageResult("second message") ], "", 0);
 
-    results.each!(a => a.print(printer));
+    wrappedException.msg.should.equal("first message\n\nsecond message\n");
   }
-
-  ///
-  override string toString() {
-    return exception.toString ~ results.map!(a => a.toString).join("\n").to!string;
-  }
-}
-
-/// The message of a wrapped exception should contain the original exception
-unittest {
-  auto exception = new TestException([ new MessageResult("first message") ], "", 0);
-  auto wrappedException = new TestExceptionWrapper(exception, [ new MessageResult("second message") ], "", 0);
-
-  wrappedException.msg.should.equal("first message\n\nsecond message\n");
-}
 
 /// Converts a Throwable to a TestException which improves the failure verbosity
 TestException toTestException(Throwable t)

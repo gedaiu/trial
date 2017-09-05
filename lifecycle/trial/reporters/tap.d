@@ -14,8 +14,10 @@ import std.conv;
 import std.string;
 import std.algorithm;
 
-import fluentasserts.core.base;
-import fluentasserts.core.results;
+version(Have_fluent_asserts_core) {
+  import fluentasserts.core.base;
+  import fluentasserts.core.results;
+}
 
 import trial.interfaces;
 import trial.reporters.writer;
@@ -64,30 +66,37 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
     } else {
       writer.writeln("not ok - " ~ suite ~ "." ~ test.name, ReportWriter.Context._default);
 
-      if(test.throwable !is null) {
-        if(cast(TestException) test.throwable !is null) {
-          printTestException(test);
-        } else {
-          printThrowable(test);
-        }
+      version(Have_fluent_asserts_core) {
+        if(test.throwable !is null) {
+          if(cast(TestException) test.throwable !is null) {
+            printTestException(test);
+          } else {
+            printThrowable(test);
+          }
 
-        writer.writeln("");
+          writer.writeln("");
+        }
+      } else {
+        printThrowable(test);
       }
     }
   }
 
-  private void printTestException(ref TestResult test) {
-    auto diagnostic = test.throwable.msg.split("\n").map!(a => "# " ~ a).join("\n");
 
-    auto msg = test.throwable.msg.split("\n")[0];
+  version(Have_fluent_asserts_core) {
+    private void printTestException(ref TestResult test) {
+      auto diagnostic = test.throwable.msg.split("\n").map!(a => "# " ~ a).join("\n");
 
-    writer.writeln(diagnostic, ReportWriter.Context._default);
-    writer.writeln("  ---", ReportWriter.Context._default);
-    writer.writeln("  message: '" ~ msg ~ "'", ReportWriter.Context._default);
-    writer.writeln("  severity: " ~ test.status.to!string, ReportWriter.Context._default);
-    writer.writeln("  location:", ReportWriter.Context._default);
-    writer.writeln("    fileName: '" ~ test.throwable.file.replace("'", "\'") ~ "'", ReportWriter.Context._default);
-    writer.writeln("    line: " ~ test.throwable.line.to!string, ReportWriter.Context._default);
+      auto msg = test.throwable.msg.split("\n")[0];
+
+      writer.writeln(diagnostic, ReportWriter.Context._default);
+      writer.writeln("  ---", ReportWriter.Context._default);
+      writer.writeln("  message: '" ~ msg ~ "'", ReportWriter.Context._default);
+      writer.writeln("  severity: " ~ test.status.to!string, ReportWriter.Context._default);
+      writer.writeln("  location:", ReportWriter.Context._default);
+      writer.writeln("    fileName: '" ~ test.throwable.file.replace("'", "\'") ~ "'", ReportWriter.Context._default);
+      writer.writeln("    line: " ~ test.throwable.line.to!string, ReportWriter.Context._default);
+    }
   }
 
   private void printThrowable(ref TestResult test) {

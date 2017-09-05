@@ -1,5 +1,5 @@
 /++
-  A module containing the Visual Trial reporter used to send data to the 
+  A module containing the Visual Trial reporter used to send data to the
   Visual Studio Code plugin
 
   Copyright: © 2017 Szabo Bogdan
@@ -12,8 +12,10 @@ import std.conv;
 import std.string;
 import std.algorithm;
 
-import fluentasserts.core.base;
-import fluentasserts.core.results;
+version(Have_fluent_asserts_core) {
+  import fluentasserts.core.base;
+  import fluentasserts.core.results;
+}
 
 import trial.interfaces;
 import trial.reporters.writer;
