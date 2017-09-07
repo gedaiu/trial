@@ -88,10 +88,10 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     import("step.d") ~
     import("coverage.d") ~
     import("attributes.d") ~
+    import("terminal.d") ~
     import("stackresult.d");
 
   string code;
-
 
   if(hasTrialDependency) {
     code = "
