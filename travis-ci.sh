@@ -17,6 +17,7 @@ dub run :runner --compiler=$DC -- :lifecycle
 
 # download vibe and run the tests
 git clone https://github.com/vibe-d/vibe.d.git
+ls -lsa
 cd vibe-d
 ../trial :data
 cd ..
