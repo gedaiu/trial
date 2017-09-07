@@ -100,7 +100,7 @@ class ConsoleWriter : ReportWriter {
   }
 }
 
-static import trial.terminal;
+import trial.terminal;
 
 shared static this() {
   version(windows) {
@@ -119,10 +119,7 @@ shared static this() {
 class ColorConsoleWriter : ReportWriter {
   private {
     int[string] cues;
-    trial.terminal.Terminal terminal;
-    alias Color = trial.terminal.Color;
-    alias Bright = trial.terminal.Bright;
-    alias ForceOption = trial.terminal.ForceOption;
+    Terminal terminal;
 
     int lines = 0;
     bool movedToBottom = false;
@@ -196,7 +193,7 @@ class ColorConsoleWriter : ReportWriter {
   }
 
   this() {
-    this.terminal = trial.terminal.Terminal(trial.terminal.ConsoleOutputType.linear);
+    this.terminal = Terminal(ConsoleOutputType.linear);
     this.terminal._suppressDestruction = true;
 
     lines = this.terminal.cursorY;
