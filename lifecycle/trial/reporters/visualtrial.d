@@ -88,7 +88,7 @@ unittest {
   auto reporter = new VisualTrialReporter(writer);
   reporter.begin(10);
 
-  writer.buffer.should.equal("");
+  writer.buffer.should.equal("\n\n");
 }
 
 /// it should print a sucess test

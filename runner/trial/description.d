@@ -6,6 +6,7 @@ import std.file;
 import std.path;
 import std.conv;
 import std.string;
+import std.digest.sha;
 
 import dub.internal.vibecompat.data.json;
 
@@ -221,7 +222,18 @@ class PackageDescriptionCommand : PackageBuildCommand
         }
 
         auto content = generateTestFile(settings, hasTrial, modules, externalModules, testName);
-        std.file.write(mainFile, content);
+
+        if(!mainFile.exists) {
+            std.file.write(mainFile, content);
+            return;
+        }
+
+        ubyte[28] hash1 = sha224Of(content);
+        ubyte[28] hash2 = sha224Of(std.file.readText(mainFile));
+
+        if(toHexString(hash1) != toHexString(hash2)) {
+            std.file.write(mainFile, content);
+        }
     }
 
     string mainFile()
