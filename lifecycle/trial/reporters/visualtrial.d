@@ -69,8 +69,8 @@ class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
 
     if(test.status != TestResult.Status.success) {
       if(test.throwable !is null) {
-        writer.writeln("file:" ~ test.throwable.file, ReportWriter.Context._default);
-        writer.writeln("line:" ~ test.throwable.line.to!string, ReportWriter.Context._default);
+        writer.writeln("errorFile:" ~ test.throwable.file, ReportWriter.Context._default);
+        writer.writeln("errorLine:" ~ test.throwable.line.to!string, ReportWriter.Context._default);
         writer.writeln("message:" ~ test.throwable.msg.split("\n")[0], ReportWriter.Context._default);
         writer.write("error:", ReportWriter.Context._default);
         writer.writeln(test.throwable.toString, ReportWriter.Context._default);
@@ -94,6 +94,29 @@ unittest {
   writer.buffer.should.equal("\n\n");
 }
 
+/// it should print the test location
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new VisualTrialReporter(writer);
+
+  auto test = new TestResult("other test");
+  test.fileName = "someFile.d";
+  test.line = 100;
+  test.labels = [ Label("name", "value"), Label("name1", "value1") ];
+  test.status = TestResult.Status.success;
+
+  reporter.begin("some suite", test);
+
+  writer.buffer.should.equal("BEGIN TEST;\n" ~
+    "suite:some suite\n" ~
+    "test:other test\n" ~
+    "file:someFile.d\n" ~
+    "line:100\n" ~
+    `labels:[{ "name": "name", "value": "value" }, { "name": "name1", "value": "value1" }]` ~ "\n");
+}
+
+
 /// it should print a sucess test
 unittest
 {
@@ -101,6 +124,8 @@ unittest
   auto reporter = new VisualTrialReporter(writer);
 
   auto test = new TestResult("other test");
+  test.fileName = "someFile.d";
+  test.line = 100;
   test.status = TestResult.Status.success;
 
   reporter.end("some suite", test);
@@ -121,8 +146,8 @@ unittest
   reporter.end("some suite", test);
 
   writer.buffer.should.equal("status:failure\n" ~
-         "file:file.d\n" ~
-         "line:42\n" ~
+         "errorFile:file.d\n" ~
+         "errorLine:42\n" ~
          "message:Test's failure\n" ~
          "error:object.Exception@file.d(42): Test's failure\n" ~
          "END TEST;\n");
@@ -160,8 +185,8 @@ unittest {
   reporter.end("some suite", test);
 
   writer.buffer.should.equal("status:failure\n" ~
-         "file:unknown\n" ~
-         "line:0\n" ~
+         "errorFile:unknown\n" ~
+         "errorLine:0\n" ~
          "message:message\n" ~
          "error:fluentasserts.core.base.TestException@unknown(0): message\n\n" ~
          "    Extra:a\n" ~
