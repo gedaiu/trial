@@ -4,6 +4,9 @@ import std.exception;
 import std.algorithm;
 import std.stdio;
 import std.string;
+import std.file;
+import std.datetime;
+import std.path;
 import trial.description;
 
 import dub.internal.vibecompat.data.json;
@@ -105,9 +108,7 @@ class TrialCommand : PackageBuildCommand {
 
 		m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
 
-		auto settings = getSettings;
-
-		dub.testProject(settings, settings.config, Path(m_description.mainFile));
+		run();
 
 		return 0;
 	}
@@ -128,6 +129,38 @@ class TrialCommand : PackageBuildCommand {
 		settings.runArgs = [];
 
 		return settings;
+	}
+
+	void run(string[] runArgs = []) {
+		auto settings = getSettings;
+
+
+		settings.runArgs = runArgs;
+
+		auto project = m_description.project;
+		auto config = settings.config;
+		auto testConfig = m_description.buildFile;
+
+		BuildSettingsTemplate tcinfo = project.rootPackage.recipe.getConfiguration(config).buildSettings;
+
+		tcinfo.targetType = TargetType.executable;
+		tcinfo.targetName = testConfig;
+		tcinfo.excludedSourceFiles[""] ~= tcinfo.mainSourceFile;
+		tcinfo.sourceFiles[""] ~= Path(m_description.mainFile).relativeTo(project.rootPackage.path).toNativeString();
+		tcinfo.importPaths[""] ~= Path(m_description.mainFile).parentPath.toNativeString();
+		tcinfo.mainSourceFile = m_description.mainFile;
+		tcinfo.versions[""] ~= "VibeCustomMain";
+		project.rootPackage.recipe.buildSettings.versions[""] = project.rootPackage.recipe.buildSettings.versions.get("", null).remove!(v => v == "VibeDefaultMain");
+
+		settings.buildSettings.mainSourceFile = m_description.mainFile;
+
+		auto generator = createProjectGenerator("build", project);
+
+		project.rootPackage.recipe.configurations = [ ConfigurationInfo(testConfig, tcinfo) ];
+
+		settings.config = testConfig;
+
+		generator.generate(settings);
 	}
 }
 
@@ -177,11 +210,8 @@ class TrialDescribeCommand : TrialCommand {
 
 			m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
 
-			GeneratorSettings settings = getSettings;
+			run([ "describe" ]);
 
-			settings.runArgs = [ "describe" ];
-
-			dub.testProject(settings, settings.config, Path(m_description.mainFile));
 			return 0;
 		}
 	}

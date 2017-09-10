@@ -87,6 +87,10 @@ class PackageDescriptionCommand : PackageBuildCommand
             .filter!(a => a.rootPackage.canFind(subPackageName)).array;
     }
 
+    string getSubPackageName() {
+        return subPackageName;
+    }
+
     GeneratorSettings getSettings() {
         GeneratorSettings settings;
         settings.platform = m_buildPlatform;
@@ -96,6 +100,10 @@ class PackageDescriptionCommand : PackageBuildCommand
         settings.buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
 
         return settings;
+    }
+
+    auto project() {
+        return dub.project;
     }
 
     string configuration()
@@ -242,5 +250,12 @@ class PackageDescriptionCommand : PackageBuildCommand
         name = name.replace(":", "");
 
         return (dub.rootPath ~ Path("trial_" ~ name ~ ".d")).to!string;
+    }
+
+    string buildFile() {
+        string name = subPackageName != "" ? subPackageName : "root";
+        name = name.replace(":", "");
+
+        return "trial-" ~ name;
     }
 }
