@@ -30,3 +30,4 @@ trial-test-executable
 trial-test-trial
 libtrial.a
 xunit/
+trial_*.d

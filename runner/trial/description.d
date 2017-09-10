@@ -238,6 +238,9 @@ class PackageDescriptionCommand : PackageBuildCommand
 
     string mainFile()
     {
-        return (dub.rootPath ~ Path("generated.d")).to!string;
+        string name = subPackageName != "" ? subPackageName : "root";
+        name = name.replace(":", "");
+
+        return (dub.rootPath ~ Path("trial_" ~ name ~ ".d")).to!string;
     }
 }

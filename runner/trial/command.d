@@ -107,7 +107,7 @@ class TrialCommand : PackageBuildCommand {
 
 		auto settings = getSettings;
 
-		dub.testProject(settings, settings.config, dub.rootPath ~ Path("generated.d"));
+		dub.testProject(settings, settings.config, Path(m_description.mainFile));
 
 		return 0;
 	}
@@ -181,7 +181,7 @@ class TrialDescribeCommand : TrialCommand {
 
 			settings.runArgs = [ "describe" ];
 
-			dub.testProject(settings, settings.config, dub.rootPath ~ Path("generated.d"));
+			dub.testProject(settings, settings.config, Path(m_description.mainFile));
 			return 0;
 		}
 	}

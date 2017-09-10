@@ -167,7 +167,8 @@ unittest
 
   text.should.contain(`<h1>Test Suite<small> <span class="duration">10 secs</span> </small></h1>`);
   text.should.contain(`<strong class='test-name'>some test</strong>`);
-  text.should.contain(`<span class="label label-success">success</span> <span class="label label-default"> <span class="duration">10 secs</span>`);
+  text.should.contain(`<span class="label label-success">success</span>`);
+  text.should.contain(`<span class="label label-default"> <span class="duration">10 secs</span> </span>`);
 
   text.should.contain(`passes: <strong>1</strong>`);
   text.should.contain(`failures: <strong>0</strong>`);

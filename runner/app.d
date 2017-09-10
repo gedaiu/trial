@@ -70,7 +70,7 @@ private void showHelp(in TrialCommand command, CommandArgs common_args)
 	writeln(`USAGE: trial [--version] [subPackage] [<options...>]
 
 Run the tests using the trial runner. It will parse your source files and it will
-generate the "generated.d" file. This file contains a custom main function that will
+generate the "trial_package.d" file. This file contains a custom main function that will
 discover and execute your tests.
 
 Available options

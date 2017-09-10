@@ -289,7 +289,7 @@ struct CoveredFile {
 
 /// Check if a file is in the current path
 bool isPackagePath(string fullPath, string packagePath) {
-  if(fullPath.indexOf("generated.d") != -1) {
+  if(fullPath.indexOf("trial_") != -1) {
     return false;
   }
 
@@ -307,7 +307,7 @@ bool isPackagePath(string fullPath, string packagePath) {
 /// Check project paths
 unittest {
   "../../something.d".isPackagePath("/Users/trial/").should.equal(false);
-  "/Users/trial/generated.d".isPackagePath("/Users/trial/").should.equal(false);
+  "/Users/trial/trial_.d".isPackagePath("/Users/trial/").should.equal(false);
   "/Users/trial/runner.d".isPackagePath("/Users/trial/").should.equal(true);
   "C:\\Users\\trial\\runner.d".isPackagePath("C:/Users/trial/").should.equal(true);
 }
@@ -349,9 +349,9 @@ lifecycle/trial/runner.d is 74% covered
   result.lines[9].code.should.equal("  }");
 }
 
-/// should mark the `generated.d` file as external file
+/// should mark the `trial_.d` file as external file
 unittest {
-  auto result = `generated.d is 74% covered
+  auto result = `trial_package.d is 74% covered
 `.toCoverageFile(buildPath(getcwd, "lifecycle/trial"));
 
   result.isInCurrentProject.should.equal(false);
