@@ -236,6 +236,8 @@ TestResult toTestResult(const TestCase testCase) {
   testResult.begin = Clock.currTime;
   testResult.end = testResult.begin;
   testResult.labels = testCase.labels.dup;
+  testResult.fileName = testCase.location.fileName;
+  testResult.line = testCase.location.line;
 
   return testResult;
 }
@@ -331,6 +333,12 @@ class TestResult : StepResult
     ///
     unknown
   }
+
+  /// The file that contains this test
+  string fileName;
+
+  /// The line where this test starts
+  size_t line;
 
   /// Represents the test status
   Status status = Status.created;

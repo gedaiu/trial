@@ -57,6 +57,9 @@ class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
     writer.writeln("BEGIN TEST;", ReportWriter.Context._default);
     writer.writeln("suite:" ~ suite, ReportWriter.Context._default);
     writer.writeln("test:" ~ result.name, ReportWriter.Context._default);
+    writer.writeln("file:" ~ result.fileName, ReportWriter.Context._default);
+    writer.writeln("line:" ~ result.line.to!string, ReportWriter.Context._default);
+    writer.writeln("labels:[" ~ result.labels.map!(a => a.toString).join(", ") ~ "]", ReportWriter.Context._default);
   }
 
   ///
