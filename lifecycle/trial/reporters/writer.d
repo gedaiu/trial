@@ -196,7 +196,7 @@ class ColorConsoleWriter : ReportWriter
 
   void setColorReverse(Context context)
   {
-    if (isReversed && context == currentContext)
+    if (!isReversed && context == currentContext)
     {
       return;
     }

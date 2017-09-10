@@ -41,8 +41,8 @@ class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
 
   ///
   void begin(ulong testCount) {
-    writer.writeln("");
-    writer.writeln("");
+    writer.writeln("", ReportWriter.Context._default);
+    writer.writeln("", ReportWriter.Context._default);
   }
 
   ///
@@ -54,27 +54,27 @@ class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
   ///
   void begin(string suite, ref TestResult result)
   {
-    writer.writeln("BEGIN TEST;");
-    writer.writeln("suite:" ~ suite);
-    writer.writeln("test:" ~ result.name);
+    writer.writeln("BEGIN TEST;", ReportWriter.Context._default);
+    writer.writeln("suite:" ~ suite, ReportWriter.Context._default);
+    writer.writeln("test:" ~ result.name, ReportWriter.Context._default);
   }
 
   ///
   void end(string suite, ref TestResult test)
   {
-    writer.writeln("status:" ~ test.status.to!string);
+    writer.writeln("status:" ~ test.status.to!string, ReportWriter.Context._default);
 
     if(test.status != TestResult.Status.success) {
       if(test.throwable !is null) {
-        writer.writeln("file:" ~ test.throwable.file);
-        writer.writeln("line:" ~ test.throwable.line.to!string);
-        writer.writeln("message:" ~ test.throwable.msg.split("\n")[0]);
-        writer.write("error:");
-        writer.writeln(test.throwable.toString);
+        writer.writeln("file:" ~ test.throwable.file, ReportWriter.Context._default);
+        writer.writeln("line:" ~ test.throwable.line.to!string, ReportWriter.Context._default);
+        writer.writeln("message:" ~ test.throwable.msg.split("\n")[0], ReportWriter.Context._default);
+        writer.write("error:", ReportWriter.Context._default);
+        writer.writeln(test.throwable.toString, ReportWriter.Context._default);
       }
     }
 
-    writer.writeln("END TEST;");
+    writer.writeln("END TEST;", ReportWriter.Context._default);
   }
 }
 
