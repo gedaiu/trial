@@ -14,7 +14,8 @@ import trial.settings;
 
 private string[string] templates;
 
-string generateDiscoveries(string[] discoveries, string[2][] modules, bool hasTrialDependency) {
+///
+string generateDiscoveries(string[] discoveries, string[2][] modules) {
   string code;
 
   uint index;
@@ -137,7 +138,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     `;
   }
 
-  code ~= generateDiscoveries(settings.testDiscovery, modules, hasTrialDependency);
+  code ~= generateDiscoveries(settings.testDiscovery, modules);
 
   code ~= `
       if(arguments.length > 1 && arguments[1] == "describe") {
@@ -267,7 +268,6 @@ unittest{
     return 0;
   }`);
 }
-
 
 @("It should remove unittest versions 2")
 unittest{

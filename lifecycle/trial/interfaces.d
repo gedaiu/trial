@@ -186,6 +186,7 @@ struct TestCase
     suiteName = testCase.suiteName.dup;
     name = testCase.name.dup;
     func = testCase.func;
+    location = testCase.location;
 
     foreach(key, val; testCase.labels) {
       labels[key] = val;
