@@ -39,6 +39,7 @@ This library intends to provide a rich set of features that helps you to customi
   - [Steps](doc/steps.md)
   - [Attributes](doc/attributes.md)
   - [Attachments](doc/attachments.md)
+  - [Visual Studio Code integration](https://marketplace.visualstudio.com/items?itemName=bosz.visual-trial)
 
 ## Configurable
 
