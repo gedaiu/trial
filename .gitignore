@@ -31,3 +31,5 @@ trial-test-trial
 libtrial.a
 xunit/
 trial_*.d
+trial-lifecycle
+trial-runner
