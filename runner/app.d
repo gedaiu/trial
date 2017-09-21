@@ -89,6 +89,8 @@ void showVersion() {
 
 version(unitttest) {} else {
 	int main(string[] arguments) {
+		arguments = arguments.map!(a => a.strip).filter!(a => a != "").array;
+
 		version(Windows) {
 			environment["TEMP"] = environment["TEMP"].replace("/", "\\");
 		}

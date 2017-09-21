@@ -33,3 +33,4 @@ xunit/
 trial_*.d
 trial-lifecycle
 trial-runner
+trial-root
