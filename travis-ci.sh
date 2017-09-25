@@ -3,6 +3,8 @@ set -e -x -o pipefail
 
 # test for successful 32-bit build
 if [ "$DC" == "dmd" ]; then
+	sudo apt-get install libcurl3:i386
+	
 	dub test :lifecycle --arch=x86
 	dub test :runner --arch=x86
 	dub clean --all-packages
