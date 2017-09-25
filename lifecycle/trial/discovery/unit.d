@@ -252,14 +252,14 @@ class UnitTestDiscovery : ITestDiscovery {
 
 			enum key = "__un" ~ "ittestL";
 			enum len = key.length;
-			long line;
+			size_t line;
 
 			try {
 				auto postFix = name[len..$];
 				auto idx = postFix.indexOf("_");
 
 				if(idx != -1) {
-					line = postFix[0..idx].to!long;
+					line = postFix[0..idx].to!size_t;
 				}
 			} catch(Exception e) {
 				return SourceLocation();
