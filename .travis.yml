@@ -14,7 +14,6 @@ addons:
     - g++-multilib
     - gcc-multilib
     - libcurl4-gnutls-dev
-    - libcurl4-gnutls-dev:i386
 
 d:
   # order: latest DMD, oldest DMD, LDC/GDC, remaining DMD versions
@@ -36,4 +35,5 @@ matrix:
   allow_failures:
     - d: dmd-beta
     - d: ldc-beta
+
 script: ./travis-ci.sh
