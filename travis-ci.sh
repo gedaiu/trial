@@ -3,7 +3,7 @@ set -e -x -o pipefail
 
 # test for successful 32-bit build
 if [ "$DC" == "dmd" ]; then
-	dub build :lifecycle --arch=x86
+	dub test :lifecycle --arch=x86
 	dub clean --all-packages
 fi
 

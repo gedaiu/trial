@@ -127,7 +127,10 @@ struct Attachment {
     import trial.runner;
 
     auto a = const Attachment(name, path, name);
-    LifeCycleListeners.instance.attach(a);
+
+    if(LifeCycleListeners.instance !is null) {
+      LifeCycleListeners.instance.attach(a);
+    }
   }
 }
 

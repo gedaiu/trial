@@ -35,4 +35,5 @@ matrix:
   allow_failures:
     - d: dmd-beta
     - d: ldc-beta
+
 script: ./travis-ci.sh
