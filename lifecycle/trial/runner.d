@@ -130,6 +130,7 @@ const(TestCase)[][string] describeTests(const(TestCase)[] tests) {
   return groupedTests;
 }
 
+///
 string toJSONHierarchy(T)(const(T)[][string] items) {
   struct Node {
     Node[string] nodes;
@@ -222,6 +223,8 @@ unittest {
 
 /// Runs the tests and returns the results
 auto runTests(const(TestCase)[] tests, string testName = "") {
+  setupSegmentationHandler();
+
   const(TestCase)[] filteredTests = tests;
 
   if(testName != "") {
@@ -295,8 +298,19 @@ class LifeCycleListeners {
     ITestDiscovery[] testDiscoveryListeners;
     IAttachmentListener[] attachmentListeners;
     ITestExecutor executor;
+
+    string currentTest;
   }
 
+  @property {
+    /// Return an unique name for the current running test. If there is no test running it
+    /// will return an empty string
+    string runningTest() const nothrow {
+      return currentTest;
+    }
+  }
+
+  ///
   TestCase[] getTestCases() {
     return testDiscoveryListeners.map!(a => a.getTestCases).join;
   }
@@ -370,21 +384,25 @@ class LifeCycleListeners {
 
   /// Send the begin test event to all listeners
   void begin(string suite, ref TestResult test) {
+    currentTest = suite ~ "." ~ test.name;
     testListeners.each!(a => a.begin(suite, test));
   }
 
   /// Send the end test event to all listeners
   void end(string suite, ref TestResult test) {
+    currentTest = "";
     testListeners.each!(a => a.end(suite, test));
   }
 
   /// Send the begin step event to all listeners
   void begin(string suite, string test, ref StepResult step) {
+    currentTest = suite ~ "." ~ test ~ "." ~ step.name;
     stepListeners.each!(a => a.begin(suite, test, step));
   }
 
   /// Send the end step event to all listeners
   void end(string suite, string test, ref StepResult step) {
+    currentTest = "";
     stepListeners.each!(a => a.end(suite, test, step));
   }
 
@@ -401,5 +419,73 @@ class LifeCycleListeners {
   /// Send the end execution the executor listener
   SuiteResult[] endExecution() {
     return executor.endExecution();
+  }
+}
+
+/// It should return the name of this test
+unittest {
+  LifeCycleListeners.instance.runningTest.should.equal("trial.runner.It should return the name of this test");
+}
+
+void setupSegmentationHandler()
+{
+  import core.runtime;
+  writeln("SETUP Seg handler");
+
+  // backtrace
+  version( CRuntime_Glibc )
+    import core.sys.linux.execinfo;
+  else version( OSX )
+    import core.sys.darwin.execinfo;
+  else version( FreeBSD )
+    import core.sys.freebsd.execinfo;
+  else version( NetBSD )
+    import core.sys.netbsd.execinfo;
+  else version( Windows )
+    import core.sys.windows.stacktrace;
+  else version( Solaris )
+    import core.sys.solaris.execinfo;
+
+  static if( __traits( compiles, backtrace ) )
+  {
+    import core.sys.posix.signal; // segv handler
+
+    static extern (C) void unittestSegvHandler(int signum, siginfo_t* info, void* ptr ) nothrow
+    {
+      import core.stdc.stdio;
+
+      core.stdc.stdio.printf("\n\n");
+
+      if(signum == SIGSEGV) {
+        core.stdc.stdio.printf("Got a Segmentation Fault running ");
+      }
+
+      if(signum == SIGBUS) {
+        core.stdc.stdio.printf("Got a bus error running ");
+      }
+
+
+      if(LifeCycleListeners.instance.runningTest != "") {
+        core.stdc.stdio.printf("%s\n\n", LifeCycleListeners.instance.runningTest.ptr);
+      } else {
+        core.stdc.stdio.printf("some setup step. This is probably a Trial bug. Please create an issue on github.\n\n");
+      }
+
+
+      static enum MAXFRAMES = 128;
+      void*[MAXFRAMES]  callstack;
+      int               numframes;
+
+      numframes = backtrace( callstack.ptr, MAXFRAMES );
+      backtrace_symbols_fd( callstack.ptr, numframes, 2);
+    }
+
+    sigaction_t action = void;
+    (cast(byte*) &action)[0 .. action.sizeof] = 0;
+    sigfillset( &action.sa_mask ); // block other signals
+    action.sa_flags = SA_SIGINFO | SA_RESETHAND;
+    action.sa_sigaction = &unittestSegvHandler;
+    sigaction( SIGSEGV, &action, null );
+    sigaction( SIGBUS, &action, null );
   }
 }
