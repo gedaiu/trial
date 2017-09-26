@@ -31,7 +31,6 @@ shared static this() {
   dmd_coverDestPath(buildPath("coverage", "raw"));
 }
 
-
 /// Converts coverage lst files to html
 double convertLstFiles(string packagePath, string packageName) {
   if(!exists(buildPath("coverage", "html"))) {
@@ -276,6 +275,10 @@ struct CoveredFile {
   /// false if is an external file
   bool isInCurrentProject;
 
+  /// Is true if the file is set to be ignored
+  /// from the final report
+  bool isIgnored;
+
   /// The module name
   string moduleName;
 
@@ -284,6 +287,66 @@ struct CoveredFile {
 
   /// The file lines with coverage data
   LineCoverage[] lines;
+}
+
+/// Check if a file should be ignored from the report
+bool isIgnored(const string content) {
+  auto firstLine = content.splitter('\n');
+
+  if(firstLine.empty) {
+    return false;
+  }
+
+  auto smallCase = firstLine.front.strip.toLower;
+  auto pieces = smallCase.replace("\t", " ").splitter(' ').filter!(a => a != "").array;
+
+  if(pieces[0].indexOf("//") == -1 && pieces[0].indexOf("/*") == -1 && pieces[0].indexOf("/+") == -1) {
+    return false;
+  }
+
+  if(pieces.length == 2) {
+    return pieces[0].indexOf("ignore") != -1 && pieces[1] == "coverage";
+  }
+
+  if(pieces.length < 3) {
+    return false;
+  }
+
+  return pieces[1] == "ignore" && pieces[2] == "coverage";
+}
+
+/// It should return true for ignored coverage files
+unittest {
+  "// IGNORE COVERAGE".isIgnored.should.equal(true);
+  "// \t IGNORE \t COVERAGE".isIgnored.should.equal(true);
+  "// ignore coverage".isIgnored.should.equal(true);
+  "//IGNORE COVERAGE".isIgnored.should.equal(true);
+  "/////IGNORE COVERAGE".isIgnored.should.equal(true);
+  "//     IGNORE     COVERAGE     ".isIgnored.should.equal(true);
+  "/*     IGNORE     COVERAGE     */".isIgnored.should.equal(true);
+  "/*****     IGNORE     COVERAGE  ".isIgnored.should.equal(true);
+  "/*****     IGNORE     COVERAGE     ****/".isIgnored.should.equal(true);
+  "/+     IGNORE     COVERAGE     +/".isIgnored.should.equal(true);
+  "/+++++     IGNORE     COVERAGE  ".isIgnored.should.equal(true);
+  "/+++++     IGNORE     COVERAGE     +++++/".isIgnored.should.equal(true);
+}
+
+
+/// It should return false for when the ignore coverage file is missing
+unittest {
+  "".isIgnored.should.equal(false);
+  "//\nIGNORE COVERAGE".isIgnored.should.equal(false);
+  "//\nIGNORE COVERAGE".isIgnored.should.equal(false);
+  "/////\nIGNORE COVERAGE".isIgnored.should.equal(false);
+  "//\n     IGNORE     COVERAGE     ".isIgnored.should.equal(false);
+  "/*\n     IGNORE     COVERAGE     */".isIgnored.should.equal(false);
+  "/*****  \n   IGNORE     COVERAGE  ".isIgnored.should.equal(false);
+  "/*****  \n   IGNORE     COVERAGE     ****/".isIgnored.should.equal(false);
+  "/+   \n  IGNORE     COVERAGE     +/".isIgnored.should.equal(false);
+  "/+++++  \n   IGNORE     COVERAGE  ".isIgnored.should.equal(false);
+  "/+++++   \n  IGNORE     COVERAGE     +++++/".isIgnored.should.equal(false);
+  "// IGNORE\nCOVERAGE".isIgnored.should.equal(false);
+  "//IGNORE\nCOVERAGE".isIgnored.should.equal(false);
 }
 
 
@@ -320,6 +383,7 @@ CoveredFile toCoverageFile(string content, string packagePath) {
   return CoveredFile(
     fileName,
     fullPath.isPackagePath(packagePath),
+    content.isIgnored(),
     getModuleName(fullPath),
     getCoveragePercent(content),
     content.toCoverageLines.array);
@@ -514,15 +578,16 @@ unittest {
 
 /// check a 50% covered file
 unittest {
-  auto coveredFile = CoveredFile("", true, "", 50, [ LineCoverage("     75|  this(File f)"), LineCoverage("     0|  this(File f)") ]);
+  auto coveredFile = CoveredFile("", true, false, "", 50, [ LineCoverage("     75|  this(File f)"), LineCoverage("     0|  this(File f)") ]);
   [coveredFile].coveragePercent.should.equal(50);
 }
 
 /// check a 50% external covered file
 unittest {
-  auto coveredFile = CoveredFile("", false, "", 0, [ LineCoverage("     0|  this(File f)"), LineCoverage("     0|  this(File f)") ]);
+  auto coveredFile = CoveredFile("", false, false, "", 0, [ LineCoverage("     0|  this(File f)"), LineCoverage("     0|  this(File f)") ]);
   [coveredFile].coveragePercent.should.equal(100);
 }
+
 
 string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
   sort!("toUpper(a.path) < toUpper(b.path)", SwapStrategy.stable)(coveredFiles);
