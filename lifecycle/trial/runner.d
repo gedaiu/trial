@@ -424,6 +424,10 @@ class LifeCycleListeners {
 
 /// It should return the name of this test
 unittest {
+  if(LifeCycleListeners.instance is null) {
+    return;
+  }
+
   LifeCycleListeners.instance.runningTest.should.equal("trial.runner.It should return the name of this test");
 }
 
