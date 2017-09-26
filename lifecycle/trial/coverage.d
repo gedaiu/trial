@@ -545,6 +545,10 @@ string indexTable(string content) {
   return import("templates/indexTable.html").replaceVariable("content", content);
 }
 
+string ignoredTable(string content) {
+  return import("templates/ignoredTable.html").replaceVariable("content", content);
+}
+
 /// Check if the table body is inserted
 unittest {
   indexTable("some content").should.contain(`<tbody>some content</tbody>`);
@@ -559,7 +563,7 @@ double coveragePercent(CoveredFile[] coveredFiles) {
   double total = 0;
   double covered = 0;
 
-  foreach(file; coveredFiles.filter!"a.isInCurrentProject") {
+  foreach(file; coveredFiles.filter!"a.isInCurrentProject".filter!"!a.isIgnored") {
     total += file.lines.map!(a => a.hasCode ? 1 : 0).sum;
     covered += file.lines.filter!(a => a.hasCode).map!(a => a.hits > 0 ? 1 : 0).sum;
   }
@@ -596,9 +600,10 @@ string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
   string table;
   size_t totalHitLines;
   size_t totalLines;
+  size_t ignoredLines;
   int count;
 
-  foreach(file; coveredFiles.filter!"a.isInCurrentProject") {
+  foreach(file; coveredFiles.filter!"a.isInCurrentProject".filter!"!a.isIgnored") {
     auto currentHitLines = file.lines.hitLines;
     auto currentTotalLines = file.lines.codeLines;
 
@@ -622,6 +627,30 @@ string toHtmlIndex(CoveredFile[] coveredFiles, string name) {
 
   content ~= indexHeader(name) ~ table.indexTable;
 
+
+  /// Ignored files
+  table = "";
+  foreach(file; coveredFiles.filter!"a.isInCurrentProject".filter!"a.isIgnored") {
+    auto currentTotalLines = file.lines.codeLines;
+
+    table ~= `<tr>
+      <td><a href="` ~ file.path.toCoverageHtmlFileName ~ `">` ~ file.path ~ `</a></td>
+      <td>` ~ file.moduleName ~ `</td>
+      <td>` ~ currentTotalLines.to!string ~ `/` ~ totalLines.to!string ~ `</td>
+    </tr>`;
+
+    ignoredLines += currentTotalLines;
+    count++;
+  }
+
+  table ~= `<tr>
+      <th colspan="2">Total</td>
+      <th>` ~ ignoredLines.to!string ~ `/` ~ totalLines.to!string ~ `</td>
+    </tr>`;
+
+  content ~= `<h1>Ignored</h1>` ~ table.ignoredTable;
+
+  /// external files
   table = "";
   foreach(file; coveredFiles.filter!"!a.isInCurrentProject") {
     table ~= `<tr>
