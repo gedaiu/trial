@@ -223,7 +223,7 @@ unittest {
 
 /// Runs the tests and returns the results
 auto runTests(const(TestCase)[] tests, string testName = "") {
-  setupSegmentationHandler();
+  setupSegmentationHandler!true();
 
   const(TestCase)[] filteredTests = tests;
 
@@ -427,10 +427,9 @@ unittest {
   LifeCycleListeners.instance.runningTest.should.equal("trial.runner.It should return the name of this test");
 }
 
-void setupSegmentationHandler()
+void setupSegmentationHandler(bool testRunner)()
 {
   import core.runtime;
-  writeln("SETUP Seg handler");
 
   // backtrace
   version( CRuntime_Glibc )
@@ -456,21 +455,32 @@ void setupSegmentationHandler()
 
       core.stdc.stdio.printf("\n\n");
 
-      if(signum == SIGSEGV) {
-        core.stdc.stdio.printf("Got a Segmentation Fault running ");
-      }
+      static if(testRunner) {
+        if(signum == SIGSEGV) {
+          core.stdc.stdio.printf("Got a Segmentation Fault running ");
+        }
 
-      if(signum == SIGBUS) {
-        core.stdc.stdio.printf("Got a bus error running ");
-      }
+        if(signum == SIGBUS) {
+          core.stdc.stdio.printf("Got a bus error running ");
+        }
 
 
-      if(LifeCycleListeners.instance.runningTest != "") {
-        core.stdc.stdio.printf("%s\n\n", LifeCycleListeners.instance.runningTest.ptr);
+        if(LifeCycleListeners.instance.runningTest != "") {
+          core.stdc.stdio.printf("%s\n\n", LifeCycleListeners.instance.runningTest.ptr);
+        } else {
+          core.stdc.stdio.printf("some setup step. This is probably a Trial bug. Please create an issue on github.\n\n");
+        }
       } else {
-        core.stdc.stdio.printf("some setup step. This is probably a Trial bug. Please create an issue on github.\n\n");
-      }
+        if(signum == SIGSEGV) {
+          core.stdc.stdio.printf("Got a Segmentation Fault! ");
+        }
 
+        if(signum == SIGBUS) {
+          core.stdc.stdio.printf("Got a bus error! ");
+        }
+
+        core.stdc.stdio.printf(" This is probably a Trial bug. Please create an issue on github.\n\n");
+      }
 
       static enum MAXFRAMES = 128;
       void*[MAXFRAMES]  callstack;
