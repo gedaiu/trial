@@ -329,7 +329,7 @@ private template isUnitTestContainer(DECL...)
 	} else static if (is(DECL[0]) && !isAggregateType!(DECL[0])) {
 		enum isUnitTestContainer = false;
 	} else static if (isPackage!(DECL[0])) {
-		enum isUnitTestContainer = false;
+		enum isUnitTestContainer = true;
 	} else static if (isModule!(DECL[0])) {
 		enum isUnitTestContainer = DECL[0].stringof != "module object";
 	} else static if (!__traits(compiles, fullyQualifiedName!(DECL[0]))) {
