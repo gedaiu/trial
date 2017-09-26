@@ -89,6 +89,11 @@ void showVersion() {
 
 version(unitttest) {} else {
 	int main(string[] arguments) {
+		import trial.runner;
+		setupSegmentationHandler!false;
+
+		arguments = arguments.map!(a => a.strip).filter!(a => a != "").array;
+
 		version(Windows) {
 			environment["TEMP"] = environment["TEMP"].replace("/", "\\");
 		}
