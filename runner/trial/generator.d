@@ -57,6 +57,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   setupTemplate!"templates/coverageColumn.html";
   setupTemplate!"templates/coverageHeader.html";
   setupTemplate!"templates/indexTable.html";
+  setupTemplate!"templates/ignoredTable.html";
   setupTemplate!"templates/page.html";
   setupTemplate!"templates/progress.html";
 
