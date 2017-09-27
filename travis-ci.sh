@@ -13,16 +13,16 @@ dub clean --all-packages
 
 # run unit tests
 dub test :runner --compiler=$DC
-dub run :runner --compiler=$DC -- :lifecycle
+dub run :runner --compiler=$DC -- :lifecycle  --coverage
 
 # download vibe and run the tests
 git clone https://github.com/vibe-d/vibe.d.git
 cd vibe.d
-../trial :data
+../trial :data --coverage
 cd ..
 
 # download a simple app and run the tests
 git clone https://github.com/gedaiu/Game-Of-Life-D.git
 cd Game-Of-Life-D
-../trial
+../trial --coverage
 cd ..
