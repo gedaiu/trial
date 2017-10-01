@@ -35,7 +35,14 @@ interface ILifecycleListener
 
 /// A listener that provides test cases to be executed
 interface ITestDiscovery {
+  /// Get the test cases from the compiled source code
   TestCase[] getTestCases();
+}
+
+/// A listener that provides test cases contained in a certain file
+interface ITestDescribe {
+  /// Get the test cases by parsing the source code
+  TestCase[] discoverTestCases(string file);
 }
 
 /**

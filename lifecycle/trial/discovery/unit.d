@@ -213,6 +213,10 @@ class UnitTestDiscovery : ITestDiscovery {
 		return testCases.values.map!(a => a.values).joiner.array;
 	}
 
+	TestCase[] discoverTestCases(string file) {
+		return [];
+	}
+
 	void addModule(string file, string moduleName)()
 	{
 		mixin("import " ~ moduleName ~ ";");
@@ -444,4 +448,20 @@ unittest {
 	r.empty.should.equal(false).because("an issue test is in this module");
 	r.front.labels.map!(a => a.name).should.equal(["issue", "issue"]);
 	r.front.labels.map!(a => a.value).should.equal(["1", "2"]);
+}
+
+
+/// The discoverTestCases should find this test
+unittest {
+	immutable line = __LINE__ - 1;
+	auto testDiscovery = new UnitTestDiscovery;
+
+	auto tests = testDiscovery.discoverTestCases(__FILE__);
+	tests.length.should.be.greaterThan(0);
+
+	auto thisTest = tests.filter!(a => a.name == "The discoverTestCases should find this test").front;
+
+	thisTest.suiteName.should.equal("trial.discovery.unit");
+	thisTest.location.fileName.should.equal(__FILE__);
+	thisTest.location.line.should.equal(line);
 }

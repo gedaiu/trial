@@ -139,7 +139,6 @@ class SpecTestDiscovery : ITestDiscovery
     return testCases;
   }
 
-
   /// It does nothing...
   void addModule(string file, string moduleName)() {}
 }
