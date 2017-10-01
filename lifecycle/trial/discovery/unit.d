@@ -17,6 +17,12 @@ import std.algorithm;
 import std.range;
 import std.typecons;
 
+import dparse.ast;
+import dparse.lexer;
+import dparse.parser;
+
+import fluentasserts.core.results;
+
 import trial.interfaces;
 
 enum CommentType {
@@ -205,6 +211,79 @@ auto compressComments(string code)
 	return result;
 }
 
+/// An iterator that helps to deal with DLang tokens
+struct TokenIterator {
+	private {
+		const(Token)[] tokens;
+		size_t index;
+	}
+
+	///
+	int opApply(int delegate(const(Token)) dg) {
+		int result = 0;
+
+		while(index < tokens.length) {
+			result = dg(tokens[index]);
+			index++;
+			if (result) {
+				break;
+			}
+		}
+
+		return result;
+	}
+
+	/// Skip until a token with a certain text is reached
+	ref auto skipUntil(string text) {
+		while(index < tokens.length) {
+			if(tokens[index].text == text) {
+				break;
+			}
+
+			index++;
+		}
+
+		return this;
+	}
+
+	/// Skip until a token with a certain type is reached
+	ref auto skipUntilType(string type) {
+		while(index < tokens.length) {
+			if(str(tokens[index].type) == type) {
+				break;
+			}
+
+			index++;
+		}
+
+		return this;
+	}
+
+	/// Skip one token
+	ref auto skipOne() {
+		index++;
+
+		return this;
+	}
+
+	/// Concatenate all the tokens until the first token of a certain type
+	/// that will be ignored
+	string readUntilType(string type) {
+		string result;
+
+		while(index < tokens.length) {
+			if(str(tokens[index].type) == type) {
+				break;
+			}
+
+			result ~= tokens[index].text == "" ? str(tokens[index].type) : tokens[index].text;
+			index++;
+		}
+
+		return result;
+	}
+}
+
 /// The default test discovery looks for unit test sections and groups them by module
 class UnitTestDiscovery : ITestDiscovery {
 	TestCase[string][string] testCases;
@@ -214,7 +293,36 @@ class UnitTestDiscovery : ITestDiscovery {
 	}
 
 	TestCase[] discoverTestCases(string file) {
-		return [];
+		auto tokens = fileToDTokens(file);
+
+		import std.stdio;
+		TestCase[] testCases = [];
+
+		void noTest() {
+			assert(false, "you can not run this test");
+		}
+
+		bool readingModule;
+
+		auto iterator = TokenIterator(tokens);
+
+		auto moduleName = iterator.skipUntilType("module").skipOne.readUntilType(";").strip;
+		writeln("==> ", moduleName);
+
+		foreach(token; iterator) {
+			auto type = str(token.type);
+			writeln("??", str(token.type), ":", token.text);
+
+
+			if(type == "unittest") {
+				auto testCase = TestCase("unknown suite", "unknown test", &noTest, []);
+				testCase.location = SourceLocation(file, token.line);
+
+				testCases ~= testCase;
+			}
+		}
+
+		return testCases;
 	}
 
 	void addModule(string file, string moduleName)()
