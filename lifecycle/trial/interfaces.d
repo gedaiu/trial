@@ -162,7 +162,7 @@ unittest {
 }
 
 private string escapeJson(string value) {
-  return value.replace(`"`, `\"`);
+  return value.replace(`"`, `\"`).replace("\r", `\r`).replace("\n", `\n`).replace("\t", `\t`);
 }
 
 /// A test case that will be executed

@@ -203,14 +203,13 @@ class TrialDescribeCommand : TrialCommand {
 				package_name = free_args[0];
 			}
 
-			logInfo("Generate main file: " ~ m_description.mainFile);
-			m_description.writeTestFile(m_testName);
+			import trial.runner;
+			import trial.discovery.unit;
 
-			setupPackage(dub, package_name, m_buildType);
+			auto unitTestDiscovery = new UnitTestDiscovery;
+			auto testCases = m_description.files.map!(a => unitTestDiscovery.discoverTestCases(a)).join.array;
 
-			m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
-
-			run([ "describe" ]);
+			testCases.describeTests.toJSONHierarchy.write;
 
 			return 0;
 		}
