@@ -211,6 +211,41 @@ auto compressComments(string code)
 	return result;
 }
 
+struct DLangAttribute {
+	const(Token)[] tokens;
+
+	string identifier() {
+		string result;
+
+		foreach(token; tokens) {
+			if(str(token.type) == "(") {
+				break;
+			}
+
+			result ~= token.text;
+		}
+
+		return result;
+	}
+
+	string value() {
+		bool after;
+		string result;
+
+		foreach(token; tokens) {
+			if(after) {
+				result ~= token.text.strip('"').strip('`').strip('\'');
+			}
+
+			if(str(token.type) == "(") {
+				after = true;
+			}
+		}
+
+		return result;
+	}
+}
+
 /// An iterator that helps to deal with DLang tokens
 struct TokenIterator {
 	private {
@@ -282,6 +317,67 @@ struct TokenIterator {
 
 		return result;
 	}
+
+	/// Returns a Dlang attribute. You must call this method after the
+	/// @ token was read.
+	DLangAttribute readAttribute() {
+		const(Token)[] attributeTokens = [];
+
+		int paranthesisCount;
+		bool readingParams;
+		bool foundWs;
+
+		while(index < tokens.length) {
+			auto type = str(tokens[index].type);
+
+			if(type == "whitespace" && paranthesisCount == 0 && !readingParams) {
+				foundWs = true;
+			}
+
+			if(foundWs && type == ".") {
+				foundWs = false;
+			}
+
+			if(foundWs && type != "(") {
+				break;
+			}
+
+			if(type == "(") {
+				paranthesisCount++;
+				readingParams = true;
+				foundWs = false;
+			}
+
+			if(type == ")") {
+				paranthesisCount--;
+			}
+
+			if(readingParams && paranthesisCount == 0) {
+				break;
+			}
+
+			attributeTokens ~= tokens[index];
+
+			index++;
+		}
+
+		return DLangAttribute(attributeTokens);
+	}
+}
+
+/// Remove comment tokens
+string clearCommentTokens(string text) {
+	return text.strip('/').strip('+').strip('*').strip;
+}
+
+/// clearCommentTokens should remove comment tokens
+unittest {
+	clearCommentTokens("// text").should.equal("text");
+	clearCommentTokens("///// text").should.equal("text");
+	clearCommentTokens("/+++ text").should.equal("text");
+	clearCommentTokens("/*** text").should.equal("text");
+	clearCommentTokens("/*** text ***/").should.equal("text");
+	clearCommentTokens("/+++ text +++/").should.equal("text");
 }
 
 /// The default test discovery looks for unit test sections and groups them by module
@@ -302,20 +398,53 @@ class UnitTestDiscovery : ITestDiscovery {
 			assert(false, "you can not run this test");
 		}
 
-		bool readingModule;
-
 		auto iterator = TokenIterator(tokens);
 
 		auto moduleName = iterator.skipUntilType("module").skipOne.readUntilType(";").strip;
-		writeln("==> ", moduleName);
+
+		string lastName;
+		DLangAttribute[] attributes;
 
 		foreach(token; iterator) {
 			auto type = str(token.type);
-			writeln("??", str(token.type), ":", token.text);
 
+			if(type == "}") {
+				lastName = "";
+				attributes = [];
+			}
+
+			if(type == "@") {
+				attributes ~= iterator.readAttribute;
+			}
+
+			if(type == "comment") {
+				if(lastName != "") {
+					lastName ~= " ";
+				}
+
+				lastName ~= token.text.clearCommentTokens;
+			}
 
 			if(type == "unittest") {
-				auto testCase = TestCase("unknown suite", "unknown test", &noTest, []);
+				auto issues = attributes.filter!(a => a.identifier == "Issue");
+				auto flakynes = attributes.filter!(a => a.identifier == "Flaky");
+				auto stringAttributes = attributes.filter!(a => a.identifier == "");
+
+				Label[] labels = [];
+
+				foreach(issue; issues) {
+					labels ~= Label("issue", issue.value);
+				}
+
+				if(!flakynes.empty) {
+					labels ~= Label("flaky", "");
+				}
+
+				if(!stringAttributes.empty) {
+					lastName = stringAttributes.front.value.strip;
+				}
+
+				auto testCase = TestCase(moduleName, lastName, &noTest, labels);
 				testCase.location = SourceLocation(file, token.line);
 
 				testCases ~= testCase;
@@ -519,7 +648,7 @@ unittest {
 
 	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
 
-	auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(a => a.name.indexOf("flaky") != -1);
+	auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(a => a.name == "It should find this flaky test");
 
 	r.empty.should.equal(false).because("a flaky test is in this module");
 	r.front.labels.map!(a => a.name).should.equal(["status_details"]);
@@ -551,15 +680,14 @@ unittest {
 
 	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
 
-	auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(a => a.name.indexOf("issues") != -1);
+	auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(a => a.name == "It should find this test with issues attributes");
 
 	r.empty.should.equal(false).because("an issue test is in this module");
 	r.front.labels.map!(a => a.name).should.equal(["issue", "issue"]);
 	r.front.labels.map!(a => a.value).should.equal(["1", "2"]);
 }
 
-
-/// The discoverTestCases should find this test
+/// The discoverTestCases should find the test with issues attributes
 unittest {
 	immutable line = __LINE__ - 1;
 	auto testDiscovery = new UnitTestDiscovery;
@@ -567,7 +695,59 @@ unittest {
 	auto tests = testDiscovery.discoverTestCases(__FILE__);
 	tests.length.should.be.greaterThan(0);
 
-	auto thisTest = tests.filter!(a => a.name == "The discoverTestCases should find this test").front;
+	auto testFilter = tests.filter!(a => a.name == "It should find this test with issues attributes");
+	testFilter.empty.should.equal(false);
+
+	auto theTest = testFilter.front;
+
+	theTest.labels.map!(a => a.name).should.equal(["issue", "issue"]);
+	theTest.labels.map!(a => a.value).should.equal(["1", "2"]);
+}
+
+/// The discoverTestCases should find the test with the flaky attribute
+unittest {
+	immutable line = __LINE__ - 1;
+	auto testDiscovery = new UnitTestDiscovery;
+
+	auto tests = testDiscovery.discoverTestCases(__FILE__);
+	tests.length.should.be.greaterThan(0);
+
+	auto testFilter = tests.filter!(a => a.name == "It should find this flaky test");
+	testFilter.empty.should.equal(false);
+
+	auto theTest = testFilter.front;
+
+	theTest.labels.map!(a => a.name).should.equal(["flaky"]);
+	theTest.labels.map!(a => a.value).should.equal([""]);
+}
+
+@( "", "The discoverTestCases should find the test with the string attribute name")
+unittest {
+	immutable line = __LINE__ - 1;
+	auto testDiscovery = new UnitTestDiscovery;
+
+	auto tests = testDiscovery.discoverTestCases(__FILE__);
+	tests.length.should.be.greaterThan(0);
+
+	auto testFilter = tests.filter!(a => a.name == "The discoverTestCases should find the test with the string attribute name");
+	testFilter.empty.should.equal(false);
+
+	testFilter.front.labels.length.should.equal(0);
+}
+
+/// The discoverTestCases
+/// should find this test
+unittest {
+	immutable line = __LINE__ - 1;
+	auto testDiscovery = new UnitTestDiscovery;
+
+	auto tests = testDiscovery.discoverTestCases(__FILE__);
+	tests.length.should.be.greaterThan(0);
+
+	auto testFilter = tests.filter!(a => a.name == "The discoverTestCases should find this test");
+	testFilter.empty.should.equal(false);
+
+	auto thisTest = testFilter.front;
 
 	thisTest.suiteName.should.equal("trial.discovery.unit");
 	thisTest.location.fileName.should.equal(__FILE__);
