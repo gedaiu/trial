@@ -195,19 +195,21 @@ class TrialDescribeCommand : TrialCommand {
 
 		int execute(Dub dub, string[] free_args, string[] app_args = [])
 		{
-			string package_name;
-
-			enforce(free_args.length <= 1, "Expected one or zero arguments.");
-
-			if (free_args.length >= 1) {
-				package_name = free_args[0];
-			}
-
 			import trial.runner;
 			import trial.discovery.unit;
+			import trial.interfaces;
 
 			auto unitTestDiscovery = new UnitTestDiscovery;
-			auto testCases = m_description.files.map!(a => unitTestDiscovery.discoverTestCases(a)).join.array;
+			TestCase[] testCases;
+
+			writeln(free_args, app_args);
+			enforce(free_args.length <= 1, "Expected one or zero arguments.");
+
+			if(free_args.length == 1 && exists(free_args[0])) {
+				testCases = unitTestDiscovery.discoverTestCases(free_args[0]);
+			} else {
+				testCases = m_description.files.map!(a => unitTestDiscovery.discoverTestCases(a)).join.array;
+			}
 
 			testCases.describeTests.toJSONHierarchy.write;
 
