@@ -202,7 +202,6 @@ class TrialDescribeCommand : TrialCommand {
 			auto unitTestDiscovery = new UnitTestDiscovery;
 			TestCase[] testCases;
 
-			writeln(free_args, app_args);
 			enforce(free_args.length <= 1, "Expected one or zero arguments.");
 
 			if(free_args.length == 1 && exists(free_args[0])) {
