@@ -17,13 +17,10 @@ import std.algorithm;
 import std.range;
 import std.typecons;
 
-import dparse.ast;
-import dparse.lexer;
-import dparse.parser;
-
 import fluentasserts.core.results;
 
 import trial.interfaces;
+import trial.discovery.code;
 
 enum CommentType {
 	none,
@@ -211,160 +208,6 @@ auto compressComments(string code)
 	return result;
 }
 
-struct DLangAttribute {
-	const(Token)[] tokens;
-
-	string identifier() {
-		string result;
-
-		foreach(token; tokens) {
-			if(str(token.type) == "(") {
-				break;
-			}
-
-			result ~= token.text;
-		}
-
-		return result;
-	}
-
-	string value() {
-		bool after;
-		string result;
-
-		foreach(token; tokens) {
-			if(after) {
-				result ~= token.text.strip('"').strip('`').strip('\'');
-			}
-
-			if(str(token.type) == "(") {
-				after = true;
-			}
-		}
-
-		return result;
-	}
-}
-
-/// An iterator that helps to deal with DLang tokens
-struct TokenIterator {
-	private {
-		const(Token)[] tokens;
-		size_t index;
-	}
-
-	///
-	int opApply(int delegate(const(Token)) dg) {
-		int result = 0;
-
-		while(index < tokens.length) {
-			result = dg(tokens[index]);
-			index++;
-			if (result) {
-				break;
-			}
-		}
-
-		return result;
-	}
-
-	/// Skip until a token with a certain text is reached
-	ref auto skipUntil(string text) {
-		while(index < tokens.length) {
-			if(tokens[index].text == text) {
-				break;
-			}
-
-			index++;
-		}
-
-		return this;
-	}
-
-	/// Skip until a token with a certain type is reached
-	ref auto skipUntilType(string type) {
-		while(index < tokens.length) {
-			if(str(tokens[index].type) == type) {
-				break;
-			}
-
-			index++;
-		}
-
-		return this;
-	}
-
-	/// Skip one token
-	ref auto skipOne() {
-		index++;
-
-		return this;
-	}
-
-	/// Concatenate all the tokens until the first token of a certain type
-	/// that will be ignored
-	string readUntilType(string type) {
-		string result;
-
-		while(index < tokens.length) {
-			if(str(tokens[index].type) == type) {
-				break;
-			}
-
-			result ~= tokens[index].text == "" ? str(tokens[index].type) : tokens[index].text;
-			index++;
-		}
-
-		return result;
-	}
-
-	/// Returns a Dlang attribute. You must call this method after the
-	/// @ token was read.
-	DLangAttribute readAttribute() {
-		const(Token)[] attributeTokens = [];
-
-		int paranthesisCount;
-		bool readingParams;
-		bool foundWs;
-
-		while(index < tokens.length) {
-			auto type = str(tokens[index].type);
-
-			if(type == "whitespace" && paranthesisCount == 0 && !readingParams) {
-				foundWs = true;
-			}
-
-			if(foundWs && type == ".") {
-				foundWs = false;
-			}
-
-			if(foundWs && type != "(") {
-				break;
-			}
-
-			if(type == "(") {
-				paranthesisCount++;
-				readingParams = true;
-				foundWs = false;
-			}
-
-			if(type == ")") {
-				paranthesisCount--;
-			}
-
-			if(readingParams && paranthesisCount == 0) {
-				break;
-			}
-
-			attributeTokens ~= tokens[index];
-
-			index++;
-		}
-
-		return DLangAttribute(attributeTokens);
-	}
-}
-
 /// Remove comment tokens
 string clearCommentTokens(string text) {
 	return text.strip('/').strip('+').strip('*').strip;
@@ -389,65 +232,66 @@ class UnitTestDiscovery : ITestDiscovery {
 	}
 
 	TestCase[] discoverTestCases(string file) {
-		auto tokens = fileToDTokens(file);
-
-		import std.stdio;
 		TestCase[] testCases = [];
 
-		void noTest() {
-			assert(false, "you can not run this test");
-		}
+		version(Have_libdparse) {
+			auto tokens = fileToDTokens(file);
 
-		auto iterator = TokenIterator(tokens);
-
-		auto moduleName = iterator.skipUntilType("module").skipOne.readUntilType(";").strip;
-
-		string lastName;
-		DLangAttribute[] attributes;
-
-		foreach(token; iterator) {
-			auto type = str(token.type);
-
-			if(type == "}") {
-				lastName = "";
-				attributes = [];
+			void noTest() {
+				assert(false, "you can not run this test");
 			}
 
-			if(type == "@") {
-				attributes ~= iterator.readAttribute;
-			}
+			auto iterator = TokenIterator(tokens);
 
-			if(type == "comment") {
-				if(lastName != "") {
-					lastName ~= " ";
+			auto moduleName = iterator.skipUntilType("module").skipOne.readUntilType(";").strip;
+
+			string lastName;
+			DLangAttribute[] attributes;
+
+			foreach(token; iterator) {
+				auto type = str(token.type);
+
+				if(type == "}") {
+					lastName = "";
+					attributes = [];
 				}
 
-				lastName ~= token.text.clearCommentTokens;
-			}
-
-			if(type == "unittest") {
-				auto issues = attributes.filter!(a => a.identifier == "Issue");
-				auto flakynes = attributes.filter!(a => a.identifier == "Flaky");
-				auto stringAttributes = attributes.filter!(a => a.identifier == "");
-
-				Label[] labels = [];
-
-				foreach(issue; issues) {
-					labels ~= Label("issue", issue.value);
+				if(type == "@") {
+					attributes ~= iterator.readAttribute;
 				}
 
-				if(!flakynes.empty) {
-					labels ~= Label("flaky", "");
+				if(type == "comment") {
+					if(lastName != "") {
+						lastName ~= " ";
+					}
+
+					lastName ~= token.text.clearCommentTokens;
 				}
 
-				if(!stringAttributes.empty) {
-					lastName = stringAttributes.front.value.strip;
+				if(type == "unittest") {
+					auto issues = attributes.filter!(a => a.identifier == "Issue");
+					auto flakynes = attributes.filter!(a => a.identifier == "Flaky");
+					auto stringAttributes = attributes.filter!(a => a.identifier == "");
+
+					Label[] labels = [];
+
+					foreach(issue; issues) {
+						labels ~= Label("issue", issue.value);
+					}
+
+					if(!flakynes.empty) {
+						labels ~= Label("flaky", "");
+					}
+
+					if(!stringAttributes.empty) {
+						lastName = stringAttributes.front.value.strip;
+					}
+
+					auto testCase = TestCase(moduleName, lastName, &noTest, labels);
+					testCase.location = SourceLocation(file, token.line);
+
+					testCases ~= testCase;
 				}
-
-				auto testCase = TestCase(moduleName, lastName, &noTest, labels);
-				testCase.location = SourceLocation(file, token.line);
-
-				testCases ~= testCase;
 			}
 		}
 
