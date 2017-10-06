@@ -17,8 +17,6 @@ import std.algorithm;
 import std.range;
 import std.typecons;
 
-import fluentasserts.core.results;
-
 import trial.interfaces;
 import trial.discovery.code;
 
@@ -234,7 +232,9 @@ class UnitTestDiscovery : ITestDiscovery {
 	TestCase[] discoverTestCases(string file) {
 		TestCase[] testCases = [];
 
-		version(Have_libdparse) {
+		version(Have_fluent_asserts_core) version(Have_libdparse) {
+			import fluentasserts.core.results;
+
 			auto tokens = fileToDTokens(file);
 
 			void noTest() {
