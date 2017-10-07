@@ -268,6 +268,10 @@ class UnitTestDiscovery : ITestDiscovery {
 					lastName ~= token.text.clearCommentTokens;
 				}
 
+				if(type == "version") {
+					iterator.skipUntilType(")");
+				}
+
 				if(type == "unittest") {
 					auto issues = attributes.filter!(a => a.identifier == "Issue");
 					auto flakynes = attributes.filter!(a => a.identifier == "Flaky");
@@ -285,6 +289,10 @@ class UnitTestDiscovery : ITestDiscovery {
 
 					if(!stringAttributes.empty) {
 						lastName = stringAttributes.front.value.strip;
+					}
+
+					if(lastName == "") {
+						lastName = "__unittestL" ~ token.line.to!string;
 					}
 
 					auto testCase = TestCase(moduleName, lastName, &noTest, labels);
@@ -467,6 +475,7 @@ private void testTempl(X...)()
 	}
 }
 
+/// This adds asserts to the module
 version(unittest) {
 	import fluent.asserts;
 }
@@ -596,4 +605,23 @@ unittest {
 	thisTest.suiteName.should.equal("trial.discovery.unit");
 	thisTest.location.fileName.should.equal(__FILE__);
 	thisTest.location.line.should.equal(line);
+}
+
+/// discoverTestCases should ignore version(unittest)
+unittest {
+	auto testDiscovery = new UnitTestDiscovery;
+
+	auto tests = testDiscovery.discoverTestCases(__FILE__);
+	tests.length.should.be.greaterThan(0);
+
+	auto testFilter = tests.filter!(a => a.name == "This adds asserts to the module");
+	testFilter.empty.should.equal(true);
+}
+
+unittest {
+	/// discoverTestCases should set the default test names
+	immutable line = __LINE__ - 2;
+	auto testDiscovery = new UnitTestDiscovery;
+
+	testDiscovery.discoverTestCases(__FILE__).map!(a => a.name).array.should.contain("__unittestL" ~ line.to!string);
 }
