@@ -108,7 +108,7 @@ class TrialCommand : PackageBuildCommand {
 
 		m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
 
-		run();
+		run([ m_testName ]);
 
 		return 0;
 	}
@@ -126,7 +126,7 @@ class TrialCommand : PackageBuildCommand {
 		settings.force = m_force;
 		settings.tempBuild = m_single;
 		settings.run = true;
-		settings.runArgs = [];
+		settings.runArgs = [] ;
 
 		return settings;
 	}

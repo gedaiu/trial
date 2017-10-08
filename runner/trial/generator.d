@@ -147,7 +147,12 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
         describeTests.toJSONHierarchy.write;
         return 0;
       } else {
-        return runTests("` ~ testName.replace(`"`,`\"`) ~ `").isSuccess ? 0 : 1;
+        string filterName;
+        if(arguments.length > 1) {
+          filterName = arguments[1];
+        }
+
+        return runTests(filterName).isSuccess ? 0 : 1;
       }
   }
 
