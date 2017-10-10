@@ -49,43 +49,73 @@ version(Have_libdparse) {
 	struct DLangAttribute {
 		const(Token)[] tokens;
 
-		string identifier() {
-			string result;
+		inout {
+			string identifier() {
+				string result;
 
-			foreach(token; tokens) {
-				if(str(token.type) == "(") {
-					break;
+				foreach(token; tokens) {
+					if(str(token.type) == "(") {
+						break;
+					}
+
+					result ~= token.text;
 				}
 
-				result ~= token.text;
+				return result;
 			}
 
-			return result;
-		}
+			string value() {
+				bool after;
+				string result;
 
-		string value() {
-			bool after;
-			string result;
+				foreach(token; tokens) {
+					if(after) {
+						result ~= token.text.strip('"').strip('`').strip('\'');
+					}
 
-			foreach(token; tokens) {
-				if(after) {
-					result ~= token.text.strip('"').strip('`').strip('\'');
+					if(str(token.type) == "(") {
+						after = true;
+					}
 				}
 
-				if(str(token.type) == "(") {
-					after = true;
-				}
+				return result;
 			}
-
-			return result;
 		}
 	}
 
 	struct DLangFunction {
+		const(DLangAttribute)[] attributes;
 		const(Token)[] tokens;
 
 		string name() {
-			assert(false, "not implemented");
+			auto result = TokenIterator(tokens)
+				.readUntilType("(")
+				.replace("\n", " ")
+				.replace("\r", " ")
+				.replace("\t", " ")
+				.split(" ");
+
+			result.reverse;
+
+			return result[0];
+		}
+
+		bool hasAttribute(string name) {
+			return !attributes.filter!(a => a.identifier == name).empty;
+		}
+
+		string testName() {
+			foreach(attribute; attributes) {
+				if(attribute.identifier == "") {
+					return attribute.value;
+				}
+			}
+
+			return name.camelToSentence;
+		}
+
+		size_t line() {
+			return TokenIterator(tokens).skipUntilType("(").currentToken.line;
 		}
 	}
 
@@ -106,7 +136,46 @@ version(Have_libdparse) {
 		}
 
 		DLangFunction[] functions() {
-			return [];
+			int paranthesisCount;
+
+			auto iterator = TokenIterator(tokens);
+			iterator.skipUntilType("{");
+
+			const(Token)[] currentTokens;
+			DLangFunction[] discoveredFunctions;
+			DLangAttribute[] attributes;
+			bool readingFunction;
+			int functionLevel = 1;
+
+			foreach(token; iterator) {
+				string type = token.type.str;
+				currentTokens ~= token;
+
+				if(type == "@") {
+					attributes ~= iterator.readAttribute;
+				}
+
+				if(type == "{") {
+					paranthesisCount++;
+				}
+
+				if(type == "}") {
+					paranthesisCount--;
+
+					if(paranthesisCount == functionLevel) {
+						discoveredFunctions ~= DLangFunction(attributes, currentTokens);
+					}
+				}
+
+				readingFunction = paranthesisCount > functionLevel;
+
+				if(type == "}" || (!readingFunction && type == ";")) {
+					currentTokens = [];
+					attributes = [];
+				}
+			}
+
+			return discoveredFunctions;
 		}
 	}
 
@@ -132,6 +201,11 @@ version(Have_libdparse) {
 			return result;
 		}
 
+		///
+		auto currentToken() {
+			return tokens[index];
+		}
+
 		/// Skip until a token with a certain text is reached
 		ref auto skipUntil(string text) {
 			while(index < tokens.length) {
@@ -143,6 +217,39 @@ version(Have_libdparse) {
 			}
 
 			return this;
+		}
+
+		ref auto skipNextBlock() {
+			readNextBlock();
+			return this;
+		}
+
+		ref auto readNextBlock() {
+			const(Token)[] blockTokens = [];
+
+			bool readingBlock;
+			int paranthesisCount;
+
+			while(index < tokens.length) {
+				auto type = str(tokens[index].type);
+
+				if(type == "{") {
+					paranthesisCount++;
+					readingBlock = true;
+				}
+
+				if(type == "}") {
+					paranthesisCount--;
+				}
+
+				blockTokens ~= tokens[index];
+				index++;
+				if(readingBlock && paranthesisCount == 0) {
+					break;
+				}
+			}
+
+			return blockTokens;
 		}
 
 		/// Skip until a token with a certain type is reached
@@ -257,4 +364,19 @@ version(Have_libdparse) {
 			return DLangAttribute(attributeTokens);
 		}
 	}
+}
+
+/// Converts a string from camel notation to a readable sentence
+string camelToSentence(const string name) pure {
+  string sentence;
+
+  foreach(ch; name) {
+    if(ch.toUpper == ch) {
+      sentence ~= " " ~ ch.toLower.to!string;
+    } else {
+      sentence ~= ch;
+    }
+  }
+
+  return sentence.capitalize;
 }

@@ -205,6 +205,12 @@ struct TestCase
   }
 
   ///
+  this(T)(string suiteName, string name, T func, Label[] labels, SourceLocation location) {
+    this(suiteName, name, func.toDelegate, labels);
+    this.location = location;
+  }
+
+  ///
   this(string suiteName, string name, TestCaseFunction func, Label[] labels = []) {
     this(suiteName, name, func.toDelegate, labels);
   }

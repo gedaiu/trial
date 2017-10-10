@@ -106,27 +106,24 @@ class TestClassDiscovery : ITestDiscovery {
       foreach(token; iterator) {
         auto type = str(token.type);
 
-        //if(blockIndex > endClassIndex) {
-          writeln(str(token.type), ":", token.text);
-        //}
+        if(type == "version") {
+          iterator.skipUntilType(")");
+        }
+
+        if(type == "unittest") {
+          iterator.skipNextBlock;
+        }
 
         if(type == "class") {
           iterator.skipOne;
           auto dlangClass = iterator.readClass;
 
-          writeln("dlangClass.name: ", dlangClass.name);
-          writeln("dlangClass.methods: ", dlangClass.functions.map!(a => a.name).array);
-
           lastSuite = moduleName ~ "." ~ dlangClass.name;
-        }
 
-        if(type == "@") {
-          auto lastAttribute = iterator.readAttribute;
-          attributes ~= lastAttribute;
-
-          if(lastAttribute.identifier == "Test") {
-            writeln("!!!! Test ", "=>", lastAttribute.tokens.map!(a => str(a.type) ~ ":" ~ a.text).array);
-          }
+          testCases ~= dlangClass.functions
+            .filter!(a => a.hasAttribute("Test"))
+            .map!(a => TestCase(lastSuite, a.testName, &noTest, [], SourceLocation(file, a.line)))
+            .array;
         }
       }
     }
@@ -250,21 +247,6 @@ auto getSetup(string ModuleName, string className, string member)() {
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
 
   return setupAttributes!attributes[0];
-}
-
-/// Converts a string from camel notation to a readable sentence
-string camelToSentence(const string name) pure {
-  string sentence;
-
-  foreach(ch; name) {
-    if(ch.toUpper == ch) {
-      sentence ~= " " ~ ch.toLower.to!string;
-    } else {
-      sentence ~= ch;
-    }
-  }
-
-  return sentence.capitalize;
 }
 
 ///
