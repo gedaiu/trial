@@ -81,6 +81,35 @@ version(Have_libdparse) {
 		}
 	}
 
+	struct DLangFunction {
+		const(Token)[] tokens;
+
+		string name() {
+			assert(false, "not implemented");
+		}
+	}
+
+	struct DLangClass {
+		const(Token)[] tokens;
+
+		/// returns the class name
+		string name() {
+			auto iterator = TokenIterator(tokens);
+			auto name = iterator.readUntilType("{");
+
+			import std.stdio;
+			if(name.indexOf(":") != -1) {
+				name = name.split(":")[0];
+			}
+
+			return name.strip;
+		}
+
+		DLangFunction[] functions() {
+			return [];
+		}
+	}
+
 	/// An iterator that helps to deal with DLang tokens
 	struct TokenIterator {
 		private {
@@ -153,6 +182,35 @@ version(Have_libdparse) {
 			return result;
 		}
 
+		/// Returns a Dlang class. You must call this method after the
+		/// class token was read.
+		DLangClass readClass() {
+			const(Token)[] classTokens = [];
+
+			bool readingClass;
+			int paranthesisCount;
+
+			while(index < tokens.length) {
+				auto type = str(tokens[index].type);
+
+				if(type == "{") {
+					paranthesisCount++;
+					readingClass = true;
+				}
+
+				if(type == "}") {
+					paranthesisCount--;
+				}
+				classTokens ~= tokens[index];
+				index++;
+				if(readingClass && paranthesisCount == 0) {
+					break;
+				}
+			}
+
+			return DLangClass(classTokens);
+		}
+
 		/// Returns a Dlang attribute. You must call this method after the
 		/// @ token was read.
 		DLangAttribute readAttribute() {
@@ -187,11 +245,11 @@ version(Have_libdparse) {
 					paranthesisCount--;
 				}
 
+				attributeTokens ~= tokens[index];
+
 				if(readingParams && paranthesisCount == 0) {
 					break;
 				}
-
-				attributeTokens ~= tokens[index];
 
 				index++;
 			}

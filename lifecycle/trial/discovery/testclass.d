@@ -14,9 +14,11 @@ import std.conv;
 import std.string;
 import std.algorithm;
 import std.random;
+import std.array;
 
 import trial.interfaces;
 import trial.attributes;
+import trial.discovery.code;
 
 /// A structure that stores data about the setup events(methods)
 struct SetupEvent {
@@ -77,6 +79,59 @@ class TestClassDiscovery : ITestDiscovery {
   /// added with `addModule`
   TestCase[] getTestCases() {
     return list;
+  }
+
+  TestCase[] discoverTestCases(string file) {
+    TestCase[] testCases = [];
+
+    version(Have_fluent_asserts_core) version(Have_libdparse) {
+      import fluentasserts.core.results;
+      import std.stdio;
+
+      auto tokens = fileToDTokens(file);
+
+      void noTest() {
+        assert(false, "you can not run this test");
+      }
+
+      auto iterator = TokenIterator(tokens);
+      auto moduleName = iterator.skipUntilType("module").skipOne.readUntilType(";").strip;
+
+      string lastName;
+      string lastSuite;
+
+      DLangAttribute[] attributes;
+      int blockIndex;
+
+      foreach(token; iterator) {
+        auto type = str(token.type);
+
+        //if(blockIndex > endClassIndex) {
+          writeln(str(token.type), ":", token.text);
+        //}
+
+        if(type == "class") {
+          iterator.skipOne;
+          auto dlangClass = iterator.readClass;
+
+          writeln("dlangClass.name: ", dlangClass.name);
+          writeln("dlangClass.methods: ", dlangClass.functions.map!(a => a.name).array);
+
+          lastSuite = moduleName ~ "." ~ dlangClass.name;
+        }
+
+        if(type == "@") {
+          auto lastAttribute = iterator.readAttribute;
+          attributes ~= lastAttribute;
+
+          if(lastAttribute.identifier == "Test") {
+            writeln("!!!! Test ", "=>", lastAttribute.tokens.map!(a => str(a.type) ~ ":" ~ a.text).array);
+          }
+        }
+      }
+    }
+
+    return testCases;
   }
 
   /// Add tests from a certain module
@@ -350,7 +405,7 @@ version(unittest) {
   }
 }
 
-/// It should find the Test Suite class
+/// TestClassDiscovery should find the Test Suite class
 unittest {
   auto discovery = new TestClassDiscovery();
   discovery.addModule!(`lifecycle/trial/discovery/testclass.d`, `trial.discovery.testclass`);
@@ -365,7 +420,22 @@ unittest {
   testCases[1].name.should.equal(`Some other name`);
 }
 
-/// It should execute tests from a Test Suite class
+/// discoverTestCases should find the Test Suite class
+unittest {
+  auto testDiscovery = new TestClassDiscovery;
+
+  auto testCases = testDiscovery.discoverTestCases(__FILE__);
+
+  testCases.length.should.equal(2);
+  testCases[0].suiteName.should.equal(`trial.discovery.testclass.SomeTestSuite`);
+  testCases[0].name.should.equal(`A simple test`);
+
+  testCases[1].suiteName.should.equal(`trial.discovery.testclass.OtherTestSuite`);
+  testCases[1].name.should.equal(`Some other name`);
+}
+
+
+/// TestClassDiscovery should execute tests from a Test Suite class
 unittest {
   scope(exit) {
     SomeTestSuite.lastTest = "";
@@ -384,7 +454,7 @@ unittest {
   SomeTestSuite.lastTest.should.equal("a simple test");
 }
 
-/// It should execute the before and after methods tests from a Test Suite class
+/// TestClassDiscovery should execute the before and after methods tests from a Test Suite class
 unittest {
   scope(exit) {
     OtherTestSuite.order = [];
@@ -404,7 +474,7 @@ unittest {
 }
 
 private string generateRandomParameters(alias T, int index)() pure nothrow {
-  alias paramTypes = Parameters!T;
+  alias paramTypes = std.traits.Parameters!T;
   enum params = ParameterIdentifierTuple!T;
   alias providers = Filter!(isRightParameter!(params[index].stringof[1..$-1]), extractValueProviders!(__traits(getAttributes, T)));
 

@@ -242,7 +242,6 @@ class UnitTestDiscovery : ITestDiscovery {
 			}
 
 			auto iterator = TokenIterator(tokens);
-
 			auto moduleName = iterator.skipUntilType("module").skipOne.readUntilType(";").strip;
 
 			string lastName;
