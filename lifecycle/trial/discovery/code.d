@@ -202,6 +202,20 @@ version(Have_libdparse) {
 		}
 
 		///
+		ref auto skipWsAndComments() {
+			while(index < tokens.length) {
+				auto type = str(tokens[index].type);
+				if(type != "comment" && type != "whitespace") {
+					break;
+				}
+
+				index++;
+			}
+
+			return this;
+		}
+
+		///
 		auto currentToken() {
 			return tokens[index];
 		}
@@ -224,7 +238,7 @@ version(Have_libdparse) {
 			return this;
 		}
 
-		ref auto readNextBlock() {
+		auto readNextBlock() {
 			const(Token)[] blockTokens = [];
 
 			bool readingBlock;

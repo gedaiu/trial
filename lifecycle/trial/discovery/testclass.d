@@ -230,7 +230,6 @@ string getTestName(string ModuleName, string className, string member)() {
   }
 }
 
-
 ///
 SourceLocation getTestLocation(string ModuleName, string className, string member)() {
   mixin("import " ~ ModuleName ~ ";");
@@ -250,7 +249,8 @@ auto getSetup(string ModuleName, string className, string member)() {
 }
 
 ///
-bool isTestMember(string ModuleName, string className, string member)() {
+bool isTestMember(string ModuleName, string className, string member)()
+{
   mixin("import " ~ ModuleName ~ ";");
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
 
@@ -258,7 +258,8 @@ bool isTestMember(string ModuleName, string className, string member)() {
 }
 
 ///
-bool isSetupMember(string ModuleName, string className, string member)() {
+bool isSetupMember(string ModuleName, string className, string member)()
+{
   mixin("import " ~ ModuleName ~ ";");
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
 
@@ -288,7 +289,8 @@ template isTestAttribute(alias Attribute)
 }
 
 ///
-template isRightParameter(string parameterName) {
+template isRightParameter(string parameterName)
+{
   template isRightParameter(alias Attribute) {
     enum isRightParameter = Attribute.parameterName == parameterName;
   }
@@ -305,7 +307,8 @@ template isSetupAttribute(alias Attribute)
 }
 
 ///
-template isValueProvider(alias Attribute) {
+template isValueProvider(alias Attribute)
+{
   static if(__traits(hasMember, Attribute, "provide") && __traits(hasMember, Attribute, "parameterName")) {
     enum bool isValueProvider = true;
   } else {
@@ -382,6 +385,12 @@ version(unittest) {
     @Test()
     @("Some other name")
     void aCustomTest() {
+      order ~= "a custom test";
+    }
+
+    @Test()
+    @("Some other name 2-")
+    void aCustomTest2() {
       order ~= "a custom test";
     }
   }

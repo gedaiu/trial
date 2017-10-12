@@ -198,10 +198,12 @@ class TrialDescribeCommand : TrialCommand {
 			import trial.runner;
 			import trial.discovery.unit;
 			import trial.discovery.testclass;
+			import trial.discovery.spec;
 			import trial.interfaces;
 
 			auto unitTestDiscovery = new UnitTestDiscovery;
 			auto testClassDiscovery = new TestClassDiscovery;
+			auto specDiscovery = new SpecTestDiscovery;
 			TestCase[] testCases;
 
 			enforce(free_args.length <= 1, "Expected one or zero arguments.");
@@ -209,9 +211,11 @@ class TrialDescribeCommand : TrialCommand {
 			if(free_args.length == 1 && exists(free_args[0])) {
 				testCases = unitTestDiscovery.discoverTestCases(free_args[0]);
 				testCases ~= testClassDiscovery.discoverTestCases(free_args[0]);
+				testCases ~= specDiscovery.discoverTestCases(free_args[0]);
 			} else {
 				testCases = m_description.files.map!(a => unitTestDiscovery.discoverTestCases(a)).join.array;
 				testCases ~= m_description.files.map!(a => testClassDiscovery.discoverTestCases(a)).join.array;
+				testCases ~= m_description.files.map!(a => specDiscovery.discoverTestCases(a)).join.array;
 			}
 
 			testCases.describeTests.toJSONHierarchy.write;
