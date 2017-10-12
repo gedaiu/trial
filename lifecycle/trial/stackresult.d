@@ -204,7 +204,8 @@ class StackResult : IResult
   {
     foreach (line; t)
     {
-
+      import std.stdio;
+      t.writeln;
       auto frame = line.to!string.toFrame;
       frame.name = demangle(frame.name).to!string;
       frames ~= frame;

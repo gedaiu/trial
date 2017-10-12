@@ -233,6 +233,7 @@ class SpecTestDiscovery : ITestDiscovery
   }
 }
 
+///
 string parseString(string someString) {
   if(someString == ""){
     return "";
