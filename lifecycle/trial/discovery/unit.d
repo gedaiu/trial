@@ -582,7 +582,7 @@ unittest
 /// It should find the line of this test
 unittest
 {
-  enum line = __LINE__;
+  enum line = __LINE__ - 2;
   auto testDiscovery = new UnitTestDiscovery;
 
   testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
@@ -594,7 +594,7 @@ unittest
 
   r.empty.should.equal(false).because("the location should be present");
   r.front.location.fileName.should.endWith("unit.d");
-  r.front.location.line.should.equal(line - 1);
+  r.front.location.line.should.equal(line);
 }
 
 /// It should find this test with issues attributes
@@ -617,7 +617,7 @@ unittest
 /// The discoverTestCases should find the test with issues attributes
 unittest
 {
-  immutable line = __LINE__ - 1;
+  immutable line = __LINE__ - 2;
   auto testDiscovery = new UnitTestDiscovery;
 
   auto tests = testDiscovery.discoverTestCases(__FILE__);
@@ -635,7 +635,7 @@ unittest
 /// The discoverTestCases should find the test with the flaky attribute
 unittest
 {
-  immutable line = __LINE__ - 1;
+  immutable line = __LINE__ - 2;
   auto testDiscovery = new UnitTestDiscovery;
 
   auto tests = testDiscovery.discoverTestCases(__FILE__);
@@ -653,7 +653,7 @@ unittest
 @("", "The discoverTestCases should find the test with the string attribute name")
 unittest
 {
-  immutable line = __LINE__ - 1;
+  immutable line = __LINE__ - 2;
   auto testDiscovery = new UnitTestDiscovery;
 
   auto tests = testDiscovery.discoverTestCases(__FILE__);
@@ -670,7 +670,7 @@ unittest
 /// should find this test
 unittest
 {
-  immutable line = __LINE__ - 1;
+  immutable line = __LINE__ - 2;
   auto testDiscovery = new UnitTestDiscovery;
 
   auto tests = testDiscovery.discoverTestCases(__FILE__);
@@ -701,7 +701,7 @@ unittest
 unittest
 {
   /// discoverTestCases should set the default test names
-  immutable line = __LINE__ - 2;
+  immutable line = __LINE__ - 3;
   auto testDiscovery = new UnitTestDiscovery;
 
   testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
