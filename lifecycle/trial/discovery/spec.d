@@ -465,3 +465,12 @@ unittest
 
   trace.should.equal("test3 after2-bis after1");
 }
+
+/// discoverTestCases should find the same tests like testCases
+unittest
+{
+  auto testDiscovery = new SpecTestDiscovery;
+
+  testDiscovery.discoverTestCases(__FILE__).map!(a => a.toString).join("\n")
+    .should.equal(testDiscovery.getTestCases.map!(a => a.toString).join("\n"));
+}
