@@ -254,7 +254,6 @@ string removeUnittests(string data) {
       continue;
     }
 
-
     cleanContent ~= token.text == "" ? type : token.text;
   }
 
