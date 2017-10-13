@@ -481,17 +481,17 @@ void setupSegmentationHandler(bool testRunner)()
   import core.runtime;
 
   // backtrace
-  version( CRuntime_Glibc )
+  version(CRuntime_Glibc)
     import core.sys.linux.execinfo;
-  else version( OSX )
+  else version(OSX)
     import core.sys.darwin.execinfo;
-  else version( FreeBSD )
+  else version(FreeBSD)
     import core.sys.freebsd.execinfo;
-  else version( NetBSD )
+  else version(NetBSD)
     import core.sys.netbsd.execinfo;
-  else version( Windows )
+  else version(Windows)
     import core.sys.windows.stacktrace;
-  else version( Solaris )
+  else version(Solaris)
     import core.sys.solaris.execinfo;
 
   static if( __traits( compiles, backtrace ) )

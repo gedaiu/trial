@@ -159,37 +159,40 @@ class SpecTestDiscovery : ITestDiscovery
     assert(false, "you can not run this test");
   }
 
-  private TestCase[] getTestCasesFromSpec(string file, string suite, const(Token)[] tokens) {
-    TestCase[] testCases;
-    auto iterator = TokenIterator(tokens);
+  version (Have_libdparse)
+  {
+    private TestCase[] getTestCasesFromSpec(string file, string suite, const(Token)[] tokens) {
+      TestCase[] testCases;
+      auto iterator = TokenIterator(tokens);
 
-    foreach(token; iterator) {
-      if(token.text == "describe") {
-        iterator.skipOne.skipWsAndComments;
+      foreach(token; iterator) {
+        if(token.text == "describe") {
+          iterator.skipOne.skipWsAndComments;
 
-        if(str(iterator.currentToken.type) == "(") {
-          iterator.skipUntilType("stringLiteral");
-          string suiteName = iterator.currentToken.text.parseString.strip;
+          if(str(iterator.currentToken.type) == "(") {
+            iterator.skipUntilType("stringLiteral");
+            string suiteName = iterator.currentToken.text.parseString.strip;
 
-          auto block = iterator.readNextBlock;
-          testCases ~= getTestCasesFromSpec(file, suite ~ "." ~ suiteName, block);
+            auto block = iterator.readNextBlock;
+            testCases ~= getTestCasesFromSpec(file, suite ~ "." ~ suiteName, block);
+          }
+        }
+
+        if(token.text == "it") {
+          iterator.skipOne.skipWsAndComments;
+          auto location = SourceLocation(file, iterator.currentToken.line);
+
+          if(str(iterator.currentToken.type) == "(") {
+            iterator.skipUntilType("stringLiteral");
+            string testName = iterator.currentToken.text.parseString;
+
+            testCases ~= TestCase(suite, testName, &this.noTest, [], location);
+          }
         }
       }
 
-      if(token.text == "it") {
-        iterator.skipOne.skipWsAndComments;
-        auto location = SourceLocation(file, iterator.currentToken.line);
-
-        if(str(iterator.currentToken.type) == "(") {
-          iterator.skipUntilType("stringLiteral");
-          string testName = iterator.currentToken.text.parseString;
-
-          testCases ~= TestCase(suite, testName, &this.noTest, [], location);
-        }
-      }
+      return testCases;
     }
-
-    return testCases;
   }
 
   TestCase[] discoverTestCases(string file)
@@ -247,7 +250,8 @@ string parseString(string someString) {
 }
 
 /// resolve the string tokens
-unittest {
+unittest
+{
   `"string token"`.parseString.should.equal("string token");
   `"string \" token"`.parseString.should.equal("string \" token");
   "`string token`".parseString.should.equal("string token");

@@ -218,20 +218,47 @@ string removeTest(string data) {
 }
 
 string removeUnittests(string data) {
+  import trial.discovery.code;
+
   auto pieces = data.split("unittest");
 
-  return pieces
-          .map!(a => a.strip.removeTest)
-          .join("\n")
-          .split("version(\nunittest)")
-          .map!(a => a.strip.removeTest)
-          .join("\n")
-          .split("version (\nunittest)")
-          .map!(a => a.strip.removeTest)
-          .join("\n")
-          .split("\n")
-          .map!(a => a.stripRight)
-          .join("\n");
+  auto tokens = stringToDTokens(data);
+  auto iterator = TokenIterator(tokens);
+
+  string cleanContent;
+
+  foreach(token; iterator) {
+    string type = str(token.type);
+
+    if(type == "comment") {
+      continue;
+    }
+
+    if(type == "unittest") {
+      iterator.skipNextBlock;
+      continue;
+    }
+
+    if(type == "version") {
+      iterator.skipUntilType("(").skipWsAndComments.skipOne;
+
+      string value = iterator.currentToken.text == "" ? str(iterator.currentToken.type) : iterator.currentToken.text;
+
+      if(value == "unittest") {
+        iterator.skipNextBlock;
+      } else {
+        cleanContent ~= `version(` ~ value ~ `)`;
+        iterator.skipUntilType(")");
+      }
+
+      continue;
+    }
+
+
+    cleanContent ~= token.text == "" ? type : token.text;
+  }
+
+  return cleanContent;
 }
 
 @("It should remove unit tests")
