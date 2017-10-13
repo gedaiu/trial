@@ -240,9 +240,16 @@ string removeUnittests(string data) {
     }
 
     if(type == "version") {
-      iterator.skipUntilType("(").skipWsAndComments.skipOne;
-
+      iterator.skipUntilType("(").skipOne;
       string value = iterator.currentToken.text == "" ? str(iterator.currentToken.type) : iterator.currentToken.text;
+
+      if(value == "whitespace") {
+        iterator.skipWsAndComments;
+      } else if(value != "unittest") {
+        iterator.skipOne;
+      }
+
+      value = iterator.currentToken.text == "" ? str(iterator.currentToken.type) : iterator.currentToken.text;
 
       if(value == "unittest") {
         iterator.skipNextBlock;
@@ -254,7 +261,7 @@ string removeUnittests(string data) {
       continue;
     }
 
-    cleanContent ~= token.text == "" ? type : token.text;
+    cleanContent ~= token.text == "" && type != "stringLiteral" ? type : token.text;
   }
 
   return cleanContent;
@@ -276,8 +283,6 @@ unittest{
   }`.removeUnittests.should.equal(`module test;
 
   @("It should find this test")
-
-
   int main() {
     return 0;
   }`);
@@ -294,7 +299,6 @@ unittest{
   int main() {
     return 0;
   }`.removeUnittests.should.equal(`module test;
-
 
   int main() {
     return 0;
@@ -315,7 +319,6 @@ unittest{
     return 0;
   }`.removeUnittests.should.equal(`module test;
 
-
   int main() {
     return 0;
   }`);
@@ -329,6 +332,7 @@ version (unittest)
 {
   import fluent.asserts;
 }`.removeUnittests.should.equal(`module test;
+
 `);
 }
 

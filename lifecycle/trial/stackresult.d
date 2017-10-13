@@ -644,6 +644,21 @@ Frame toLinuxFrame(string line) {
   return frame;
 }
 
+/// Parse a Linux frame
+Frame toMissingInfoLinuxFrame(string line) {
+  Frame frame;
+
+  auto matched = matchFirst(line, `\?\?:\?\s+` ~ name ~ `\s+\[` ~ address ~ `\]`);
+
+  frame.name = matched["name"];
+  frame.address = matched["address"];
+
+  enforce(frame.address != "", "address not found");
+  enforce(frame.name != "", "name not found");
+
+  return frame;
+}
+
 /// Converts a stack trace line to a Frame structure
 Frame toFrame(string line)
 {
@@ -692,6 +707,14 @@ Frame toFrame(string line)
   try
   {
     return line.toLinuxFrame;
+  }
+  catch (Exception e)
+  {
+  }
+
+  try
+  {
+    return line.toMissingInfoLinuxFrame;
   }
   catch (Exception e)
   {
@@ -840,18 +863,22 @@ unittest {
   frame.offset.should.equal("");
 }
 
-/*
-??:? __libc_start_main [0x174bbf44]
-??:? [0x404608]
-??:? [0x66779e]
-??:? [0x66d0c2]
-base.d:39 [0x589f7e]
-base.d:43 [0x58a0c5]
-testclass.d:464 [0x4f7ac3]
-unit.d:381 [0x4f7885]
-functional.d-mixin-1223:1234 [0x55b05c]
-single.d:96 [0x4b0b63]
 
+/// Get an missing info function frame info from linux format
+unittest {
+  auto line = `??:? __libc_start_main [0x174bbf44]`;
+  auto frame = line.toFrame;
+
+  frame.moduleName.should.equal("");
+  frame.file.should.equal("");
+  frame.line.should.equal(-1);
+  frame.name.should.equal("__libc_start_main");
+  frame.address.should.equal("0x174bbf44");
+  frame.index.should.equal(-1);
+  frame.offset.should.equal("");
+}
+
+/*
 
 lifecycle/trial/executor/single.d:96 void trial.executor.single.DefaultExecutor.createTestResult(const(trial.interfaces.TestCase)) [0x8653dd6]
 lifecycle/trial/executor/single.d:130 trial.interfaces.SuiteResult[] trial.executor.single.DefaultExecutor.execute(ref const(trial.interfaces.TestCase)) [0x86540f0]
