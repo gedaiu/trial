@@ -283,7 +283,7 @@ class UnitTestDiscovery : ITestDiscovery {
 					}
 
 					if(!flakynes.empty) {
-						labels ~= Label("flaky", "");
+						labels ~= Label("status_details", "flaky");
 					}
 
 					if(!stringAttributes.empty) {
@@ -529,7 +529,6 @@ unittest {
 	auto testDiscovery = new UnitTestDiscovery;
 
 	testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
-
 	testDiscovery.testCases.keys.should.contain("trial.discovery.unit");
 
 	auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(a => a.name == "It should find this test with issues attributes");
@@ -569,8 +568,8 @@ unittest {
 
 	auto theTest = testFilter.front;
 
-	theTest.labels.map!(a => a.name).should.equal(["flaky"]);
-	theTest.labels.map!(a => a.value).should.equal([""]);
+	theTest.labels.map!(a => a.name).should.equal(["status_details"]);
+	theTest.labels.map!(a => a.value).should.equal(["flaky"]);
 }
 
 @( "", "The discoverTestCases should find the test with the string attribute name")
@@ -623,4 +622,22 @@ unittest {
 	auto testDiscovery = new UnitTestDiscovery;
 
 	testDiscovery.discoverTestCases(__FILE__).map!(a => a.name).array.should.contain("__unittestL" ~ line.to!string);
+}
+
+/// discoverTestCases should find the same tests like testCases
+unittest {
+	auto testDiscovery = new UnitTestDiscovery;
+
+	testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
+
+	testDiscovery
+		.discoverTestCases(__FILE__)
+		.map!(a => a.toString)
+		.join("\n")
+		.replace("__unittestL619", "__unittestL619_130()") // Because the 130 can not be estimated at parse time
+		.should.equal(
+			testDiscovery.testCases["trial.discovery.unit"]
+			.values.sort!((a, b) => a.location.line < b.location.line )
+			.map!(a => a.toString)
+			.join("\n"));
 }

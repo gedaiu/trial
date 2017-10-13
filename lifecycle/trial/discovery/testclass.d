@@ -387,12 +387,6 @@ version(unittest) {
     void aCustomTest() {
       order ~= "a custom test";
     }
-
-    @Test()
-    @("Some other name 2-")
-    void aCustomTest2() {
-      order ~= "a custom test";
-    }
   }
 }
 

@@ -204,8 +204,6 @@ class StackResult : IResult
   {
     foreach (line; t)
     {
-      import std.stdio;
-      t.writeln;
       auto frame = line.to!string.toFrame;
       frame.name = demangle(frame.name).to!string;
       frames ~= frame;
@@ -841,6 +839,30 @@ unittest {
   frame.index.should.equal(-1);
   frame.offset.should.equal("");
 }
+
+/*
+??:? __libc_start_main [0x174bbf44]
+??:? [0x404608]
+??:? [0x66779e]
+??:? [0x66d0c2]
+base.d:39 [0x589f7e]
+base.d:43 [0x58a0c5]
+testclass.d:464 [0x4f7ac3]
+unit.d:381 [0x4f7885]
+functional.d-mixin-1223:1234 [0x55b05c]
+single.d:96 [0x4b0b63]
+
+
+lifecycle/trial/executor/single.d:96 void trial.executor.single.DefaultExecutor.createTestResult(const(trial.interfaces.TestCase)) [0x8653dd6]
+lifecycle/trial/executor/single.d:130 trial.interfaces.SuiteResult[] trial.executor.single.DefaultExecutor.execute(ref const(trial.interfaces.TestCase)) [0x86540f0]
+lifecycle/trial/runner.d:456 trial.interfaces.SuiteResult[] trial.runner.LifeCycleListeners.execute(ref const(trial.interfaces.TestCase)) [0x86773fd]
+lifecycle/trial/runner.d:284 trial.interfaces.SuiteResult[] trial.runner.runTests(const(trial.interfaces.TestCase)[], immutable(char)[]) [0x86768a7]
+lifecycle/trial/interfaces.d:477 void trial.interfaces.__unittestL464_146() [0x8655f7a]
+??:? void trial.interfaces.__modtest() [0x86589b0]
+??:? int core.runtime.runModuleUnitTests().__foreachbody2(object.ModuleInfo*) [0x8770420]
+??:? int object.ModuleInfo.opApply(scope int delegate(object.ModuleInfo*)).__lambda2(immutable(object.ModuleInfo*)) [0x8745e20]
+??:? int rt.minfo.moduleinfos_apply(scope int delegate(immutable(object.ModuleInfo*))).__foreachbody2(ref rt.sections_elf_shared.DSO) [0x874f2ca]
+*/
 
 
 
