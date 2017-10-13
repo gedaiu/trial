@@ -80,6 +80,10 @@ version(Have_libdparse) {
 
 				return result;
 			}
+
+			auto line() {
+				return tokens[0].line;
+			}
 		}
 	}
 
@@ -102,6 +106,10 @@ version(Have_libdparse) {
 
 		bool hasAttribute(string name) {
 			return !attributes.filter!(a => a.identifier == name).empty;
+		}
+
+		auto getAttribute(string name) {
+			return attributes.filter!(a => a.identifier == name).front;
 		}
 
 		string testName() {
