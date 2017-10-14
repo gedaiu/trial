@@ -132,7 +132,7 @@ version (Have_libdparse)
       auto result = TokenIterator(tokens).readUntilType("(").replace("\n", " ")
         .replace("\r", " ").replace("\t", " ").split(" ");
 
-      result.reverse;
+      std.algorithm.reverse(result);
 
       return result[0];
     }
