@@ -240,12 +240,12 @@ string removeUnittests(string data) {
     }
 
     if(type == "version") {
-      iterator.skipUntilType("(").skipOne;
+      iterator.skipUntilType("(");
       string value = iterator.currentToken.text == "" ? str(iterator.currentToken.type) : iterator.currentToken.text;
 
       if(value == "whitespace") {
         iterator.skipWsAndComments;
-      } else if(value != "unittest") {
+      } else {
         iterator.skipOne;
       }
 
@@ -265,75 +265,6 @@ string removeUnittests(string data) {
   }
 
   return cleanContent;
-}
-
-@("It should remove unit tests")
-unittest{
-  `module test;
-
-  @("It should find this test")
-  unittest
-  {
-    import trial.discovery;
-    {}{{}}
-  }
-
-  int main() {
-    return 0;
-  }`.removeUnittests.should.equal(`module test;
-
-  @("It should find this test")
-  int main() {
-    return 0;
-  }`);
-}
-
-@("It should ignore strings inside unit tests")
-unittest{
-  `module test;
-
-  unittest {
-    "}";
-  }
-
-  int main() {
-    return 0;
-  }`.removeUnittests.should.equal(`module test;
-
-  int main() {
-    return 0;
-  }`);
-}
-
-@("It should remove unittest versions 2")
-unittest{
-  `module test;
-
-  version(    unittest  )
-  {
-    import trial.discovery;
-    {}{{}}
-  }
-
-  int main() {
-    return 0;
-  }`.removeUnittests.should.equal(`module test;
-
-  int main() {
-    return 0;
-  }`);
-}
-
-@("It should remove unittest versions")
-unittest{
-  `module test;
-
-version (unittest)
-{
-  import fluent.asserts;
-}`.removeUnittests.should.equal(`module test;
-
-`);
 }
 
 string replaceImports(string source) {
