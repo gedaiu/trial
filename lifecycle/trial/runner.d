@@ -152,19 +152,34 @@ string toJSONHierarchy(T)(const(T)[][string] items) {
     string toString(int spaces = 2) {
       string prefix = leftJustify("", spaces);
       string endPrefix = leftJustify("", spaces - 2);
+      string listValues = "";
+      string objectValues = "";
 
-      if(nodes.length == 0) {
-        return "[\n" ~ values
+      if(values.length > 0) {
+        listValues = values
           .map!(a => a.toString)
           .map!(a => prefix ~ a)
-          .join(",\n") ~ "\n" ~ endPrefix ~ "]";
+          .join(",\n");
       }
 
-      return "{\n" ~ nodes
-            .byKeyValue
-            .map!(a => `"` ~ a.key ~ `": ` ~ a.value.toString(spaces + 2))
-            .map!(a => prefix ~ a)
-            .join(",\n") ~ "\n" ~ endPrefix ~ "}";
+      if(nodes.keys.length > 0) {
+        objectValues = nodes
+              .byKeyValue
+              .map!(a => `"` ~ a.key ~ `": ` ~ a.value.toString(spaces + 2))
+              .map!(a => prefix ~ a)
+              .join(",\n");
+      }
+
+
+      if(listValues != "" && objectValues != "") {
+        return "{\n" ~ objectValues ~ ",\n" ~ prefix ~ "\"\": [\n" ~ listValues ~ "\n" ~ prefix ~ "]\n" ~ endPrefix ~ "}";
+      }
+
+      if(listValues != "") {
+        return "[\n" ~ listValues ~ "\n" ~ endPrefix ~ "]";
+      }
+
+      return "{\n" ~ objectValues ~ "\n" ~ endPrefix ~ "}";
     }
   }
 
@@ -201,6 +216,36 @@ unittest {
     "c": [
       "val3"
     ]
+  }
+}`);
+}
+
+/// it should have an empty key for items that contain both values and childs
+unittest {
+  struct Mock {
+    string val;
+
+    string toString() inout {
+      return `"` ~ val ~ `"`;
+    }
+  }
+
+  const(Mock)[][string] mocks;
+
+  mocks["a.b"] = [ Mock("val1"), Mock("val2") ];
+  mocks["a.b.c"] = [ Mock("val3") ];
+
+  mocks.toJSONHierarchy.should.equal(`{
+  "a": {
+    "b": {
+      "c": [
+        "val3"
+      ],
+      "": [
+      "val1",
+      "val2"
+      ]
+    }
   }
 }`);
 }
@@ -436,17 +481,17 @@ void setupSegmentationHandler(bool testRunner)()
   import core.runtime;
 
   // backtrace
-  version( CRuntime_Glibc )
+  version(CRuntime_Glibc)
     import core.sys.linux.execinfo;
-  else version( OSX )
+  else version(OSX)
     import core.sys.darwin.execinfo;
-  else version( FreeBSD )
+  else version(FreeBSD)
     import core.sys.freebsd.execinfo;
-  else version( NetBSD )
+  else version(NetBSD)
     import core.sys.netbsd.execinfo;
-  else version( Windows )
+  else version(Windows)
     import core.sys.windows.stacktrace;
-  else version( Solaris )
+  else version(Solaris)
     import core.sys.solaris.execinfo;
 
   static if( __traits( compiles, backtrace ) )

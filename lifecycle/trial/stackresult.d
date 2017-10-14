@@ -204,7 +204,6 @@ class StackResult : IResult
   {
     foreach (line; t)
     {
-
       auto frame = line.to!string.toFrame;
       frame.name = demangle(frame.name).to!string;
       frames ~= frame;
@@ -645,6 +644,21 @@ Frame toLinuxFrame(string line) {
   return frame;
 }
 
+/// Parse a Linux frame
+Frame toMissingInfoLinuxFrame(string line) {
+  Frame frame;
+
+  auto matched = matchFirst(line, `\?\?:\?\s+` ~ name ~ `\s+\[` ~ address ~ `\]`);
+
+  frame.name = matched["name"];
+  frame.address = matched["address"];
+
+  enforce(frame.address != "", "address not found");
+  enforce(frame.name != "", "name not found");
+
+  return frame;
+}
+
 /// Converts a stack trace line to a Frame structure
 Frame toFrame(string line)
 {
@@ -693,6 +707,14 @@ Frame toFrame(string line)
   try
   {
     return line.toLinuxFrame;
+  }
+  catch (Exception e)
+  {
+  }
+
+  try
+  {
+    return line.toMissingInfoLinuxFrame;
   }
   catch (Exception e)
   {
@@ -840,6 +862,34 @@ unittest {
   frame.index.should.equal(-1);
   frame.offset.should.equal("");
 }
+
+
+/// Get an missing info function frame info from linux format
+unittest {
+  auto line = `??:? __libc_start_main [0x174bbf44]`;
+  auto frame = line.toFrame;
+
+  frame.moduleName.should.equal("");
+  frame.file.should.equal("");
+  frame.line.should.equal(-1);
+  frame.name.should.equal("__libc_start_main");
+  frame.address.should.equal("0x174bbf44");
+  frame.index.should.equal(-1);
+  frame.offset.should.equal("");
+}
+
+/*
+
+lifecycle/trial/executor/single.d:96 void trial.executor.single.DefaultExecutor.createTestResult(const(trial.interfaces.TestCase)) [0x8653dd6]
+lifecycle/trial/executor/single.d:130 trial.interfaces.SuiteResult[] trial.executor.single.DefaultExecutor.execute(ref const(trial.interfaces.TestCase)) [0x86540f0]
+lifecycle/trial/runner.d:456 trial.interfaces.SuiteResult[] trial.runner.LifeCycleListeners.execute(ref const(trial.interfaces.TestCase)) [0x86773fd]
+lifecycle/trial/runner.d:284 trial.interfaces.SuiteResult[] trial.runner.runTests(const(trial.interfaces.TestCase)[], immutable(char)[]) [0x86768a7]
+lifecycle/trial/interfaces.d:477 void trial.interfaces.__unittestL464_146() [0x8655f7a]
+??:? void trial.interfaces.__modtest() [0x86589b0]
+??:? int core.runtime.runModuleUnitTests().__foreachbody2(object.ModuleInfo*) [0x8770420]
+??:? int object.ModuleInfo.opApply(scope int delegate(object.ModuleInfo*)).__lambda2(immutable(object.ModuleInfo*)) [0x8745e20]
+??:? int rt.minfo.moduleinfos_apply(scope int delegate(immutable(object.ModuleInfo*))).__foreachbody2(ref rt.sections_elf_shared.DSO) [0x874f2ca]
+*/
 
 
 

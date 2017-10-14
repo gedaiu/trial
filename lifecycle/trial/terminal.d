@@ -2611,123 +2611,6 @@ struct InputEvent {
 	}
 }
 
-version(Demo)
-/// View the source of this!
-void main() {
-	auto terminal = Terminal(ConsoleOutputType.cellular);
-
-	//terminal.color(Color.DEFAULT, Color.DEFAULT);
-
-	//
-	///*
-	auto getter = new FileLineGetter(&terminal, "test");
-	getter.prompt = "> ";
-	getter.history = ["abcdefghijklmnopqrstuvwzyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
-	terminal.writeln("\n" ~ getter.getline());
-	terminal.writeln("\n" ~ getter.getline());
-	terminal.writeln("\n" ~ getter.getline());
-	getter.dispose();
-	//*/
-
-	terminal.writeln(terminal.getline());
-	terminal.writeln(terminal.getline());
-	terminal.writeln(terminal.getline());
-
-	//input.getch();
-
-	// return;
-	//
-
-	terminal.setTitle("Basic I/O");
-	auto input = RealTimeConsoleInput(&terminal, ConsoleInputFlags.raw | ConsoleInputFlags.allInputEvents);
-	terminal.color(Color.green | Bright, Color.black);
-
-	terminal.write("test some long string to see if it wraps or what because i dont really know what it is going to do so i just want to test i think it will wrap but gotta be sure lolololololololol");
-	terminal.writefln("%d %d", terminal.cursorX, terminal.cursorY);
-
-	int centerX = terminal.width / 2;
-	int centerY = terminal.height / 2;
-
-	bool timeToBreak = false;
-
-	void handleEvent(InputEvent event) {
-		terminal.writef("%s\n", event.type);
-		final switch(event.type) {
-			case InputEvent.Type.UserInterruptionEvent:
-			case InputEvent.Type.HangupEvent:
-			case InputEvent.Type.EndOfFileEvent:
-				timeToBreak = true;
-				version(with_eventloop) {
-					import arsd.eventloop;
-					exit();
-				}
-			break;
-			case InputEvent.Type.SizeChangedEvent:
-				auto ev = event.get!(InputEvent.Type.SizeChangedEvent);
-				terminal.writeln(ev);
-			break;
-			case InputEvent.Type.KeyboardEvent:
-				auto ev = event.get!(InputEvent.Type.KeyboardEvent);
-					terminal.writef("\t%s", ev);
-				terminal.writef(" (%s)", cast(KeyboardEvent.Key) ev.which);
-				terminal.writeln();
-				if(ev.which == 'Q') {
-					timeToBreak = true;
-					version(with_eventloop) {
-						import arsd.eventloop;
-						exit();
-					}
-				}
-
-				if(ev.which == 'C')
-					terminal.clear();
-			break;
-			case InputEvent.Type.CharacterEvent: // obsolete
-				auto ev = event.get!(InputEvent.Type.CharacterEvent);
-				terminal.writef("\t%s\n", ev);
-			break;
-			case InputEvent.Type.NonCharacterKeyEvent: // obsolete
-				terminal.writef("\t%s\n", event.get!(InputEvent.Type.NonCharacterKeyEvent));
-			break;
-			case InputEvent.Type.PasteEvent:
-				terminal.writef("\t%s\n", event.get!(InputEvent.Type.PasteEvent));
-			break;
-			case InputEvent.Type.MouseEvent:
-				terminal.writef("\t%s\n", event.get!(InputEvent.Type.MouseEvent));
-			break;
-			case InputEvent.Type.CustomEvent:
-			break;
-		}
-
-		terminal.writefln("%d %d", terminal.cursorX, terminal.cursorY);
-
-		/*
-		if(input.kbhit()) {
-			auto c = input.getch();
-			if(c == 'q' || c == 'Q')
-				break;
-			terminal.moveTo(centerX, centerY);
-			terminal.writef("%c", c);
-			terminal.flush();
-		}
-		usleep(10000);
-		*/
-	}
-
-	version(with_eventloop) {
-		import arsd.eventloop;
-		addListener(&handleEvent);
-		loop();
-	} else {
-		loop: while(true) {
-			auto event = input.nextEvent();
-			handleEvent(event);
-			if(timeToBreak)
-				break loop;
-		}
-	}
-}
-
 /**
 	FIXME: support lines that wrap
 	FIXME: better controls maybe
@@ -3976,35 +3859,6 @@ class HangupException : Exception {
        XK_KP_9           9                                       ESC O y
 */
 
-version(Demo_kbhit)
-void main() {
-	auto terminal = Terminal(ConsoleOutputType.linear);
-	auto input = RealTimeConsoleInput(&terminal, ConsoleInputFlags.raw);
-
-	int a;
-	char ch = '.';
-	while(a < 1000) {
-		a++;
-		if(a % terminal.width == 0) {
-			terminal.write("\r");
-			if(ch == '.')
-				ch = ' ';
-			else
-				ch = '.';
-		}
-
-		if(input.kbhit())
-			terminal.write(input.getch());
-		else
-			terminal.write(ch);
-
-		terminal.flush();
-
-		import core.thread;
-		Thread.sleep(50.msecs);
-	}
-}
-
 /*
 	The Xterm palette progression is:
 	[0, 95, 135, 175, 215, 255]
@@ -4116,11 +3970,3 @@ int approximate16Color(RGB color) {
 
 	return c;
 }
-
-/*
-void main() {
-	auto terminal = Terminal(ConsoleOutputType.linear);
-	terminal.setTrueColor(RGB(255, 0, 255), RGB(255, 255, 255));
-	terminal.writeln("Hello, world!");
-}
-*/

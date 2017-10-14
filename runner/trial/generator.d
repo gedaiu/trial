@@ -147,7 +147,12 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
         describeTests.toJSONHierarchy.write;
         return 0;
       } else {
-        return runTests("` ~ testName.replace(`"`,`\"`) ~ `").isSuccess ? 0 : 1;
+        string filterName;
+        if(arguments.length > 1) {
+          filterName = arguments[1];
+        }
+
+        return runTests(filterName).isSuccess ? 0 : 1;
       }
   }
 
@@ -213,92 +218,53 @@ string removeTest(string data) {
 }
 
 string removeUnittests(string data) {
+  import trial.discovery.code;
+
   auto pieces = data.split("unittest");
 
-  return pieces
-          .map!(a => a.strip.removeTest)
-          .join("\n")
-          .split("version(\nunittest)")
-          .map!(a => a.strip.removeTest)
-          .join("\n")
-          .split("version (\nunittest)")
-          .map!(a => a.strip.removeTest)
-          .join("\n")
-          .split("\n")
-          .map!(a => a.stripRight)
-          .join("\n");
-}
+  auto tokens = stringToDTokens(data);
+  auto iterator = TokenIterator(tokens);
 
-@("It should remove unit tests")
-unittest{
-  `module test;
+  string cleanContent;
 
-  @("It should find this test")
-  unittest
-  {
-    import trial.discovery;
-    {}{{}}
+  foreach(token; iterator) {
+    string type = str(token.type);
+
+    if(type == "comment") {
+      continue;
+    }
+
+    if(type == "unittest") {
+      iterator.skipNextBlock;
+      continue;
+    }
+
+    if(type == "version") {
+      iterator.skipUntilType("(");
+      string value = iterator.currentToken.text == "" ? str(iterator.currentToken.type) : iterator.currentToken.text;
+
+      if(value == "whitespace") {
+        iterator.skipWsAndComments;
+      } else {
+        iterator.skipOne;
+      }
+
+      value = iterator.currentToken.text == "" ? str(iterator.currentToken.type) : iterator.currentToken.text;
+
+      if(value == "unittest") {
+        iterator.skipNextBlock;
+      } else {
+        cleanContent ~= `version(` ~ value ~ `)`;
+        iterator.skipUntilType(")");
+      }
+
+      continue;
+    }
+
+    cleanContent ~= token.text == "" && type != "stringLiteral" ? type : token.text;
   }
 
-  int main() {
-    return 0;
-  }`.removeUnittests.should.equal(`module test;
-
-  @("It should find this test")
-
-
-  int main() {
-    return 0;
-  }`);
-}
-
-@("It should ignore strings inside unit tests")
-unittest{
-  `module test;
-
-  unittest {
-    "}";
-  }
-
-  int main() {
-    return 0;
-  }`.removeUnittests.should.equal(`module test;
-
-
-  int main() {
-    return 0;
-  }`);
-}
-
-@("It should remove unittest versions 2")
-unittest{
-  `module test;
-
-  version(    unittest  )
-  {
-    import trial.discovery;
-    {}{{}}
-  }
-
-  int main() {
-    return 0;
-  }`.removeUnittests.should.equal(`module test;
-
-
-  int main() {
-    return 0;
-  }`);
-}
-
-@("It should remove unittest versions")
-unittest{
-  `module test;
-
-version (unittest)
-{
-  import fluent.asserts;
-}`.removeUnittests.should.equal(`module test;
-`);
+  return cleanContent;
 }
 
 string replaceImports(string source) {

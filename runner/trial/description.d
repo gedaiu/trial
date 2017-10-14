@@ -148,6 +148,10 @@ class PackageDescriptionCommand : PackageBuildCommand
                     getModuleName(a)]).filter!(a => a[1] != "").array.to!(string[2][]);
     }
 
+    auto files() {
+        return neededTarget.front.buildSettings.sourceFiles.map!(a => a.to!string).array;
+    }
+
     string[] subPackages() {
         import std.stdio;
 

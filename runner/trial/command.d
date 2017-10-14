@@ -108,7 +108,7 @@ class TrialCommand : PackageBuildCommand {
 
 		m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
 
-		run();
+		run([ m_testName ]);
 
 		return 0;
 	}
@@ -126,7 +126,7 @@ class TrialCommand : PackageBuildCommand {
 		settings.force = m_force;
 		settings.tempBuild = m_single;
 		settings.run = true;
-		settings.runArgs = [];
+		settings.runArgs = [] ;
 
 		return settings;
 	}
@@ -195,22 +195,30 @@ class TrialDescribeCommand : TrialCommand {
 
 		int execute(Dub dub, string[] free_args, string[] app_args = [])
 		{
-			string package_name;
+			import trial.runner;
+			import trial.discovery.unit;
+			import trial.discovery.testclass;
+			import trial.discovery.spec;
+			import trial.interfaces;
+
+			auto unitTestDiscovery = new UnitTestDiscovery;
+			auto testClassDiscovery = new TestClassDiscovery;
+			auto specDiscovery = new SpecTestDiscovery;
+			TestCase[] testCases;
 
 			enforce(free_args.length <= 1, "Expected one or zero arguments.");
 
-			if (free_args.length >= 1) {
-				package_name = free_args[0];
+			if(free_args.length == 1 && exists(free_args[0])) {
+				testCases = unitTestDiscovery.discoverTestCases(free_args[0]);
+				testCases ~= testClassDiscovery.discoverTestCases(free_args[0]);
+				testCases ~= specDiscovery.discoverTestCases(free_args[0]);
+			} else {
+				testCases = m_description.files.map!(a => unitTestDiscovery.discoverTestCases(a)).join.array;
+				testCases ~= m_description.files.map!(a => testClassDiscovery.discoverTestCases(a)).join.array;
+				testCases ~= m_description.files.map!(a => specDiscovery.discoverTestCases(a)).join.array;
 			}
 
-			logInfo("Generate main file: " ~ m_description.mainFile);
-			m_description.writeTestFile(m_testName);
-
-			setupPackage(dub, package_name, m_buildType);
-
-			m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
-
-			run([ "describe" ]);
+			testCases.describeTests.toJSONHierarchy.write;
 
 			return 0;
 		}

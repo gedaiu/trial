@@ -11,6 +11,7 @@ module trial.reporters.visualtrial;
 import std.conv;
 import std.string;
 import std.algorithm;
+import std.stdio;
 
 version(Have_fluent_asserts_core) {
   import fluentasserts.core.base;
@@ -54,17 +55,23 @@ class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
   ///
   void begin(string suite, ref TestResult result)
   {
+    std.stdio.stdout.flush;
+    std.stdio.stderr.flush;
     writer.writeln("BEGIN TEST;", ReportWriter.Context._default);
     writer.writeln("suite:" ~ suite, ReportWriter.Context._default);
     writer.writeln("test:" ~ result.name, ReportWriter.Context._default);
     writer.writeln("file:" ~ result.fileName, ReportWriter.Context._default);
     writer.writeln("line:" ~ result.line.to!string, ReportWriter.Context._default);
     writer.writeln("labels:[" ~ result.labels.map!(a => a.toString).join(", ") ~ "]", ReportWriter.Context._default);
+    std.stdio.stdout.flush;
+    std.stdio.stderr.flush;
   }
 
   ///
   void end(string suite, ref TestResult test)
   {
+    std.stdio.stdout.flush;
+    std.stdio.stderr.flush;
     writer.writeln("status:" ~ test.status.to!string, ReportWriter.Context._default);
 
     if(test.status != TestResult.Status.success) {
@@ -78,6 +85,9 @@ class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
     }
 
     writer.writeln("END TEST;", ReportWriter.Context._default);
+
+    std.stdio.stdout.flush;
+    std.stdio.stderr.flush;
   }
 }
 
