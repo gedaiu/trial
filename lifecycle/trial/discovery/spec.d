@@ -365,7 +365,7 @@ unittest
 unittest
 {
   auto specDiscovery = new SpecTestDiscovery;
-  auto tests = specDiscovery.discoverTestCases(__FILE_FULL_PATH__).filter!(
+  auto tests = specDiscovery.discoverTestCases(__FILE__).filter!(
       a => a.suiteName == "trial.discovery.spec.Algorithm").array;
 
   tests.length.should.equal(1).because("the Spec suite defined is in this file");
