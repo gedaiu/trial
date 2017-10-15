@@ -88,6 +88,8 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
       } else if(test.status == TestResult.Status.failure) {
         write!(Type.failure)("Failure\n", 0);
         failedTests++;
+      } else if(test.status == TestResult.Status.pending) {
+        write!(Type.pending)("Pending\n", 0);
       } else {
         write!(Type.none)("Unknown\n", 0);
       }
@@ -152,6 +154,29 @@ unittest
         "    └ ✓ Success\n" ~
         "    ┌ some test\n" ~
         "    └ ✓ Success\n");
+}
+
+
+@("it should format a pending test")
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new SpecStepsReporter(writer);
+
+  auto suite = SuiteResult("some suite");
+  auto test = new TestResult("some test");
+  test.status = TestResult.Status.pending;
+
+  reporter.begin(suite);
+  reporter.begin("some suite", test);
+  reporter.end("some suite", test);
+
+  reporter.end(suite);
+
+  writer.buffer.should.equal("\n" ~
+        "  some suite\n" ~
+        "    ┌ some test\n" ~
+        "    └ - Pending\n");
 }
 
 @("it should format the steps for a failing test")

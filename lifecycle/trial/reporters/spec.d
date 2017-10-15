@@ -29,6 +29,8 @@ struct SpecGlyphs {
     ///
     string ok = "✓";
   }
+
+  string pending = "-";
 }
 
 ///
@@ -44,6 +46,7 @@ class SpecReporter : ITestCaseLifecycleListener
     none,
     success,
     step,
+    pending,
     failure,
     testBegin,
     testEnd,
@@ -102,6 +105,11 @@ class SpecReporter : ITestCaseLifecycleListener
       writer.write(" " ~ text, ReportWriter.Context.inactive);
       break;
 
+    case Type.pending:
+      writer.write(glyphs.pending, ReportWriter.Context.info);
+      writer.write(" " ~ text, ReportWriter.Context.inactive);
+      break;
+
     case Type.failure:
       writer.write(failedTests.to!string ~ ") " ~ text,
           ReportWriter.Context.danger);
@@ -154,6 +162,11 @@ class SpecReporter : ITestCaseLifecycleListener
     if (test.status == TestResult.Status.success)
     {
       write!(Type.success)(test.name, indents);
+    }
+
+    if (test.status == TestResult.Status.pending)
+    {
+      write!(Type.pending)(test.name, indents);
     }
 
     if (test.status == TestResult.Status.failure)
@@ -228,6 +241,23 @@ unittest
   reporter.end("some suite", test);
 
   writer.buffer.should.equal("\n  some suite" ~ "\n    0) some test\n");
+}
+
+@("it should print a pending test")
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new SpecReporter(writer);
+
+  auto suite = SuiteResult("some suite");
+  auto test = new TestResult("some test");
+
+  test.status = TestResult.Status.pending;
+
+  reporter.begin("some suite", test);
+  reporter.end("some suite", test);
+
+  writer.buffer.should.equal("\n  some suite" ~ "\n    - some test\n");
 }
 
 @("it should split suites by dot")
