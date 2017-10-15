@@ -131,11 +131,31 @@ void it(T)(string name, T test, string file = __FILE__, size_t line = __LINE__)
   testCases ~= testCase;
 }
 
+
+/// Define a pending Spec
+void it(string name, string file = __FILE__, size_t line = __LINE__)
+{
+  auto before = beforeList.dup;
+  auto after = afterList.dup;
+  auto path = suitePath.dup;
+
+  reverse(after);
+
+  updateTestCounter(path, 1);
+
+  auto testCase = TestCase(suitePath.join("."), name, ({ throw new PendingTestException(); }));
+
+  testCase.location = SourceLocation(file, line);
+
+  testCases ~= testCase;
+}
+
 /// The main spec container
 template Spec(alias definition)
 {
   shared static this()
   {
+    suitePath = [moduleName!definition];
     definition();
   }
 }

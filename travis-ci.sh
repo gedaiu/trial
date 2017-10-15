@@ -21,8 +21,14 @@ cd vibe.d
 ../trial :data --coverage
 cd ..
 
-# download a simple app and run the tests
-git clone https://github.com/gedaiu/Game-Of-Life-D.git
-cd Game-Of-Life-D
-../trial --coverage
-cd ..
+# Test the examples
+cd examples/unittest
+../../trial --coverage
+
+cd ../spec
+../../trial --coverage
+
+cd ../test-class
+../../trial --coverage
+
+cd ../..

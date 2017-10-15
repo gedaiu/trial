@@ -25,6 +25,7 @@ struct DotMatrixGlyphs {
   string success = ".";
   string failure = "!";
   string unknown = "?";
+  string pending = "-";
 }
 
 ///
@@ -67,6 +68,10 @@ class DotMatrixReporter : ITestCaseLifecycleListener
 
     case TestResult.Status.failure:
       writer.write(glyphs.failure, ReportWriter.Context.danger);
+      break;
+
+    case TestResult.Status.pending:
+      writer.write(glyphs.pending, ReportWriter.Context.info);
       break;
 
     default:
@@ -112,4 +117,21 @@ unittest
 
   reporter.end("some suite", test);
   writer.buffer.should.equal("!");
+}
+
+@("it should print a pending test")
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new DotMatrixReporter(writer);
+
+  auto suite = SuiteResult("some suite");
+  auto test = new TestResult("some test");
+  test.status = TestResult.Status.pending;
+
+  reporter.begin("some suite", test);
+  writer.buffer.should.equal("");
+
+  reporter.end("some suite", test);
+  writer.buffer.should.equal("-");
 }

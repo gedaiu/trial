@@ -349,6 +349,8 @@ class TestResult : StepResult
     ///
     success,
     ///
+    pending,
+    ///
     unknown
   }
 
@@ -672,4 +674,13 @@ struct Story {
 /// Attach the readme file
 unittest {
   Attachment.fromFile("readme file", "README.md", "text/plain");
+}
+
+/// An exception that should be thrown by the pending test cases
+class PendingTestException : Exception {
+
+  ///
+  this(string file = __FILE__, size_t line = __LINE__, Throwable next = null)  {
+    super("You cannot run pending tests", file, line, next);
+  }
 }

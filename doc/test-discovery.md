@@ -23,7 +23,7 @@ The default value is:
 ```json
 "testDiscovery": [
     "trial.discovery.unit.UnitTestDiscovery"
-],
+]
 ```
 
 which will use the `UnitTestDiscovery` class from the `trial.discovery.unit` module.
@@ -33,6 +33,8 @@ which will use the `UnitTestDiscovery` class from the `trial.discovery.unit` mod
 This is the default test discovery. It will search inside your modules for `unittest` blocks. You can add custom names
 to your tests by adding a comment before the `unittest` keyword or you annotate
 the test with a string [UDA](http://dlang.org/spec/attribute.html#uda) that string will be used as the test name.
+
+[Project example](https://github.com/gedaiu/trial/tree/master/examples/unittest)
 
 ```d
 /// This is my awesome test
@@ -56,10 +58,12 @@ Test class discovery search for classes annotated with `@Test()`. This discovery
 
 In order to use this discovery method, you need to add `"trial.discovery.testclass.TestClassDiscovery"` to the `trial.json` file.
 
+[Project example](https://github.com/gedaiu/trial/tree/master/examples/test-class)
+
 ```json
 "testDiscovery": [
     "trial.discovery.testclass.TestClassDiscovery"
-],
+]
 ```
 
 There are a bunch of other [annotations](http://trial.szabobogdan.com/api/trial/attributes.html) that are useful.
@@ -102,6 +106,8 @@ A test suite begins with a call to the global function `describe` with two param
 is a name or title for a spec suite - usually what is being tested. The `function` is a block of code that implements the suite.
 
 Specs are defined by calling the global function `it`, which, like `describe` takes a `string` and a `function`. The `string` is the title of the spec and the function is the spec, or test. A spec contains one or more expectations that test the state of the code. An expectation is an assertion that is either `true` or `false`. A spec with all true expectations is a passing spec. A spec with one or more false expectations is a failing spec.
+
+[Project example](https://github.com/gedaiu/trial/tree/master/examples/spec)
 
 Example:
 ```d
@@ -169,7 +175,7 @@ In order to use this discovery method, you need to add `"trial.discovery.spec.Sp
 ```json
 "testDiscovery": [
     "trial.discovery.spec.SpecTestDiscovery"
-],
+]
 ```
 
 ## Extending
