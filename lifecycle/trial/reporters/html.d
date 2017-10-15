@@ -79,6 +79,7 @@ class HtmlReporter : ILifecycleListener
     string details;
     double passes = 0;
     double failures = 0;
+    double pending = 0;
     double other = 0;
     Duration totalDuration = Duration.zero;
 
@@ -110,6 +111,10 @@ class HtmlReporter : ILifecycleListener
         {
           failures++;
         }
+        else if (test.status == TestResult.Status.pending)
+        {
+          pending++;
+        }
         else
         {
           other++;
@@ -119,6 +124,7 @@ class HtmlReporter : ILifecycleListener
 
     content ~= `<p>passes: <strong>` ~ passes.to!string ~ `</strong></p>`;
     content ~= `<p>failures: <strong>` ~ failures.to!string ~ `</strong></p>`;
+    content ~= `<p>pending: <strong>` ~ pending.to!string ~ `</strong></p>`;
     content ~= `<p>other: <strong>` ~ other.to!string ~ `</strong></p>`;
     content ~= `<p>duration: <strong>` ~ totalDuration.to!string ~ `</strong></p>`;
 
