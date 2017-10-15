@@ -47,6 +47,9 @@ class ListReporter : SpecReporter
       if(test.status == TestResult.Status.success) {
         write!(Type.success)("", 1);
         write!(Type.none)(suite ~ " " ~ test.name ~ "\n");
+      } else if(test.status == TestResult.Status.pending) {
+        write!(Type.pending)("", 1);
+        write!(Type.none)(suite ~ " " ~ test.name ~ "\n");
       } else {
         write!(Type.failure)(suite ~ " " ~ test.name ~ "\n", 1);
         failedTests++;
@@ -87,4 +90,19 @@ unittest
   reporter.end("some suite", test);
 
   writer.buffer.should.equal("  0) some suite other test\n  1) some suite other test\n");
+}
+
+
+@("it should print a pending test")
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new ListReporter(writer);
+
+  auto test = new TestResult("other test");
+  test.status = TestResult.Status.pending;
+
+  reporter.end("some suite", test);
+
+  writer.buffer.should.equal("  - some suite other test\n");
 }

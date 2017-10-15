@@ -29,6 +29,8 @@ struct SpecGlyphs {
     ///
     string ok = "✓";
   }
+
+  string pending = "-";
 }
 
 ///
@@ -44,6 +46,7 @@ class SpecReporter : ITestCaseLifecycleListener
     none,
     success,
     step,
+    pending,
     failure,
     testBegin,
     testEnd,
@@ -99,6 +102,11 @@ class SpecReporter : ITestCaseLifecycleListener
 
     case Type.success:
       writer.write(glyphs.ok, ReportWriter.Context.success);
+      writer.write(" " ~ text, ReportWriter.Context.inactive);
+      break;
+
+    case Type.pending:
+      writer.write(glyphs.pending, ReportWriter.Context.info);
       writer.write(" " ~ text, ReportWriter.Context.inactive);
       break;
 

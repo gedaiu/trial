@@ -51,7 +51,8 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
     int suites;
     int tests;
-    int failedTests = 0;
+    int pending;
+    int failedTests;
 
     SysTime beginTime;
     ReportWriter writer;
@@ -94,11 +95,16 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
   void begin(string suite, ref TestResult test)
   {
-    tests++;
   }
 
   void end(string suite, ref TestResult test)
   {
+    if(test.status == TestResult.Status.pending) {
+      pending++;
+    } else {
+      tests++;
+    }
+
     if (test.status != TestResult.Status.failure)
     {
       return;
@@ -145,6 +151,12 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
       reportTestsResult;
     }
 
+    if(pending == 1) {
+      reportOnePendingTest;
+    } else if(pending > 1) {
+      reportManyPendingTests;
+    }
+
     writer.writeln("");
 
     reportExceptions;
@@ -155,6 +167,16 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
     void reportNoTest()
     {
       writer.write("There are no tests to run.");
+    }
+
+    void reportOnePendingTest()
+    {
+      writer.write("There is a pending test.", ReportWriter.Context.info);
+    }
+
+    void reportManyPendingTests()
+    {
+      writer.write("There are " ~ pending.to!string ~ " pending tests.", ReportWriter.Context.info);
     }
 
     void reportOneTestResult()
@@ -168,7 +190,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
         return;
       }
 
-      writer.write("The test succeeded in " ~ timeDiff.to!string ~ "!", ReportWriter.Context.info);
+      writer.write("The test succeeded in " ~ timeDiff.to!string ~ "!\n", ReportWriter.Context.info);
     }
 
     void reportTestsResult()
@@ -314,6 +336,69 @@ unittest
   reporter.end(results);
 
   writer.buffer.should.contain("Executed 2 tests in 1 suite in ");
+}
+
+
+@("The user should see the number if there is a pending test")
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new ResultReporter(writer);
+  SuiteResult[] results = [SuiteResult("some suite")];
+
+  results[0].tests = [new TestResult("some test"), new TestResult("other test"), new TestResult("pending test")];
+  results[0].tests[0].status = TestResult.Status.success;
+  results[0].tests[1].status = TestResult.Status.success;
+  results[0].tests[2].status = TestResult.Status.pending;
+
+  reporter.begin(2);
+  reporter.begin(results[0]);
+
+  reporter.begin("some suite", results[0].tests[0]);
+  reporter.end("some suite", results[0].tests[0]);
+
+  reporter.begin("some suite", results[0].tests[1]);
+  reporter.end("some suite", results[0].tests[1]);
+
+  reporter.begin("some suite", results[0].tests[2]);
+  reporter.end("some suite", results[0].tests[2]);
+
+  reporter.end(results[0]);
+  reporter.end(results);
+
+  writer.buffer.should.contain("Executed 2 tests in 1 suite in ");
+  writer.buffer.should.contain("There is a pending test.");
+}
+
+@("The user should see the number if there are more than one pending tests")
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new ResultReporter(writer);
+  SuiteResult[] results = [SuiteResult("some suite")];
+
+  results[0].tests = [new TestResult("some test"), new TestResult("other test"), new TestResult("pending test")];
+  results[0].tests[0].status = TestResult.Status.success;
+  results[0].tests[1].status = TestResult.Status.pending;
+  results[0].tests[2].status = TestResult.Status.pending;
+
+  reporter.begin(2);
+  reporter.begin(results[0]);
+
+  reporter.begin("some suite", results[0].tests[0]);
+  reporter.end("some suite", results[0].tests[0]);
+
+  reporter.begin("some suite", results[0].tests[1]);
+  reporter.end("some suite", results[0].tests[1]);
+
+  reporter.begin("some suite", results[0].tests[2]);
+  reporter.end("some suite", results[0].tests[2]);
+
+  reporter.end(results[0]);
+  reporter.end(results);
+
+  writer.buffer.should.contain("The test succeeded in");
+  writer.buffer.should.contain("There are 2 pending tests.");
 }
 
 @("The user should see the reason of a failing test")
