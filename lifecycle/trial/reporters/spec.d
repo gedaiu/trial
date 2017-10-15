@@ -164,6 +164,11 @@ class SpecReporter : ITestCaseLifecycleListener
       write!(Type.success)(test.name, indents);
     }
 
+    if (test.status == TestResult.Status.pending)
+    {
+      write!(Type.pending)(test.name, indents);
+    }
+
     if (test.status == TestResult.Status.failure)
     {
       write!(Type.failure)(test.name, indents);
@@ -236,6 +241,23 @@ unittest
   reporter.end("some suite", test);
 
   writer.buffer.should.equal("\n  some suite" ~ "\n    0) some test\n");
+}
+
+@("it should print a pending test")
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new SpecReporter(writer);
+
+  auto suite = SuiteResult("some suite");
+  auto test = new TestResult("some test");
+
+  test.status = TestResult.Status.pending;
+
+  reporter.begin("some suite", test);
+  reporter.end("some suite", test);
+
+  writer.buffer.should.equal("\n  some suite" ~ "\n    - some test\n");
 }
 
 @("it should split suites by dot")

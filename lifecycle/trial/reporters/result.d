@@ -171,12 +171,12 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
     void reportOnePendingTest()
     {
-      writer.write("There is a pending test.", ReportWriter.Context.info);
+      writer.write("There is a pending test.\n", ReportWriter.Context.info);
     }
 
     void reportManyPendingTests()
     {
-      writer.write("There are " ~ pending.to!string ~ " pending tests.", ReportWriter.Context.info);
+      writer.write("There are " ~ pending.to!string ~ " pending tests.\n", ReportWriter.Context.info);
     }
 
     void reportOneTestResult()
