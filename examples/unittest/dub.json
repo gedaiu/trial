@@ -1,0 +1,13 @@
+{
+	"name": "unitest-example",
+	"authors": [
+		"Szabo Bogdan"
+	],
+	"description": "An example of you you can use the unit test discovery",
+	"copyright": "Copyright © 2017, Szabo Bogdan",
+	"license": "MIT",
+
+	"dependencies": {
+		"fluent-asserts": "*"
+	}
+}

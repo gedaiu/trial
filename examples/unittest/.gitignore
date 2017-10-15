@@ -1,0 +1,14 @@
+.dub
+docs.json
+__dummy.html
+docs/
+trial-spec-example.so
+trial-spec-example.dylib
+trial-spec-example.dll
+trial-spec-example.a
+trial-spec-example.lib
+trial-spec-example-test-*
+*.exe
+*.o
+*.obj
+*.lst
