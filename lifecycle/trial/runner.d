@@ -297,7 +297,7 @@ auto runTests(string testName = "") {
 
 /// Check if a suite result list is a success
 bool isSuccess(SuiteResult[] results) {
-  return results.map!(a => a.tests).joiner.map!(a => a.status).all!(a => a == TestResult.Status.success);
+  return results.map!(a => a.tests).joiner.map!(a => a.status).all!(a => a == TestResult.Status.success || a == TestResult.Status.pending);
 }
 
 version(unittest) {
