@@ -6,24 +6,24 @@ import trial.discovery.spec;
 import fluent.asserts;
 
 private alias suite = Spec!({
-    describe("The game of life rules", {
+    describe("any live cell", {
         GameOfLifeRules rules;
 
         beforeEach({
             rules = new GameOfLifeRules;
         });
 
-        it("any live cell with fewer than two live neighbours dies, as if caused by underpopulation", {
+        it("should die if it has fewer than two live neighbours, as if caused by underpopulation", {
             rules.shouldDie(1).should.equal(true);
             rules.shouldDie(0).should.equal(true);
         });
 
-        it("any live cell with two or three live neighbours lives on to the next generation", {
+        it("should live on to the next generation if it has two or three live neighbours", {
             rules.shouldDie(2).should.equal(false);
             rules.shouldDie(3).should.equal(false);
         });
 
-        it("any live cell with more than three live neighbours dies, as if by overpopulation", {
+        it("should die if it has more than three live neighbours, as if by overpopulation", {
             rules.shouldDie(4).should.equal(true);
             rules.shouldDie(5).should.equal(true);
             rules.shouldDie(6).should.equal(true);
@@ -31,7 +31,9 @@ private alias suite = Spec!({
             rules.shouldDie(8).should.equal(true);
             rules.shouldDie(9).should.equal(true);
         });
+    });
 
-        it("any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction");
+    describe("any dead cell", {
+        it("should become a live cell if it has exactly three live neighbours, as if by reproduction");
     });
 });
