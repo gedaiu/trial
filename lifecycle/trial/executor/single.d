@@ -96,6 +96,9 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
         testCase.func();
         testResult.status = TestResult.Status.success;
       }
+      catch (PendingTestException) {
+        testResult.status = TestResult.Status.pending;
+      }
       catch (Throwable t)
       {
         testResult.status = TestResult.Status.failure;
@@ -134,4 +137,30 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
 
     return result;
   }
+}
+
+version(unittest) {
+  import fluent.asserts;
+}
+
+/// Executing a test case that throws a PendingTestException should mark the test result
+/// as pending instead of a failure
+unittest {
+  auto old = LifeCycleListeners.instance;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new DefaultExecutor);
+
+  scope (exit) {
+    LifeCycleListeners.instance = old;
+  }
+
+  void test() {
+    throw new PendingTestException();
+  }
+
+  auto testCase = const TestCase("Some.Suite", "test name", &test, []);
+  auto result = [testCase].runTests;
+
+  result.length.should.equal(1);
+  result[0].tests[0].status.should.equal(TestResult.Status.pending);
 }
