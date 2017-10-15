@@ -203,3 +203,31 @@ unittest
   text.should.contain(`other: <strong>0</strong>`);
   text.should.contain(`duration: <strong>10 secs</strong>`);
 }
+
+@("it should print a pending test")
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new HtmlReporter();
+
+  auto begin = Clock.currTime - 10.seconds;
+  auto end = begin + 10.seconds;
+
+  auto testResult = new TestResult("some test");
+  testResult.begin = begin;
+  testResult.end = end;
+  testResult.status = TestResult.Status.pending;
+  testResult.throwable = new Exception("Some error");
+
+  SuiteResult[] result = [SuiteResult("Test Suite", begin, end, [testResult])];
+  reporter.end(result);
+
+  auto text = readText("trial-result.html");
+
+  text.should.contain(`<span class="label label-info">pending</span>`);
+  text.should.contain(`passes: <strong>0</strong>`);
+  text.should.contain(`failures: <strong>0</strong>`);
+  text.should.contain(`pending: <strong>1</strong>`);
+  text.should.contain(`other: <strong>0</strong>`);
+  text.should.contain(`duration: <strong>10 secs</strong>`);
+}
