@@ -17,7 +17,7 @@ import std.random;
 import std.array;
 
 import trial.interfaces;
-import trial.attributes;
+public import trial.attributes;
 import trial.discovery.code;
 
 /// A structure that stores data about the setup events(methods)
@@ -59,11 +59,11 @@ private void methodDone(string ModuleName, string ClassName)()
 
 private auto getTestClassInstance(string ModuleName, string ClassName)()
 {
+  mixin(`import ` ~ ModuleName ~ `;`);
   enum key = ModuleName ~ "." ~ ClassName;
 
   if (key !in testClassInstances)
   {
-    mixin(`import ` ~ ModuleName ~ `;`);
     mixin(`auto instance = new ` ~ ClassName ~ `();`);
 
     testClassInstances[key] = instance;
@@ -307,20 +307,26 @@ bool isTestMember(string ModuleName, string className, string member)()
 bool isSetupMember(string ModuleName, string className, string member)()
 {
   mixin("import " ~ ModuleName ~ ";");
-  mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "."
-      ~ className ~ "." ~ member ~ ");");
+  pragma(msg, ModuleName ~ "." ~ className ~ "." ~ member);
+  mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "." ~ className ~ "." ~ member ~ ");");
 
   return setupAttributes!attributes.length > 0;
 }
 
 ///
-template isClass(string name)
+template isClass(string moduleName)
 {
-  mixin("
-    static if (is(" ~ name ~ " == class))
-      enum bool isClass = true;
-    else
-      enum bool isClass = false;");
+  template isModuleClass(string name) {
+    mixin("
+      import " ~ moduleName ~ ";
+
+      static if (is(" ~ name ~ " == class))
+        enum bool isModuleClass = true;
+      else
+        enum bool isModuleClass = false;");
+  }
+
+  alias isClass = isModuleClass;
 }
 
 ///
@@ -377,7 +383,8 @@ template isValueProvider(alias Attribute)
 ///
 template extractClasses(string moduleName, members...)
 {
-  alias Filter!(isClass, members) extractClasses;
+  mixin("import " ~ moduleName ~ ";");
+  alias Filter!(isClass!moduleName, members) extractClasses;
 }
 
 ///
@@ -401,6 +408,7 @@ template setupAttributes(attributes...)
 ///
 template classMembers(string moduleName)
 {
+  mixin("import " ~ moduleName ~ ";");
   mixin("alias extractClasses!(moduleName, __traits(allMembers, " ~ moduleName ~ ")) classMembers;");
 }
 
