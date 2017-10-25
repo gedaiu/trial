@@ -200,6 +200,7 @@ class TrialDescribeCommand : TrialCommand {
 			import trial.discovery.testclass;
 			import trial.discovery.spec;
 			import trial.interfaces;
+			import std.array : array;
 
 			auto unitTestDiscovery = new UnitTestDiscovery;
 			auto testClassDiscovery = new TestClassDiscovery;
