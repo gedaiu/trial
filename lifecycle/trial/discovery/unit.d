@@ -325,7 +325,7 @@ class UnitTestDiscovery : ITestDiscovery
             if (lastName == "")
             {
               static if(__VERSION__ >= 2077) {
-                lastName = __MODULE__.replace(".", "_") ~ "_d_" ~ token.line.to!string;
+                lastName = moduleName.replace(".", "_") ~ "_d_" ~ token.line.to!string;
               } else {
                 lastName = unitTestKey ~ token.line.to!string;
               }
@@ -743,14 +743,14 @@ unittest
   foreach (index, test; allTests)
   {
     static if(__VERSION__ >= 2077) {
-      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_718") != -1)
+      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_719") != -1)
       {
-        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_718";
+        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_719";
       }
     } else {
-      if (test.name.indexOf(unitTestKey ~ "718") != -1)
+      if (test.name.indexOf(unitTestKey ~ "719") != -1)
       {
-        allTests[index].name = unitTestKey ~ "718";
+        allTests[index].name = unitTestKey ~ "719";
       }
     }
   }
