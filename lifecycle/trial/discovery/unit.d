@@ -743,14 +743,14 @@ unittest
   foreach (index, test; allTests)
   {
     static if(__VERSION__ >= 2077) {
-      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_719") != -1)
+      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_718") != -1)
       {
-        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_719";
+        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_718";
       }
     } else {
-      if (test.name.indexOf(unitTestKey ~ "719") != -1)
+      if (test.name.indexOf(unitTestKey ~ "718") != -1)
       {
-        allTests[index].name = unitTestKey ~ "719";
+        allTests[index].name = unitTestKey ~ "718";
       }
     }
   }
