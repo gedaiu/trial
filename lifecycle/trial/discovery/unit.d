@@ -384,7 +384,7 @@ class UnitTestDiscovery : ITestDiscovery
       return name;
     }
 
-    size_t extractLine(string name) {
+    long extractLine(string name) {
       static if(__VERSION__ >= 2.077) {
         auto idx = name.indexOf("_d_") + 3;
         auto lastIdx = name.lastIndexOf("_");
