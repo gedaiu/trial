@@ -21,7 +21,7 @@ import trial.interfaces;
 import trial.discovery.code;
 
 
-static if(__VERSION__ >= 2.077) {
+static if(__VERSION__ >= 2077) {
   enum unitTestKey = "__un" ~ "ittest_";
 } else {
   enum unitTestKey = "__un" ~ "ittestL";
@@ -324,7 +324,7 @@ class UnitTestDiscovery : ITestDiscovery
 
             if (lastName == "")
             {
-              static if(__VERSION__ >= 2.077) {
+              static if(__VERSION__ >= 2077) {
                 lastName = __MODULE__.replace(".", "_") ~ "_d_" ~ token.line.to!string;
               } else {
                 lastName = unitTestKey ~ token.line.to!string;
@@ -385,12 +385,13 @@ class UnitTestDiscovery : ITestDiscovery
     }
 
     size_t extractLine(string name) {
-      static if(__VERSION__ >= 2.077) {
+      static if(__VERSION__ >= 2077) {
         auto idx = name.indexOf("_d_") + 3;
         auto lastIdx = name.lastIndexOf("_");
 
         return idx != -1 ? name[idx .. lastIdx].to!size_t : 0;
       } else {
+        enum len = unitTestKey.length;
         auto postFix = name[len .. $];
         auto idx = postFix.indexOf("_");
 
@@ -608,8 +609,6 @@ unittest
   auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(
       a => a.name == "It should find the line of this test");
 
-  r.front.location.writeln;
-
   r.empty.should.equal(false).because("the location should be present");
   r.front.location.fileName.should.endWith("unit.d");
   r.front.location.line.should.equal(line);
@@ -722,7 +721,7 @@ unittest
   immutable line = __LINE__ - 3;
   auto testDiscovery = new UnitTestDiscovery;
 
-  static if(__VERSION__ >= 2.077) {
+  static if(__VERSION__ >= 2077) {
     testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
       .array.should.contain(__MODULE__.replace(".", "_") ~ "_d_" ~ line.to!string);
   } else {
@@ -743,16 +742,15 @@ unittest
 
   foreach (index, test; allTests)
   {
-
-    static if(__VERSION__ >= 2.077) {
-      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_719") != -1)
+    static if(__VERSION__ >= 2077) {
+      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_718") != -1)
       {
-        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_719";
+        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_718";
       }
     } else {
-      if (test.name.indexOf(unitTestKey ~ "719") != -1)
+      if (test.name.indexOf(unitTestKey ~ "718") != -1)
       {
-        allTests[index].name = unitTestKey ~ "719";
+        allTests[index].name = unitTestKey ~ "718";
       }
     }
   }
