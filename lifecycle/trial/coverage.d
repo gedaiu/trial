@@ -19,16 +19,19 @@ import std.math;
 
 import trial.discovery.code;
 
-shared static this() {
-  import core.runtime;
 
-  if(exists("coverage")) {
-    rmdirRecurse("coverage");
+version(D_Coverage) {
+  shared static this() {
+    import core.runtime;
+
+    if(exists("coverage")) {
+      rmdirRecurse("coverage");
+    }
+
+    mkdirRecurse(buildPath("coverage", "raw"));
+
+    dmd_coverDestPath(buildPath("coverage", "raw"));
   }
-
-  mkdirRecurse(buildPath("coverage", "raw"));
-
-  dmd_coverDestPath(buildPath("coverage", "raw"));
 }
 
 /// Converts coverage lst files to html
