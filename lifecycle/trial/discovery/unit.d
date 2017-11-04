@@ -325,7 +325,7 @@ class UnitTestDiscovery : ITestDiscovery
             if (lastName == "")
             {
               static if(__VERSION__ >= 2077) {
-                lastName = __MODULE__.replace(".", "_") ~ "_d_" ~ token.line.to!string;
+                lastName = moduleName.replace(".", "_") ~ "_d_" ~ token.line.to!string;
               } else {
                 lastName = unitTestKey ~ token.line.to!string;
               }
