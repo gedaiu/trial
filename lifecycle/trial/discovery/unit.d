@@ -352,19 +352,36 @@ class UnitTestDiscovery : ITestDiscovery
         }
       }
 
-      enum key = "__un" ~ "ittestL";
+      static if(__VERSION__ >= 2.077) {
+        enum key = "__un" ~ "ittest_";
+      } else {
+        enum key = "__un" ~ "ittestL";
+      }
+
       enum len = key.length;
 
       if (name == defaultName && name.indexOf(key) == 0)
       {
         try
         {
-          auto postFix = name[len .. $];
-          auto idx = postFix.indexOf("_");
-          if (idx != -1)
-          {
-            auto line = postFix[0 .. idx].to!long;
-            name = comments.getComment(line, defaultName);
+          static if(__VERSION__ >= 2.077) {
+            auto idx = name.indexOf("_d_") + 3;
+            auto lastIdx = name.lastIndexOf("_");
+
+            if (idx != -1)
+            {
+              auto line = name[idx .. lastIdx].to!long;
+              name = comments.getComment(line, defaultName);
+            }
+          } else {
+            auto postFix = name[len .. $];
+            auto idx = postFix.indexOf("_");
+
+            if (idx != -1)
+            {
+              auto line = postFix[0 .. idx].to!long;
+              name = comments.getComment(line, defaultName);
+            }
           }
         }
         catch (Exception e)
