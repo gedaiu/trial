@@ -384,17 +384,17 @@ class UnitTestDiscovery : ITestDiscovery
       return name;
     }
 
-    long extractLine(string name) {
+    size_t extractLine(string name) {
       static if(__VERSION__ >= 2.077) {
         auto idx = name.indexOf("_d_") + 3;
         auto lastIdx = name.lastIndexOf("_");
 
-        return idx != -1 ? name[idx .. lastIdx].to!long : 0;
+        return idx != -1 ? name[idx .. lastIdx].to!size_t : 0;
       } else {
         auto postFix = name[len .. $];
         auto idx = postFix.indexOf("_");
 
-        return idx != -1 ? postFix[0 .. idx].to!long : 0;
+        return idx != -1 ? postFix[0 .. idx].to!size_t : 0;
       }
     }
 
