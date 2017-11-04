@@ -324,7 +324,11 @@ class UnitTestDiscovery : ITestDiscovery
 
             if (lastName == "")
             {
-              lastName = unitTestKey ~ token.line.to!string;
+              static if(__VERSION__ >= 2.077) {
+                lastName = __MODULE__.replace(".", "_") ~ "_d_" ~ token.line.to!string;
+              } else {
+                lastName = unitTestKey ~ token.line.to!string;
+              }
             }
 
             auto testCase = TestCase(moduleName, lastName, &noTest, labels);
@@ -366,24 +370,10 @@ class UnitTestDiscovery : ITestDiscovery
       {
         try
         {
-          static if(__VERSION__ >= 2.077) {
-            auto idx = name.indexOf("_d_") + 3;
-            auto lastIdx = name.lastIndexOf("_");
+          auto line = extractLine(name);
 
-            if (idx != -1)
-            {
-              auto line = name[idx .. lastIdx].to!long;
-              name = comments.getComment(line, defaultName);
-            }
-          } else {
-            auto postFix = name[len .. $];
-            auto idx = postFix.indexOf("_");
-
-            if (idx != -1)
-            {
-              auto line = postFix[0 .. idx].to!long;
-              name = comments.getComment(line, defaultName);
-            }
+          if(line != 0) {
+            name = comments.getComment(line, defaultName);
           }
         }
         catch (Exception e)
@@ -392,6 +382,20 @@ class UnitTestDiscovery : ITestDiscovery
       }
 
       return name;
+    }
+
+    size_t extractLine(string name) {
+      static if(__VERSION__ >= 2.077) {
+        auto idx = name.indexOf("_d_") + 3;
+        auto lastIdx = name.lastIndexOf("_");
+
+        return idx != -1 ? name[idx .. lastIdx].to!long : 0;
+      } else {
+        auto postFix = name[len .. $];
+        auto idx = postFix.indexOf("_");
+
+        return idx != -1 ? postFix[0 .. idx].to!long : 0;
+      }
     }
 
     SourceLocation testSourceLocation(alias test)(string fileName)
@@ -403,13 +407,7 @@ class UnitTestDiscovery : ITestDiscovery
 
       try
       {
-        auto postFix = name[len .. $];
-        auto idx = postFix.indexOf("_");
-
-        if (idx != -1)
-        {
-          line = postFix[0 .. idx].to!size_t;
-        }
+        line = extractLine(name);
       }
       catch (Exception e)
       {
@@ -724,8 +722,13 @@ unittest
   immutable line = __LINE__ - 3;
   auto testDiscovery = new UnitTestDiscovery;
 
-  testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-    .array.should.contain(unitTestKey ~ line.to!string);
+  static if(__VERSION__ >= 2.077) {
+    testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
+      .array.should.contain(__MODULE__.replace(".", "_") ~ "_d_" ~ line.to!string);
+  } else {
+    testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
+      .array.should.contain(unitTestKey ~ line.to!string);
+  }
 }
 
 /// discoverTestCases should find the same tests like testCases
@@ -737,11 +740,20 @@ unittest
 
   auto allTests = testDiscovery.getTestCases.sort!((a,
       b) => a.location.line < b.location.line).array;
+
   foreach (index, test; allTests)
   {
-    if (test.name.indexOf(unitTestKey ~ "701") == 0)
-    {
-      allTests[index].name = unitTestKey ~ "701";
+
+    static if(__VERSION__ >= 2.077) {
+      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_719") != -1)
+      {
+        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_719";
+      }
+    } else {
+      if (test.name.indexOf(unitTestKey ~ "719") != -1)
+      {
+        allTests[index].name = unitTestKey ~ "719";
+      }
     }
   }
 
