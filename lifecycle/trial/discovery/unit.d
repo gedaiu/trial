@@ -20,6 +20,13 @@ import std.typecons;
 import trial.interfaces;
 import trial.discovery.code;
 
+
+static if(__VERSION__ >= 2.077) {
+  enum unitTestKey = "__un" ~ "ittest_";
+} else {
+  enum unitTestKey = "__un" ~ "ittestL";
+}
+
 enum CommentType
 {
   none,
@@ -317,10 +324,11 @@ class UnitTestDiscovery : ITestDiscovery
 
             if (lastName == "")
             {
-              lastName = "__unittestL" ~ token.line.to!string;
+              lastName = unitTestKey ~ token.line.to!string;
             }
 
             auto testCase = TestCase(moduleName, lastName, &noTest, labels);
+
             testCase.location = SourceLocation(file, token.line);
 
             testCases ~= testCase;
@@ -352,15 +360,9 @@ class UnitTestDiscovery : ITestDiscovery
         }
       }
 
-      static if(__VERSION__ >= 2.077) {
-        enum key = "__un" ~ "ittest_";
-      } else {
-        enum key = "__un" ~ "ittestL";
-      }
+      enum len = unitTestKey.length;
 
-      enum len = key.length;
-
-      if (name == defaultName && name.indexOf(key) == 0)
+      if (name == defaultName && name.indexOf(unitTestKey) == 0)
       {
         try
         {
@@ -396,8 +398,7 @@ class UnitTestDiscovery : ITestDiscovery
     {
       string name = test.stringof.to!string;
 
-      enum key = "__un" ~ "ittestL";
-      enum len = key.length;
+      enum len = unitTestKey.length;
       size_t line;
 
       try
@@ -609,6 +610,8 @@ unittest
   auto r = testDiscovery.testCases["trial.discovery.unit"].values.filter!(
       a => a.name == "It should find the line of this test");
 
+  r.front.location.writeln;
+
   r.empty.should.equal(false).because("the location should be present");
   r.front.location.fileName.should.endWith("unit.d");
   r.front.location.line.should.equal(line);
@@ -722,7 +725,7 @@ unittest
   auto testDiscovery = new UnitTestDiscovery;
 
   testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-    .array.should.contain("__unittestL" ~ line.to!string);
+    .array.should.contain(unitTestKey ~ line.to!string);
 }
 
 /// discoverTestCases should find the same tests like testCases
@@ -736,9 +739,9 @@ unittest
       b) => a.location.line < b.location.line).array;
   foreach (index, test; allTests)
   {
-    if (test.name.indexOf("__unittestL701") == 0)
+    if (test.name.indexOf(unitTestKey ~ "701") == 0)
     {
-      allTests[index].name = "__unittestL701";
+      allTests[index].name = unitTestKey ~ "701";
     }
   }
 
