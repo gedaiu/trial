@@ -19,8 +19,10 @@ import std.math;
 
 import trial.discovery.code;
 
-
 version(D_Coverage) {
+
+pragma(msg, "D_Coverage ");
+
   shared static this() {
     import core.runtime;
 
@@ -33,6 +35,9 @@ version(D_Coverage) {
 
     dmd_coverDestPath(buildPath("coverage", "raw"));
   }
+} else {
+
+pragma(msg, "not D_Coverage ");
 }
 
 /// Converts coverage lst files to html
