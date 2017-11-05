@@ -129,7 +129,10 @@ class StatsReporter : ILifecycleListener, ITestCaseLifecycleListener,
     std.file.write(destination, storage.toCsv);
 
     auto attachment = const Attachment("stats", destination, "text/csv");
-    LifeCycleListeners.instance.attach(attachment);
+
+    if(LifeCycleListeners.instance !is null) {
+      LifeCycleListeners.instance.attach(attachment);
+    }
   }
 }
 
