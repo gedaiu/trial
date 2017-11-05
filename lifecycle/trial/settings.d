@@ -53,6 +53,8 @@ mixin template SettingsFields()
 
   ///
   GlyphSettings glyphs;
+
+  string artifactsLocation = ".trial";
 }
 
 /// A structure representing the `trial.json` file
@@ -107,7 +109,8 @@ string toCode(Settings settings)
     settings.testDiscovery.to!string ~ ", " ~
     settings.runInParallel.to!string ~ ", " ~
     settings.maxThreads.to!string ~ ", " ~
-    settings.glyphs.toCode ~
+    settings.glyphs.toCode ~ ", " ~
+    `"` ~ settings.artifactsLocation ~ `"` ~
     ")";
 }
 
@@ -138,13 +141,16 @@ unittest
 {
 	Settings settings;
 
-	settings.toCode.should.equal(`Settings(["spec", "result"], ` ~
-  `["trial.discovery.unit.UnitTestDiscovery"], false, 0` ~
-  ", GlyphSettings(SpecGlyphs(`✓`), " ~
-  "SpecStepsGlyphs(`┌`, `└`, `│`), "~
-  "ResultGlyphs(`✖`), " ~
-  "DotMatrixGlyphs(`.`,`!`,`?`), " ~
-  "LandingGlyphs(`✈`,`━`,`⋅`), " ~
-  "ProgressGlyphs(`░`,`▓`)"
-  ~`))`);
+	settings.toCode.should.equal(`Settings(` ~
+     `["spec", "result"], ` ~
+     `["trial.discovery.unit.UnitTestDiscovery"], false, 0, ` ~
+      "GlyphSettings(SpecGlyphs(`✓`), " ~
+                    "SpecStepsGlyphs(`┌`, `└`, `│`), "~
+                    "ResultGlyphs(`✖`), " ~
+                    "DotMatrixGlyphs(`.`,`!`,`?`), " ~
+                    "LandingGlyphs(`✈`,`━`,`⋅`), " ~
+                    "ProgressGlyphs(`░`,`▓`)" ~
+      "), " ~
+      `".trial"` ~
+      `)`);
 }

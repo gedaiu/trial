@@ -37,9 +37,17 @@ private string escape(string data) {
 /// and the attachments. http://allure.qatools.ru/
 class AllureReporter : ILifecycleListener
 {
+  private {
+    immutable string destination;
+  }
+
+  this(string destination) {
+    this.destination = destination;
+  }
+
   void begin(ulong testCount) {
-    if(exists("allure")) {
-      std.file.rmdirRecurse("allure");
+    if(exists(destination)) {
+      std.file.rmdirRecurse(destination);
     }
   }
 
@@ -47,15 +55,15 @@ class AllureReporter : ILifecycleListener
 
   void end(SuiteResult[] result)
   {
-    if(!exists("allure")) {
-      "allure".mkdir;
+    if(!exists(destination)) {
+      destination.mkdirRecurse;
     }
 
     foreach(item; result) {
       string uuid = randomUUID.toString;
-      string xml = AllureSuiteXml(item, uuid).toString;
+      string xml = AllureSuiteXml(destination, item, uuid).toString;
 
-      std.file.write("allure/" ~ uuid ~ "-testsuite.xml", xml);
+      std.file.write(buildPath(destination,  uuid ~ "-testsuite.xml"), xml);
     }
   }
 }
@@ -70,10 +78,20 @@ struct AllureSuiteXml {
   /// The allure version
   const string allureVersion = "1.5.2";
 
+  private {
+    immutable string destination;
+  }
+
+  this(const string destination, SuiteResult result, string uuid) {
+    this.destination = destination;
+    this.result = result;
+    this.uuid = uuid;
+  }
+
   /// Converts the suiteResult to a xml string
   string toString() {
     auto epoch = SysTime.fromUnixTime(0);
-    string tests = result.tests.map!(a => AllureTestXml(a, uuid).toString).array.join("\n");
+    string tests = result.tests.map!(a => AllureTestXml(destination, a, uuid).toString).array.join("\n");
 
     if(tests != "") {
       tests = "\n" ~ tests;
@@ -90,7 +108,7 @@ struct AllureSuiteXml {
 
     if(result.attachments.length > 0) {
       xml ~= "    <attachments>\n";
-      xml ~= result.attachments.map!(a => AllureAttachmentXml(a, 6, uuid)).map!(a => a.toString).array.join('\n') ~ "\n";
+      xml ~= result.attachments.map!(a => AllureAttachmentXml(destination, a, 6, uuid)).map!(a => a.toString).array.join('\n') ~ "\n";
       xml ~= "    </attachments>\n";
     }
 
@@ -124,7 +142,7 @@ unittest
 
   result.tests = [ test ];
 
-  auto allure = AllureSuiteXml(result);
+  auto allure = AllureSuiteXml("allure", result, "");
 
   allure.toString.should.equal(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ns2:test-suite start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" version="1.5.2" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
@@ -150,7 +168,7 @@ unittest
   result.begin = Clock.currTime;
   result.end = Clock.currTime;
 
-  auto allure = AllureSuiteXml(result);
+  auto allure = AllureSuiteXml("allure", result, "");
 
   allure.toString.should.equal(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ns2:test-suite start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" version="1.5.2" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
@@ -186,7 +204,7 @@ unittest
   result.end = Clock.currTime;
   result.attachments = [ Attachment("title", resource, "plain/text") ];
 
-  auto allure = AllureSuiteXml(result, uuid);
+  auto allure = AllureSuiteXml("allure", result, uuid);
 
   allure.toString.should.equal(
  `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -211,6 +229,16 @@ struct AllureTestXml {
 
   ///
   string uuid;
+
+  private {
+    immutable string destination;
+  }
+
+  this(const string destination, TestResult result, string uuid) {
+    this.destination = destination;
+    this.result = result;
+    this.uuid = uuid;
+  }
 
   /// Converts a test result to allure status
   string allureStatus() {
@@ -260,13 +288,13 @@ struct AllureTestXml {
 
     if(result.steps.length > 0) {
       xml ~= "            <steps>\n";
-      xml ~= result.steps.map!(a => AllureStepXml(a, 14, uuid)).map!(a => a.toString).array.join('\n') ~ "\n";
+      xml ~= result.steps.map!(a => AllureStepXml(destination, a, 14, uuid)).map!(a => a.toString).array.join('\n') ~ "\n";
       xml ~= "            </steps>\n";
     }
 
     if(result.attachments.length > 0) {
       xml ~= "            <attachments>\n";
-      xml ~= result.attachments.map!(a => AllureAttachmentXml(a, 14, uuid)).map!(a => a.toString).array.join('\n') ~ "\n";
+      xml ~= result.attachments.map!(a => AllureAttachmentXml(destination, a, 14, uuid)).map!(a => a.toString).array.join('\n') ~ "\n";
       xml ~= "            </attachments>\n";
     }
 
@@ -286,7 +314,7 @@ unittest
   result.end = Clock.currTime;
   result.status = TestResult.Status.success;
 
-  auto allure = AllureTestXml(result);
+  auto allure = AllureTestXml("allure", result, "");
 
   allure.toString.should.equal(
   `        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
@@ -308,7 +336,7 @@ unittest
   result.throwable = new Exception("message");
 
   Step("create the report listener");
-  auto allure = AllureTestXml(result);
+  auto allure = AllureTestXml("allure", result, "");
 
   Step("perform checks");
   allure.toString.should.equal(
@@ -338,7 +366,7 @@ unittest
 
   result.steps = [step, step];
 
-  auto allure = AllureTestXml(result);
+  auto allure = AllureTestXml("allure", result, "");
 
   allure.toString.should.equal(
   `        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
@@ -365,7 +393,7 @@ unittest
   result.status = TestResult.Status.success;
   result.labels ~= Label("status_details", "flaky");
 
-  auto allure = AllureTestXml(result);
+  auto allure = AllureTestXml("allure", result, "");
 
   allure.toString.should.equal(
  `        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
@@ -400,7 +428,7 @@ unittest
   result.status = TestResult.Status.success;
   result.attachments = [ Attachment("title", resource, "plain/text") ];
 
-  auto allure = AllureTestXml(result, uuid);
+  auto allure = AllureTestXml("allure", result, uuid);
 
   allure.toString.should.equal(
  `        <test-case start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
@@ -416,12 +444,15 @@ struct AllureStepXml {
     StepResult step;
     size_t indent;
     string uuid;
+
+    immutable string destination;
   }
 
-  this(StepResult step, size_t indent, string uuid) {
+  this(const string destination, StepResult step, size_t indent, string uuid) {
     this.step = step;
     this.indent = indent;
     this.uuid = uuid;
+    this.destination = destination;
   }
 
   /// Return the string representation of the step
@@ -433,13 +464,13 @@ struct AllureStepXml {
 
     if(step.steps.length > 0) {
       result ~= spaces ~ "  <steps>\n";
-      result ~= step.steps.map!(a => AllureStepXml(a, indent + 6, uuid)).map!(a => a.to!string).array.join('\n') ~ "\n";
+      result ~= step.steps.map!(a => AllureStepXml(destination, a, indent + 6, uuid)).map!(a => a.to!string).array.join('\n') ~ "\n";
       result ~= spaces ~ "  </steps>\n";
     }
 
     if(step.attachments.length > 0) {
       result ~= spaces ~ "  <attachments>\n";
-      result ~= step.attachments.map!(a => AllureAttachmentXml(a, indent + 6, uuid)).map!(a => a.to!string).array.join('\n') ~ "\n";
+      result ~= step.attachments.map!(a => AllureAttachmentXml(destination, a, indent + 6, uuid)).map!(a => a.to!string).array.join('\n') ~ "\n";
       result ~= spaces ~ "  </attachments>\n";
     }
 
@@ -458,7 +489,7 @@ unittest
   result.begin = Clock.currTime;
   result.end = Clock.currTime;
 
-  auto allure = AllureStepXml(result, 0, "");
+  auto allure = AllureStepXml("allure", result, 0, "");
 
   allure.toString.should.equal(
   `  <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
@@ -482,7 +513,7 @@ unittest
 
   result.steps = [ step, step ];
 
-  auto allure = AllureStepXml(result, 0, "");
+  auto allure = AllureStepXml("allure", result, 0, "");
 
   allure.toString.should.equal(
   `  <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
@@ -507,8 +538,7 @@ unittest
   auto uuid = randomUUID.toString;
 
   scope(exit) {
-    remove(resource);
-    remove("allure/" ~ uuid ~ "/name.0.some_image.png");
+    rmdirRecurse("allure");
   }
 
 
@@ -520,7 +550,7 @@ unittest
 
   result.attachments = [ Attachment("name", resource, "image/png") ];
 
-  auto allure = AllureStepXml(result, 0, uuid);
+  auto allure = AllureStepXml("allure", result, 0, uuid);
 
   allure.toString.should.equal(
   `  <step start="` ~ (result.begin - epoch).total!"msecs".to!string ~ `" stop="` ~ (result.end - epoch).total!"msecs".to!string ~ `" status="passed">
@@ -535,18 +565,20 @@ unittest
 /// It will copy the file to the allure folder with an unique name
 struct AllureAttachmentXml {
 
-  private const {
-    Attachment attachment;
-    size_t indent;
+  private {
+    const {
+      Attachment attachment;
+      size_t indent;
+    }
+
+    string allureFile;
   }
 
   @disable this();
 
   /// Init the struct and copy the atachment to the allure folder
-  this(Attachment attachment, size_t indent, string uuid) {
+  this(const string destination, Attachment attachment, size_t indent, string uuid) {
     this.indent = indent;
-
-    auto destination = buildPath(getcwd, "allure");
 
     if(!exists(buildPath(destination, uuid))) {
       buildPath(destination, uuid).mkdirRecurse;
@@ -554,21 +586,22 @@ struct AllureAttachmentXml {
 
     ulong index;
 
-    string allureFile;
-
     do {
-      allureFile = buildPath(destination, uuid, attachment.name ~ "." ~ index.to!string ~ "." ~ baseName(attachment.file));
+      allureFile = buildPath(uuid, attachment.name ~ "." ~ index.to!string ~ "." ~ baseName(attachment.file));
       index++;
-    } while(allureFile.exists);
+    } while(buildPath(destination, allureFile).exists);
 
-    std.file.copy(attachment.file, allureFile);
-    this.attachment = Attachment(attachment.name, allureFile.asRelativePath(destination).array, attachment.mime);
+    if(attachment.file.exists) {
+      std.file.copy(attachment.file, buildPath(destination, allureFile));
+    }
+
+    this.attachment = Attachment(attachment.name, buildPath(destination, allureFile), attachment.mime);
   }
 
   /// convert the attachment to string
   string toString() {
     return (" ".repeat(indent).array.join()) ~ "<attachment title=\"" ~ attachment.name ~
-      "\" source=\"" ~ attachment.file ~
+      "\" source=\"" ~ allureFile ~
       "\" type=\"" ~ attachment.mime ~ "\" />";
   }
 }
@@ -582,11 +615,10 @@ unittest {
   auto expectedPath = buildPath(getcwd(), "allure",  uuid, "name.0.some_image.png");
 
   scope(exit) {
-    remove(resource);
-    remove(expectedPath);
+    rmdirRecurse("allure");
   }
 
-  auto a = AllureAttachmentXml(Attachment("name", resource, ""), 0, uuid);
+  auto a = AllureAttachmentXml("allure", Attachment("name", resource, ""), 0, uuid);
 
   expectedPath.exists.should.equal(true);
 }
@@ -604,12 +636,10 @@ unittest {
   std.file.write(existingPath, "");
 
   scope(exit) {
-    remove(resource);
-    remove(existingPath);
-    remove(expectedPath);
+    rmdirRecurse("allure");
   }
 
-  auto a = AllureAttachmentXml(Attachment("name", resource, ""), 0, uuid);
+  auto a = AllureAttachmentXml("allure", Attachment("name", resource, ""), 0, uuid);
 
   expectedPath.exists.should.equal(true);
 }
