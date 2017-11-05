@@ -37,7 +37,7 @@ version(D_Coverage) {
 /// Converts coverage lst files to html
 double convertLstFiles(string packagePath, string packageName) {
   if(!exists(buildPath("coverage", "raw"))) {
-    return;
+    return 0;
   }
 
   if(!exists(buildPath("coverage", "html"))) {
