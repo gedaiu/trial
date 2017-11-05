@@ -36,13 +36,18 @@ private string escapeXUnit(string data) {
 /// The XUnit reporter creates a xml containing the test results
 class XUnitReporter : ILifecycleListener
 {
-  this(string destination) {
 
+  private {
+    immutable string destination;
+  }
+
+  this(string destination) {
+    this.destination = destination;
   }
 
   void begin(ulong testCount) {
-    if(exists("allure")) {
-      std.file.rmdirRecurse("allure");
+    if(exists(destination)) {
+      std.file.rmdirRecurse(destination);
     }
   }
 
@@ -50,15 +55,15 @@ class XUnitReporter : ILifecycleListener
 
   void end(SuiteResult[] result)
   {
-    if(!exists("xunit")) {
-      "xunit".mkdir;
+    if(!exists(destination)) {
+      destination.mkdirRecurse;
     }
 
     foreach(item; result) {
       string uuid = randomUUID.toString;
       string xml = `<?xml version="1.0" encoding="UTF-8"?>` ~ "\n"~ `<testsuites>` ~ "\n" ~ XUnitSuiteXml(item, uuid).toString ~ "\n</testsuites>\n";
 
-      std.file.write("xunit/" ~ item.name ~ ".xml", xml);
+      std.file.write(buildPath(destination, item.name ~ ".xml"), xml);
     }
   }
 }

@@ -85,11 +85,11 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "allure":
-        LifeCycleListeners.instance.add(new AllureReporter(settings.artifactsLocation));
+        LifeCycleListeners.instance.add(new AllureReporter(buildPath(settings.artifactsLocation, "allure")));
         break;
 
       case "xunit":
-        LifeCycleListeners.instance.add(new XUnitReporter(settings.artifactsLocation));
+        LifeCycleListeners.instance.add(new XUnitReporter(buildPath(settings.artifactsLocation, "xunit")));
         break;
 
       case "result":
