@@ -538,8 +538,7 @@ unittest
   auto uuid = randomUUID.toString;
 
   scope(exit) {
-    remove(resource);
-    remove("allure/" ~ uuid ~ "/name.0.some_image.png");
+    rmdirRecurse("allure");
   }
 
 
@@ -616,8 +615,7 @@ unittest {
   auto expectedPath = buildPath(getcwd(), "allure",  uuid, "name.0.some_image.png");
 
   scope(exit) {
-    remove(resource);
-    remove(expectedPath);
+    rmdirRecurse("allure");
   }
 
   auto a = AllureAttachmentXml("allure", Attachment("name", resource, ""), 0, uuid);
@@ -638,9 +636,7 @@ unittest {
   std.file.write(existingPath, "");
 
   scope(exit) {
-    remove(resource);
-    remove(existingPath);
-    remove(expectedPath);
+    rmdirRecurse("allure");
   }
 
   auto a = AllureAttachmentXml("allure", Attachment("name", resource, ""), 0, uuid);
