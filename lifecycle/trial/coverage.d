@@ -25,6 +25,7 @@ version(D_Coverage) {
     import core.runtime;
 
     if(exists("coverage")) {
+      writeln("Creating coverage folder...");
       rmdirRecurse("coverage");
     }
 
