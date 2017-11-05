@@ -37,6 +37,10 @@ class HtmlReporter : ILifecycleListener
     bool success = true;
   }
 
+  this(string destination) {
+
+  }
+
   void begin(ulong)
   {
   }
@@ -156,7 +160,7 @@ version (unittest)
 unittest
 {
   auto writer = new BufferedWriter;
-  auto reporter = new HtmlReporter();
+  auto reporter = new HtmlReporter("trial-result.html");
 
   auto begin = Clock.currTime - 10.seconds;
   auto end = begin + 10.seconds;
@@ -186,7 +190,7 @@ unittest
 unittest
 {
   auto writer = new BufferedWriter;
-  auto reporter = new HtmlReporter();
+  auto reporter = new HtmlReporter("trial-result.html");
 
   auto begin = Clock.currTime - 10.seconds;
   auto end = begin + 10.seconds;
@@ -214,7 +218,7 @@ unittest
 unittest
 {
   auto writer = new BufferedWriter;
-  auto reporter = new HtmlReporter();
+  auto reporter = new HtmlReporter("trial-result.html");
 
   auto begin = Clock.currTime - 10.seconds;
   auto end = begin + 10.seconds;

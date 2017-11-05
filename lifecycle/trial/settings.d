@@ -54,7 +54,7 @@ mixin template SettingsFields()
   ///
   GlyphSettings glyphs;
 
-  string arifactsLocation = ".trial";
+  string artifactsLocation = ".trial";
 }
 
 /// A structure representing the `trial.json` file
@@ -110,7 +110,7 @@ string toCode(Settings settings)
     settings.runInParallel.to!string ~ ", " ~
     settings.maxThreads.to!string ~ ", " ~
     settings.glyphs.toCode ~ ", " ~
-    `"` ~ settings.arifactsLocation ~ `"` ~
+    `"` ~ settings.artifactsLocation ~ `"` ~
     ")";
 }
 

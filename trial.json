@@ -14,7 +14,7 @@
 		"trial.discovery.testclass.TestClassDiscovery"
 	],
 
-	"arifactsLocation": ".trial",
+	"artifactsLocation": ".trial",
 	"runInParallel": false,
 	"maxThreads": 1
 }

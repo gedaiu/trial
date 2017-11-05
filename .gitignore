@@ -34,3 +34,4 @@ trial_*.d
 trial-lifecycle
 trial-runner
 trial-root
+.trial/

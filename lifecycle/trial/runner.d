@@ -15,6 +15,7 @@ import std.range;
 import std.traits;
 import std.string;
 import std.conv;
+import std.path;
 
 import trial.settings;
 import trial.executor.single;
@@ -55,7 +56,7 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "spec-progress":
-        auto storage = statsFromFile("trial-stats.csv");
+        auto storage = statsFromFile(buildPath(settings.artifactsLocation, "stats.csv"));
         LifeCycleListeners.instance.add(new SpecProgressReporter(storage));
         break;
 
@@ -80,15 +81,15 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "html":
-        LifeCycleListeners.instance.add(new HtmlReporter);
+        LifeCycleListeners.instance.add(new HtmlReporter(buildPath(settings.artifactsLocation, "result.html")));
         break;
 
       case "allure":
-        LifeCycleListeners.instance.add(new AllureReporter);
+        LifeCycleListeners.instance.add(new AllureReporter(settings.artifactsLocation));
         break;
 
       case "xunit":
-        LifeCycleListeners.instance.add(new XUnitReporter);
+        LifeCycleListeners.instance.add(new XUnitReporter(settings.artifactsLocation));
         break;
 
       case "result":
@@ -96,7 +97,7 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "stats":
-        LifeCycleListeners.instance.add(new StatsReporter);
+        LifeCycleListeners.instance.add(new StatsReporter(buildPath(settings.artifactsLocation, "stats.csv")));
         break;
 
       case "tap":
@@ -108,7 +109,7 @@ void addReporter(string name, Settings settings) {
         break;
 
       default:
-        writeln("There is no `" ~ name ~"` reporter");
+        writeln("There is no `" ~ name ~ "` reporter");
     }
 }
 

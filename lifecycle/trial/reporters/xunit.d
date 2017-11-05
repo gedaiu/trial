@@ -36,6 +36,10 @@ private string escapeXUnit(string data) {
 /// The XUnit reporter creates a xml containing the test results
 class XUnitReporter : ILifecycleListener
 {
+  this(string destination) {
+
+  }
+
   void begin(ulong testCount) {
     if(exists("allure")) {
       std.file.rmdirRecurse("allure");

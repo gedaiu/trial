@@ -37,6 +37,10 @@ private string escape(string data) {
 /// and the attachments. http://allure.qatools.ru/
 class AllureReporter : ILifecycleListener
 {
+  this(string destination) {
+
+  }
+
   void begin(ulong testCount) {
     if(exists("allure")) {
       std.file.rmdirRecurse("allure");
@@ -561,7 +565,10 @@ struct AllureAttachmentXml {
       index++;
     } while(allureFile.exists);
 
-    std.file.copy(attachment.file, allureFile);
+    if(attachment.file.exists) {
+      std.file.copy(attachment.file, allureFile);
+    }
+
     this.attachment = Attachment(attachment.name, allureFile.asRelativePath(destination).array, attachment.mime);
   }
 

@@ -15,6 +15,7 @@ import std.array;
 import std.datetime;
 import std.stdio;
 import std.file;
+import std.path;
 
 import trial.runner;
 import trial.interfaces;
@@ -51,18 +52,20 @@ class StatsReporter : ILifecycleListener, ITestCaseLifecycleListener,
 {
   private
   {
+    immutable string destination;
     StatStorage storage;
     string[][string] path;
   }
 
-  this(StatStorage storage)
+  this(StatStorage storage, string destination)
   {
     this.storage = storage;
+    this.destination = destination;
   }
 
-  this()
+  this(string destination)
   {
-    this.storage = new StatStorage;
+    this(new StatStorage, destination);
   }
 
   private
@@ -117,10 +120,15 @@ class StatsReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
   void end(SuiteResult[])
   {
-    auto f = File("trial-stats.csv", "w"); // open for writing
-    f.write(storage.toCsv);
+    auto parent = buildPath(pathSplitter(destination).array[0..$-1]);
 
-    auto attachment = const Attachment("stats", "trial-stats.csv", "text/csv");
+    if(parent != "" && !parent.exists) {
+      mkdirRecurse(parent);
+    }
+
+    std.file.write(destination, storage.toCsv);
+
+    auto attachment = const Attachment("stats", destination, "text/csv");
     LifeCycleListeners.instance.attach(attachment);
   }
 }
@@ -132,11 +140,25 @@ version (unittest)
   import std.stdio;
 }
 
+/// It should write the stats to the expected path
+unittest {
+  scope(exit) {
+    if(exists("destination.csv")) {
+      std.file.remove("destination.csv");
+    }
+  }
+
+  auto stats = new StatsReporter("destination.csv");
+  stats.end([]);
+
+  "destination.csv".exists.should.equal(true);
+}
+
 @("it should add suite to the storage")
 unittest
 {
   auto storage = new StatStorage;
-  auto stats = new StatsReporter(storage);
+  auto stats = new StatsReporter(storage, "trial-stats.csv");
 
   SuiteResult suite = SuiteResult("suite1");
 
@@ -161,7 +183,7 @@ unittest
 unittest
 {
   auto storage = new StatStorage;
-  auto stats = new StatsReporter(storage);
+  auto stats = new StatsReporter(storage, "trial-stats.csv");
 
   SuiteResult suite = SuiteResult("suite");
 
@@ -191,7 +213,7 @@ unittest
 unittest
 {
   auto storage = new StatStorage;
-  auto stats = new StatsReporter(storage);
+  auto stats = new StatsReporter(storage, "trial-stats.csv");
 
   SuiteResult suite = SuiteResult("suite");
 
