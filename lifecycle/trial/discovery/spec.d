@@ -16,7 +16,7 @@ import std.string;
 import trial.interfaces;
 import trial.discovery.code;
 
-alias SetupFunction = void delegate() @safe;
+alias SetupFunction = void delegate() @system;
 
 private string[] suitePath;
 private ulong[string] testsPerSuite;
