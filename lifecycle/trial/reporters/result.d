@@ -25,7 +25,7 @@ version (Have_fluent_asserts_core)
 }
 
 /// A structure containing the glyphs used for the result reporter
-struct ResultGlyphs {
+struct TestResultGlyphs {
   version(Windows) {
     ///
     string error = "x";
@@ -36,9 +36,10 @@ struct ResultGlyphs {
 }
 
 ///
-string resultGlyphsToCode(ResultGlyphs glyphs) {
-  return "ResultGlyphs(`" ~ glyphs.error ~ "`)";
+string testResultGlyphsToCode(TestResultGlyphs glyphs) {
+  return "TestResultGlyphs(`" ~ glyphs.error ~ "`)";
 }
+
 
 
 /// The "Result" reporter will print an overview of your test run
@@ -47,7 +48,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 {
   private
   {
-    ResultGlyphs glyphs;
+    TestResultGlyphs glyphs;
 
     int suites;
     int tests;
@@ -68,7 +69,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
     writer = defaultWriter;
   }
 
-  this(ResultGlyphs glyphs)
+  this(TestResultGlyphs glyphs)
   {
     writer = defaultWriter;
     this.glyphs = glyphs;

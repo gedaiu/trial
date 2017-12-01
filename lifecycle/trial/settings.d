@@ -78,7 +78,7 @@ mixin template GlyphSettingsFields()
   SpecStepsGlyphs specSteps;
 
   ///
-  ResultGlyphs result;
+  TestResultGlyphs result;
 
   ///
   DotMatrixGlyphs dotMatrix;
@@ -119,7 +119,7 @@ string toCode(GlyphSettings settings) {
   return "GlyphSettings(" ~
       specGlyphsToCode(settings.spec) ~ ", " ~
       specStepsGlyphsToCode(settings.specSteps) ~ ", " ~
-      resultGlyphsToCode(settings.result) ~ ", " ~
+      testResultGlyphsToCode(settings.result) ~ ", " ~
       dotMatrixGlyphsToCode(settings.dotMatrix) ~ ", " ~
       landingGlyphsToCode(settings.landing) ~ ", " ~
       progressGlyphsToCode(settings.progress) ~
@@ -146,7 +146,7 @@ unittest
      `["trial.discovery.unit.UnitTestDiscovery"], false, 0, ` ~
       "GlyphSettings(SpecGlyphs(`✓`), " ~
                     "SpecStepsGlyphs(`┌`, `└`, `│`), "~
-                    "ResultGlyphs(`✖`), " ~
+                    "TestResultGlyphs(`✖`), " ~
                     "DotMatrixGlyphs(`.`,`!`,`?`), " ~
                     "LandingGlyphs(`✈`,`━`,`⋅`), " ~
                     "ProgressGlyphs(`░`,`▓`)" ~
