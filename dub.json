@@ -26,7 +26,7 @@
 
 			"dependencies": {
 				"dub": "~>1.6.0",
-				"fluent-asserts": "~>0.8.0",
+				"fluent-asserts": "~>0.8.1",
 				"libdparse": "~>0.7.2-alpha.1"
 			}
 		}
@@ -39,8 +39,8 @@
 			"sourcePaths": ["lifecycle"],
 			"importPaths": ["lifecycle"],
 			"dependencies": {
-				"fluent-asserts": "~>0.8.0",
-				"libdparse": "~>0.7.2-alpha.1"
+				"fluent-asserts": "~>0.8.1",
+				"libdparse": "~>0.7.2-alpha.3"
 			}
 		},
 		{
@@ -52,10 +52,10 @@
 			"stringImportPaths": ["lifecycle/trial"],
 
 			"dependencies": {
-				"dub": "~>1.5.0",
+				"dub": "~>1.6.0",
 				"trial:lifecycle": "*",
 				"fluent-asserts": "*",
-				"libdparse": "~>0.7.2-alpha.1"
+				"libdparse": "~>0.7.2-alpha.3"
 			}
 		}
 	]
