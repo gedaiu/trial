@@ -497,55 +497,57 @@ void setupSegmentationHandler(bool testRunner)()
 
   static if( __traits( compiles, backtrace ) )
   {
-    import core.sys.posix.signal; // segv handler
+    version(Posix) {
+      import core.sys.posix.signal; // segv handler
 
-    static extern (C) void unittestSegvHandler(int signum, siginfo_t* info, void* ptr ) nothrow
-    {
-      import core.stdc.stdio;
+      static extern (C) void unittestSegvHandler(int signum, siginfo_t* info, void* ptr ) nothrow
+      {
+        import core.stdc.stdio;
 
-      core.stdc.stdio.printf("\n\n");
+        core.stdc.stdio.printf("\n\n");
 
-      static if(testRunner) {
-        if(signum == SIGSEGV) {
-          core.stdc.stdio.printf("Got a Segmentation Fault running ");
-        }
+        static if(testRunner) {
+          if(signum == SIGSEGV) {
+            core.stdc.stdio.printf("Got a Segmentation Fault running ");
+          }
 
-        if(signum == SIGBUS) {
-          core.stdc.stdio.printf("Got a bus error running ");
-        }
+          if(signum == SIGBUS) {
+            core.stdc.stdio.printf("Got a bus error running ");
+          }
 
 
-        if(LifeCycleListeners.instance.runningTest != "") {
-          core.stdc.stdio.printf("%s\n\n", LifeCycleListeners.instance.runningTest.ptr);
+          if(LifeCycleListeners.instance.runningTest != "") {
+            core.stdc.stdio.printf("%s\n\n", LifeCycleListeners.instance.runningTest.ptr);
+          } else {
+            core.stdc.stdio.printf("some setup step. This is probably a Trial bug. Please create an issue on github.\n\n");
+          }
         } else {
-          core.stdc.stdio.printf("some setup step. This is probably a Trial bug. Please create an issue on github.\n\n");
-        }
-      } else {
-        if(signum == SIGSEGV) {
-          core.stdc.stdio.printf("Got a Segmentation Fault! ");
+          if(signum == SIGSEGV) {
+            core.stdc.stdio.printf("Got a Segmentation Fault! ");
+          }
+
+          if(signum == SIGBUS) {
+            core.stdc.stdio.printf("Got a bus error! ");
+          }
+
+          core.stdc.stdio.printf(" This is probably a Trial bug. Please create an issue on github.\n\n");
         }
 
-        if(signum == SIGBUS) {
-          core.stdc.stdio.printf("Got a bus error! ");
-        }
+        static enum MAXFRAMES = 128;
+        void*[MAXFRAMES]  callstack;
+        int               numframes;
 
-        core.stdc.stdio.printf(" This is probably a Trial bug. Please create an issue on github.\n\n");
+        numframes = backtrace( callstack.ptr, MAXFRAMES );
+        backtrace_symbols_fd( callstack.ptr, numframes, 2);
       }
 
-      static enum MAXFRAMES = 128;
-      void*[MAXFRAMES]  callstack;
-      int               numframes;
-
-      numframes = backtrace( callstack.ptr, MAXFRAMES );
-      backtrace_symbols_fd( callstack.ptr, numframes, 2);
+      sigaction_t action = void;
+      (cast(byte*) &action)[0 .. action.sizeof] = 0;
+      sigfillset( &action.sa_mask ); // block other signals
+      action.sa_flags = SA_SIGINFO | SA_RESETHAND;
+      action.sa_sigaction = &unittestSegvHandler;
+      sigaction( SIGSEGV, &action, null );
+      sigaction( SIGBUS, &action, null );
     }
-
-    sigaction_t action = void;
-    (cast(byte*) &action)[0 .. action.sizeof] = 0;
-    sigfillset( &action.sa_mask ); // block other signals
-    action.sa_flags = SA_SIGINFO | SA_RESETHAND;
-    action.sa_sigaction = &unittestSegvHandler;
-    sigaction( SIGSEGV, &action, null );
-    sigaction( SIGBUS, &action, null );
   }
 }

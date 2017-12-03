@@ -117,15 +117,26 @@ import trial.terminal;
 
 shared static this()
 {
-  version (windows)
+  version (Windows)
   {
     import core.sys.windows.windows;
 
     SetConsoleCP(65001);
     SetConsoleOutputCP(65001);
-  }
 
-  defaultWriter = new ColorConsoleWriter;
+    auto consoleType = GetFileType(GetStdHandle(STD_OUTPUT_HANDLE));
+
+    if(consoleType == 2) {
+      writeln("using the color console.");
+      defaultWriter = new ColorConsoleWriter;
+    } else {
+      writeln("using the standard console.");
+      defaultWriter = new ConsoleWriter;
+    }
+    std.stdio.stdout.flush;
+  } else {
+    defaultWriter = new ColorConsoleWriter;
+  }
 }
 
 
