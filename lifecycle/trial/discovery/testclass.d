@@ -161,7 +161,7 @@ class TestClassDiscovery : ITestDiscovery
   {
     void discover(string ModuleName)()
     {
-      mixin("import " ~ ModuleName ~ ";");
+      mixin("static import " ~ ModuleName ~ ";");
       enum classList = classMembers!(ModuleName);
 
       foreach (className; classList)
@@ -255,7 +255,7 @@ class TestClassDiscovery : ITestDiscovery
 ///
 string getTestName(string ModuleName, string className, string member)()
 {
-  mixin("import " ~ ModuleName ~ ";");
+  mixin("static import " ~ ModuleName ~ ";");
   mixin("enum attributes = __traits(getAttributes, " ~ ModuleName ~ "."
       ~ className ~ "." ~ member ~ ");");
 
