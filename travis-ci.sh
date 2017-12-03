@@ -11,7 +11,7 @@ fi
 dub build :runner -b release --compiler=$DC
 
 # run unit tests
-dub run :runner --compiler=$DC -- --coverage
+dub run :runner --compiler=$DC -- --coverage --combined
 
 # download vibe and run the tests
 git clone https://github.com/vibe-d/vibe.d.git
