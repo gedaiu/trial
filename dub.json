@@ -57,7 +57,8 @@
 			"dependencies": {
 				"dub": "~>1.6.0",
 				"trial:lifecycle": "*",
-				"libdparse": "~>0.7.2-alpha.3"
+				"libdparse": "~>0.7.2-alpha.3",
+				"fluent-asserts": "~>0.8.2"
 			},
 			"subConfigurations": {
 				"dub": "dynamic-library-nonet"
