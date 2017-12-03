@@ -133,7 +133,7 @@ version(unitttest) {} else {
 			return 0;
 		}
 
-		auto dub = createDub(options);
+
 		auto description = new PackageDescriptionCommand(options, subPackageName);
 
 		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
@@ -147,9 +147,17 @@ version(unitttest) {} else {
 			return 1;
 		}
 
+		auto dub = createDub(options);
+
 		try {
 			cmd.execute(dub, remainingArgs);
 		} catch(Exception e) {
+			debug {
+				e.writeln;
+			} else {
+				e.msg.writeln;
+			}
+
 			return 1;
 		} finally {
 			if(arguments.canFind("--coverage")) {

@@ -62,10 +62,10 @@ Dub createDub(CommonOptions options) {
 
 class PackageDescriptionCommand : PackageBuildCommand
 {
+    Dub dub;
 
     private
     {
-        Dub dub;
         ProjectDescription desc;
         string subPackageName;
         string rootPackage;
@@ -153,8 +153,6 @@ class PackageDescriptionCommand : PackageBuildCommand
     }
 
     string[] subPackages() {
-        import std.stdio;
-
         auto subpackages = dub.packageManager
             .getOrLoadPackage(Path(options.root_path), Path.init, true)
             .subPackages;
@@ -211,9 +209,9 @@ class PackageDescriptionCommand : PackageBuildCommand
         assert(false);
     }
 
-    Settings readSettings(Path root)
+    Settings readSettings()
     {
-        string path = (root ~ Path("trial.json")).to!string;
+        string path = buildPath(options.root_path, "trial.json").to!string;
 
         if (!path.exists)
         {
@@ -228,7 +226,7 @@ class PackageDescriptionCommand : PackageBuildCommand
 
     void writeTestFile(string testName = "", string reporters = "")
     {
-        auto settings = readSettings(dub.rootPath);
+        auto settings = readSettings();
         if(reporters != "") {
             settings.reporters = reporters.split(",").map!(a => a.strip).array;
         }
@@ -253,7 +251,7 @@ class PackageDescriptionCommand : PackageBuildCommand
         string name = subPackageName != "" ? subPackageName : "root";
         name = name.replace(":", "");
 
-        return (dub.rootPath ~ Path("trial_" ~ name ~ ".d")).to!string;
+        return buildPath(options.root_path , "trial_" ~ name ~ ".d").to!string;
     }
 
     string buildFile() {
