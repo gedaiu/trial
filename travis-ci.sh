@@ -9,11 +9,9 @@ fi
 
 # test for successful release build
 dub build :runner -b release --compiler=$DC
-dub clean --all-packages
 
 # run unit tests
-dub test :runner --compiler=$DC
-dub run :runner --compiler=$DC -- :lifecycle  --coverage
+dub run :runner --compiler=$DC -- --coverage
 
 # download vibe and run the tests
 git clone https://github.com/vibe-d/vibe.d.git
