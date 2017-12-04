@@ -11,6 +11,31 @@
 	"dependencies": {
 	},
 
+	"configurations": [
+		{
+			"name": "executable"
+		},
+
+		{
+			"name": "trial",
+			"excludedSourceFiles": ["source/app.d", "runner/app.d"],
+			"sourcePaths": ["lifecycle", "runner"],
+			"stringImportPaths": ["lifecycle/trial"],
+			"importPaths": ["lifecycle", "runner"],
+			"mainSourceFile": "source/app.d",
+
+			"dependencies": {
+				"dub": "~>1.6.0",
+				"fluent-asserts": "~>0.8.3",
+				"libdparse": "~>0.7.2-alpha.3"
+			},
+			"subConfigurations": {
+				"dub": "library-nonet",
+				"fluent-asserts": "library"
+			}
+		}
+	],
+
 	"subPackages": [
 		{
 			"name": "lifecycle",
@@ -18,8 +43,11 @@
 			"sourcePaths": ["lifecycle"],
 			"importPaths": ["lifecycle"],
 			"dependencies": {
-				"fluent-asserts": "~>0.8.2",
+				"fluent-asserts": "~>0.8.3",
 				"libdparse": "~>0.7.2-alpha.3"
+			},
+			"subConfigurations": {
+				"fluent-asserts": "library"
 			}
 		},
 		{
@@ -34,10 +62,11 @@
 				"dub": "~>1.6.0",
 				"trial:lifecycle": "*",
 				"libdparse": "~>0.7.2-alpha.3",
-				"fluent-asserts": "~>0.8.2"
+				"fluent-asserts": "~>0.8.3"
 			},
 			"subConfigurations": {
-				"dub": "library-nonet"
+				"dub": "library-nonet",
+				"fluent-asserts": "library"
 			}
 		}
 	]
