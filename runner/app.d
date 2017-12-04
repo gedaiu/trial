@@ -140,7 +140,7 @@ version(unitttest) {} else {
 
 		/// run the trial command
 		cmd.setDescription(description);
-		auto remainingArgs = commandArgs.extractRemainingArgs();
+		auto remainingArgs = commandArgs.extractRemainingArgs().filter!`a != "-v"`.array;
 
 		if (remainingArgs.any!(a => a.startsWith("-"))) {
 			logError("Unknown command line flags: %s", remainingArgs.filter!(a => a.startsWith("-")).array.join(" "));
