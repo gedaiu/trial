@@ -28,10 +28,6 @@
 				"dub": "~>1.6.0",
 				"fluent-asserts": "~>0.8.3",
 				"libdparse": "~>0.7.2-alpha.3"
-			},
-			"subConfigurations": {
-				"dub": "library-nonet",
-				"fluent-asserts": "library"
 			}
 		}
 	],
@@ -45,9 +41,6 @@
 			"dependencies": {
 				"fluent-asserts": "~>0.8.3",
 				"libdparse": "~>0.7.2-alpha.3"
-			},
-			"subConfigurations": {
-				"fluent-asserts": "library"
 			}
 		},
 		{
@@ -63,10 +56,6 @@
 				"trial:lifecycle": "*",
 				"libdparse": "~>0.7.2-alpha.3",
 				"fluent-asserts": "~>0.8.3"
-			},
-			"subConfigurations": {
-				"dub": "library-nonet",
-				"fluent-asserts": "library"
 			}
 		}
 	]
