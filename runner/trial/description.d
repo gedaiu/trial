@@ -32,232 +32,214 @@ import trial.settings;
 import trial.generator;
 
 Dub createDub(CommonOptions options) {
-	Dub dub;
+  Dub dub;
 
-	if (options.bare) {
-		dub = new Dub(Path(getcwd()));
-		dub.rootPath = Path(options.root_path);
-		dub.defaultPlacementLocation = options.placementLocation;
+  if (options.bare) {
+    dub = new Dub(Path(getcwd()));
+    dub.rootPath = Path(options.root_path);
+    dub.defaultPlacementLocation = options.placementLocation;
 
-		return dub;
-	}
+    return dub;
+  }
 
-	// initialize DUB
-	auto package_suppliers = options.registry_urls.map!(url => cast(PackageSupplier)new RegistryPackageSupplier(URL(url))).array;
-	dub = new Dub(options.root_path, package_suppliers, options.skipRegistry);
+  // initialize DUB
+  auto package_suppliers = options.registry_urls.map!(
+      url => cast(PackageSupplier) new RegistryPackageSupplier(URL(url))).array;
+  dub = new Dub(options.root_path, package_suppliers, options.skipRegistry);
 
-	dub.dryRun = options.annotate;
-	dub.defaultPlacementLocation = options.placementLocation;
+  dub.dryRun = options.annotate;
+  dub.defaultPlacementLocation = options.placementLocation;
 
-	// make the CWD package available so that for example sub packages can reference their
-	// parent package.
-	try {
-		dub.packageManager.getOrLoadPackage(Path(options.root_path));
-	} catch (Exception e) {
-		logDiagnostic("No package found in current working directory.");
-	}
+  // make the CWD package available so that for example sub packages can reference their
+  // parent package.
+  try {
+    dub.packageManager.getOrLoadPackage(Path(options.root_path));
+  }
+  catch (Exception e) {
+    logDiagnostic("No package found in current working directory.");
+  }
 
-	return dub;
+  return dub;
 }
 
-class PackageDescriptionCommand : PackageBuildCommand
-{
-    Dub dub;
+class PackageDescriptionCommand : PackageBuildCommand {
+  Dub dub;
 
-    private
-    {
-        ProjectDescription desc;
-        string subPackageName;
-        string rootPackage;
-        TargetDescription[] neededTarget;
-        CommonOptions options;
+  private {
+    ProjectDescription desc;
+    string subPackageName;
+    string rootPackage;
+    TargetDescription[] neededTarget;
+    CommonOptions options;
+  }
+
+  this(CommonOptions options, string subPackageName) {
+    this.options = options;
+    dub = createDub(options);
+    setupPackage(dub, subPackageName);
+
+    this.subPackageName = subPackageName;
+    this.desc = dub.project.describe(getSettings);
+    this.rootPackage = this.desc.rootPackage;
+
+    this.neededTarget = this.desc.targets.filter!(a => a.rootPackage.canFind(rootPackage))
+      .filter!(a => a.rootPackage.canFind(subPackageName)).array;
+  }
+
+  string getSubPackageName() {
+    return subPackageName;
+  }
+
+  GeneratorSettings getSettings() {
+    GeneratorSettings settings;
+    settings.platform = m_buildPlatform;
+    settings.config = configuration;
+    settings.buildType = m_buildType;
+    settings.compiler = m_compiler;
+    settings.buildSettings.addOptions([BuildOption.unittests,
+        BuildOption.debugMode, BuildOption.debugInfo]);
+
+    return settings;
+  }
+
+  auto project() {
+    return dub.project;
+  }
+
+  string configuration() {
+    if (m_buildConfig.length) {
+      return m_buildConfig;
     }
 
-    this(CommonOptions options, string subPackageName)
-    {
-        this.options = options;
-        dub = createDub(options);
-        setupPackage(dub, subPackageName);
-
-        this.subPackageName = subPackageName;
-        this.desc = dub.project.describe(getSettings);
-        this.rootPackage = this.desc.rootPackage;
-
-        this.neededTarget = this.desc.targets.filter!(a => a.rootPackage.canFind(rootPackage))
-            .filter!(a => a.rootPackage.canFind(subPackageName)).array;
+    if (hasTrialConfiguration) {
+      return "trial";
     }
 
-    string getSubPackageName() {
-        return subPackageName;
+    return dub.project.getDefaultConfiguration(m_buildPlatform);
+  }
+
+  bool hasTrialConfiguration() {
+    return dub.configurations.canFind("trial");
+  }
+
+  auto targets() {
+    return this.desc.targets;
+  }
+
+  auto modules() {
+    logInfo("Looking for files inside `" ~ rootPackage ~ "`");
+
+    auto currentPackage = this.desc.packages.filter!(a => a.name == rootPackage).front;
+
+    auto packagePath = currentPackage.path;
+
+    if (neededTarget.empty) {
+      string[2][] val;
+      return val;
     }
 
-    GeneratorSettings getSettings() {
-        GeneratorSettings settings;
-        settings.platform = m_buildPlatform;
-        settings.config = configuration;
-        settings.buildType = m_buildType;
-        settings.compiler = m_compiler;
-        settings.buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
+    return neededTarget.front.buildSettings.sourceFiles.map!(a => a.to!string)
+      .filter!(a => a.startsWith(packagePath)).map!(a => [a, getModuleName(a)])
+      .filter!(a => a[1] != "").array.to!(string[2][]);
+  }
 
-        return settings;
+  auto files() {
+    return neededTarget.front.buildSettings.sourceFiles.map!(a => a.to!string).array;
+  }
+
+  string[] subPackages() {
+    auto subpackages = dub.packageManager.getOrLoadPackage(Path(options.root_path),
+        Path.init, true).subPackages;
+
+    auto outsidePackages = subpackages.filter!(a => a.path != "").array;
+    auto embeddedPackages = subpackages.filter!(a => a.path == "").array;
+
+    auto packages = embeddedPackages.map!(a => a.recipe.name).map!(a => ":" ~ a).array;
+
+    packages ~= outsidePackages.map!(
+        a => ":" ~ dub.packageManager.getOrLoadPackage(Path(a.path)).name).array;
+
+    return packages;
+  }
+
+  string[] externalModules() {
+    auto neededTargets = this.desc.targets.filter!(a => !a.rootPackage.canFind(rootPackage));
+
+    if (neededTargets.empty) {
+      return [];
     }
 
-    auto project() {
-        return dub.project;
+    auto files = cast(string[]) reduce!((a, b) => a ~ b)([],
+        neededTargets.map!(a => a.buildSettings.sourceFiles));
+
+    return files.map!(a => getModuleName(a)).filter!(a => a != "").array;
+  }
+
+  string getRootPackage() {
+    return rootPackage;
+  }
+
+  bool hasTrial() {
+    if (rootPackage == "trial") {
+      return true;
     }
 
-    string configuration()
-    {
-        if(m_buildConfig.length) {
-            return m_buildConfig;
-        }
-
-        if(hasTrialConfiguration) {
-            return "trial";
-        }
-
-        return dub.project.getDefaultConfiguration(m_buildPlatform);
+    if (neededTarget.empty) {
+      return false;
     }
 
-    bool hasTrialConfiguration()
-    {
-        return dub.configurations.canFind("trial");
+    return !neededTarget[0].buildSettings.versions.filter!(a => a.canFind("Have_trial")).empty;
+  }
+
+  override int execute(Dub dub, string[] free_args, string[] app_args) {
+    assert(false);
+  }
+
+  Settings readSettings() {
+    string path = buildPath(options.root_path, "trial.json").to!string;
+
+    if (!path.exists) {
+      Settings def;
+      std.file.write(path, def.serializeToJson.toPrettyString);
     }
 
-    auto targets()
-    {
-        return this.desc.targets;
+    Settings settings = readText(path).deserializeJson!Settings;
+
+    return settings;
+  }
+
+  void writeTestFile(string reporters = "") {
+    auto settings = readSettings();
+    if (reporters != "") {
+      settings.reporters = reporters.split(",").map!(a => a.strip).array;
     }
 
-    auto modules()
-    {
-        logInfo("Looking for files inside `" ~ rootPackage ~ "`");
+    auto content = generateTestFile(settings, hasTrial, modules, externalModules);
 
-        auto currentPackage = this.desc.packages.filter!(a => a.name == rootPackage).front;
-
-        auto packagePath = currentPackage.path;
-
-        if (neededTarget.empty)
-        {
-            string[2][] val;
-            return val;
-        }
-
-        return neededTarget.front.buildSettings.sourceFiles.map!(a => a.to!string)
-            .filter!(a => a.startsWith(packagePath)).map!(a => [a,
-                    getModuleName(a)]).filter!(a => a[1] != "").array.to!(string[2][]);
+    if (!mainFile.exists) {
+      std.file.write(mainFile, content);
+      return;
     }
 
-    auto files() {
-        return neededTarget.front.buildSettings.sourceFiles.map!(a => a.to!string).array;
+    ubyte[28] hash1 = sha224Of(content);
+    ubyte[28] hash2 = sha224Of(std.file.readText(mainFile));
+
+    if (toHexString(hash1) != toHexString(hash2)) {
+      std.file.write(mainFile, content);
     }
+  }
 
-    string[] subPackages() {
-        auto subpackages = dub.packageManager
-            .getOrLoadPackage(Path(options.root_path), Path.init, true)
-            .subPackages;
+  string mainFile() {
+    string name = subPackageName != "" ? subPackageName : "root";
+    name = name.replace(":", "");
 
-        auto outsidePackages = subpackages.filter!(a => a.path != "").array;
-        auto embeddedPackages = subpackages.filter!(a => a.path == "").array;
+    return buildPath(options.root_path, "trial_" ~ name ~ ".d").to!string;
+  }
 
-        auto packages = embeddedPackages
-            .map!(a => a.recipe.name)
-            .map!(a => ":" ~ a)
-                .array;
+  string buildFile() {
+    string name = subPackageName != "" ? subPackageName : "root";
+    name = name.replace(":", "");
 
-        packages ~= outsidePackages.map!(a => ":" ~ dub.packageManager.getOrLoadPackage(Path(a.path)).name).array;
-
-        return packages;
-    }
-
-    string[] externalModules()
-    {
-        auto neededTargets = this.desc.targets.filter!(a => !a.rootPackage.canFind(rootPackage));
-
-        if (neededTargets.empty)
-        {
-            return [];
-        }
-
-        auto files = cast(string[]) reduce!((a, b) => a ~ b)([],
-                neededTargets.map!(a => a.buildSettings.sourceFiles));
-
-        return files.map!(a => getModuleName(a)).filter!(a => a != "").array;
-    }
-
-    string getRootPackage() {
-        return rootPackage;
-    }
-
-    bool hasTrial()
-    {
-        if(rootPackage == "trial") {
-            return true;
-        }
-
-        if (neededTarget.empty)
-        {
-            return false;
-        }
-
-        return !neededTarget[0].buildSettings.versions.filter!(
-                a => a.canFind("Have_trial")).empty;
-    }
-
-    override int execute(Dub dub, string[] free_args, string[] app_args)
-    {
-        assert(false);
-    }
-
-    Settings readSettings()
-    {
-        string path = buildPath(options.root_path, "trial.json").to!string;
-
-        if (!path.exists)
-        {
-            Settings def;
-            std.file.write(path, def.serializeToJson.toPrettyString);
-        }
-
-        Settings settings = readText(path).deserializeJson!Settings;
-
-        return settings;
-    }
-
-    void writeTestFile(string reporters = "")
-    {
-        auto settings = readSettings();
-        if(reporters != "") {
-            settings.reporters = reporters.split(",").map!(a => a.strip).array;
-        }
-
-        auto content = generateTestFile(settings, hasTrial, modules, externalModules);
-
-        if(!mainFile.exists) {
-            std.file.write(mainFile, content);
-            return;
-        }
-
-        ubyte[28] hash1 = sha224Of(content);
-        ubyte[28] hash2 = sha224Of(std.file.readText(mainFile));
-
-        if(toHexString(hash1) != toHexString(hash2)) {
-            std.file.write(mainFile, content);
-        }
-    }
-
-    string mainFile()
-    {
-        string name = subPackageName != "" ? subPackageName : "root";
-        name = name.replace(":", "");
-
-        return buildPath(options.root_path , "trial_" ~ name ~ ".d").to!string;
-    }
-
-    string buildFile() {
-        string name = subPackageName != "" ? subPackageName : "root";
-        name = name.replace(":", "");
-
-        return "trial-" ~ name;
-    }
+    return "trial-" ~ name;
+  }
 }
