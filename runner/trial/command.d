@@ -36,6 +36,7 @@ class TrialCommand : PackageBuildCommand {
 		bool m_parallel = false;
 		bool m_force = false;
 		string m_testName = "";
+		string m_suiteName = "";
 		string m_reporters = "";
 		PackageDescriptionCommand m_description;
 	}
@@ -78,6 +79,10 @@ class TrialCommand : PackageBuildCommand {
 			"It will run all the tests that contain this text in the name."
 		]);
 
+		args.getopt("s|suite", &m_suiteName, [
+			"It will run all the suites that contain this text in the name."
+		]);
+
 		args.getopt("r|reporters", &m_reporters, [
 			"Override the reporters from the `trial.json` file. eg. -r spec,result,stats"
 		]);
@@ -102,13 +107,23 @@ class TrialCommand : PackageBuildCommand {
 		}
 
 		logInfo("Generate main file: " ~ m_description.mainFile);
-		m_description.writeTestFile(m_testName, m_reporters);
+		m_description.writeTestFile(m_reporters);
 
 		setupPackage(dub, package_name, m_buildType);
 
 		m_buildSettings.addOptions([ BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo ]);
 
-		run([ m_testName ]);
+		string[] arguments;
+
+		if(m_testName != "") {
+			arguments ~= ["-t", m_testName];
+		}
+
+		if(m_suiteName != "") {
+			arguments ~= ["-s", m_suiteName];
+		}
+
+		run(arguments);
 
 		return 0;
 	}

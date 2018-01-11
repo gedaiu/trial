@@ -44,13 +44,7 @@ void setupTemplate(string file)() {
   mixin("templates[`" ~ file ~"`] = import(`" ~ file ~ "`);");
 }
 
-string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] modules, string[] externalModules, string testName = "") {
-  testName = testName.replace(`"`, `\"`);
-
-  if(testName != "") {
-    logInfo("Selecting tests conaining `" ~ testName ~ "`.");
-  }
-
+string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] modules, string[] externalModules) {
   setupTemplate!"templates/coverage.css";
   setupTemplate!"templates/coverage.svg";
   setupTemplate!"templates/coverageBody.html";
@@ -147,12 +141,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
         describeTests.toJSONHierarchy.write;
         return 0;
       } else {
-        string filterName;
-        if(arguments.length > 1) {
-          filterName = arguments[1];
-        }
-
-        return runTests(filterName).isSuccess ? 0 : 1;
+        return runTests(arguments).isSuccess ? 0 : 1;
       }
   }
 

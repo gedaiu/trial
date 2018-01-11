@@ -224,14 +224,14 @@ class PackageDescriptionCommand : PackageBuildCommand
         return settings;
     }
 
-    void writeTestFile(string testName = "", string reporters = "")
+    void writeTestFile(string reporters = "")
     {
         auto settings = readSettings();
         if(reporters != "") {
             settings.reporters = reporters.split(",").map!(a => a.strip).array;
         }
 
-        auto content = generateTestFile(settings, hasTrial, modules, externalModules, testName);
+        auto content = generateTestFile(settings, hasTrial, modules, externalModules);
 
         if(!mainFile.exists) {
             std.file.write(mainFile, content);
