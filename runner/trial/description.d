@@ -31,6 +31,7 @@ import dub.internal.utils;
 import trial.discovery.code;
 import trial.settings;
 import trial.generator;
+import trial.jsonvalidation;
 
 Dub createDub(CommonOptions options) {
   Dub dub;
@@ -207,10 +208,12 @@ class PackageDescriptionCommand : PackageBuildCommand {
     Json jsonSettings;
 
     try {
-        jsonSettings = readText(path).parseJsonString;
+      jsonSettings = readText(path).parseJsonString;
     } catch (JSONException) {
       throw new Exception("The Json from `" ~ path ~ "` is invalid.");
     }
+
+    validateJson!Settings(jsonSettings,"", " in `" ~ path ~ "`");
 
     Settings settings = readText(path).deserializeJson!Settings;
 

@@ -25,7 +25,7 @@
 			"mainSourceFile": "source/app.d",
 
 			"dependencies": {
-				"dub": "~>1.6.0",
+				"dub": "~>1.7.0",
 				"fluent-asserts": "~>0.8.3",
 				"libdparse": "~>0.7.2-alpha.3"
 			}
@@ -52,7 +52,7 @@
 			"stringImportPaths": ["lifecycle/trial"],
 
 			"dependencies": {
-				"dub": "~>1.6.0",
+				"dub": "~>1.7.0",
 				"trial:lifecycle": "*",
 				"libdparse": "~>0.7.2-alpha.3",
 				"fluent-asserts": "~>0.8.3"

@@ -7,11 +7,6 @@
 		"allure",
 		"xunit"
 	],
-	"glyphs": {
-		"spec": {
-			"ok": "✓"
-		}
-	}
 
 	"testDiscovery": [
 		"trial.discovery.unit.UnitTestDiscovery",
