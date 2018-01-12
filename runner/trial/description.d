@@ -6,6 +6,7 @@ import std.file;
 import std.path;
 import std.conv;
 import std.string;
+import std.json;
 import std.digest.sha;
 
 import dub.internal.vibecompat.data.json;
@@ -203,6 +204,14 @@ class PackageDescriptionCommand : PackageBuildCommand {
       std.file.write(path, def.serializeToJson.toPrettyString);
     }
 
+    Json jsonSettings;
+
+    try {
+        jsonSettings = readText(path).parseJsonString;
+    } catch (JSONException) {
+      throw new Exception("The Json from `" ~ path ~ "` is invalid.");
+    }
+
     Settings settings = readText(path).deserializeJson!Settings;
 
     return settings;
@@ -210,6 +219,7 @@ class PackageDescriptionCommand : PackageBuildCommand {
 
   void writeTestFile(string reporters = "") {
     auto settings = readSettings();
+
     if (reporters != "") {
       settings.reporters = reporters.split(",").map!(a => a.strip).array;
     }
