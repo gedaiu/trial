@@ -50,7 +50,8 @@ class SpecReporter : ITestCaseLifecycleListener
     failure,
     testBegin,
     testEnd,
-    emptyLine
+    emptyLine,
+    danger
   }
 
   protected
@@ -115,6 +116,10 @@ class SpecReporter : ITestCaseLifecycleListener
           ReportWriter.Context.danger);
       break;
 
+    case Type.danger:
+      writer.write(text, ReportWriter.Context.danger);
+      break;
+
     default:
       writer.write(text);
     }
@@ -173,6 +178,12 @@ class SpecReporter : ITestCaseLifecycleListener
     {
       write!(Type.failure)(test.name, indents);
       failedTests++;
+    }
+
+    auto timeDiff = (test.endTime - test.beginTime).total!"msecs";
+
+    if(timeDiff > 20) {
+      write!(Type.danger)(" (" ~ timeDiff.to!string ~ "ms)", 0);
     }
 
     write!(Type.emptyLine);
@@ -297,4 +308,25 @@ unittest
   writer.buffer.should.equal(
       "\n" ~ "  some\n" ~ "    suite\n" ~ "      0) some test\n\n" ~ "    other\n"
       ~ "      1) some test\n");
+}
+
+/// it should print the test duration
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new SpecReporter(writer);
+
+  auto suite = SuiteResult("some.suite");
+  auto test = new TestResult("some test");
+
+  test.status = TestResult.Status.success;
+  test.endTime = Clock.currTime;
+  test.beginTime = test.endTime - 1.seconds;
+
+  test.throwable = new Exception("Random failure");
+
+  reporter.end("some.suite", test);
+
+  writer.buffer.should.equal(
+      "\n" ~ "  some\n" ~ "    suite\n" ~ "      ✓ some test (1000ms)\n");
 }
