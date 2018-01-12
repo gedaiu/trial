@@ -54,7 +54,14 @@ mixin template SettingsFields()
   ///
   GlyphSettings glyphs;
 
+  /// Where to generate artifacts
   string artifactsLocation = ".trial";
+
+  /// Show the duration with yellow if it takes more `warningTestDuration` msecs
+  uint warningTestDuration = 20;
+
+  /// Show the duration with red if it takes more `dangerTestDuration` msecs
+  uint dangerTestDuration = 100;
 }
 
 /// A structure representing the `trial.json` file
@@ -110,7 +117,9 @@ string toCode(Settings settings)
     settings.runInParallel.to!string ~ ", " ~
     settings.maxThreads.to!string ~ ", " ~
     settings.glyphs.toCode ~ ", " ~
-    `"` ~ settings.artifactsLocation ~ `"` ~
+    `"` ~ settings.artifactsLocation ~ `", ` ~
+    settings.warningTestDuration.to!string ~ `, ` ~
+    settings.dangerTestDuration.to!string ~
     ")";
 }
 
@@ -151,6 +160,7 @@ unittest
                     "LandingGlyphs(`✈`,`━`,`⋅`), " ~
                     "ProgressGlyphs(`░`,`▓`)" ~
       "), " ~
-      `".trial"` ~
+      `".trial", ` ~
+      "20, 100"~
       `)`);
 }

@@ -18,6 +18,7 @@ import std.string;
 import std.algorithm;
 
 import trial.interfaces;
+import trial.settings;
 import trial.reporters.writer;
 
 /// A structure containing the glyphs used for the spec reporter
@@ -51,7 +52,8 @@ class SpecReporter : ITestCaseLifecycleListener
     testBegin,
     testEnd,
     emptyLine,
-    danger
+    danger,
+    warning
   }
 
   protected
@@ -64,7 +66,7 @@ class SpecReporter : ITestCaseLifecycleListener
 
   private
   {
-    SpecGlyphs glyphs;
+    Settings settings;
   }
 
   this()
@@ -72,10 +74,10 @@ class SpecReporter : ITestCaseLifecycleListener
     writer = defaultWriter;
   }
 
-  this(SpecGlyphs glyphs)
+  this(Settings settings)
   {
     writer = defaultWriter;
-    this.glyphs = glyphs;
+    this.settings = settings;
   }
 
   this(ReportWriter writer)
@@ -102,12 +104,12 @@ class SpecReporter : ITestCaseLifecycleListener
       break;
 
     case Type.success:
-      writer.write(glyphs.ok, ReportWriter.Context.success);
+      writer.write(settings.glyphs.spec.ok, ReportWriter.Context.success);
       writer.write(" " ~ text, ReportWriter.Context.inactive);
       break;
 
     case Type.pending:
-      writer.write(glyphs.pending, ReportWriter.Context.info);
+      writer.write(settings.glyphs.spec.pending, ReportWriter.Context.info);
       writer.write(" " ~ text, ReportWriter.Context.inactive);
       break;
 
@@ -118,6 +120,10 @@ class SpecReporter : ITestCaseLifecycleListener
 
     case Type.danger:
       writer.write(text, ReportWriter.Context.danger);
+      break;
+
+    case Type.warning:
+      writer.write(text, ReportWriter.Context.warning);
       break;
 
     default:
@@ -182,7 +188,11 @@ class SpecReporter : ITestCaseLifecycleListener
 
     auto timeDiff = (test.endTime - test.beginTime).total!"msecs";
 
-    if(timeDiff > 20) {
+    if(timeDiff >= settings.warningTestDuration && timeDiff < settings.dangerTestDuration) {
+      write!(Type.warning)(" (" ~ timeDiff.to!string ~ "ms)", 0);
+    }
+
+    if(timeDiff >= settings.dangerTestDuration) {
       write!(Type.danger)(" (" ~ timeDiff.to!string ~ "ms)", 0);
     }
 
