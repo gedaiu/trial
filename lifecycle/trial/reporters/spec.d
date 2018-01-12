@@ -186,7 +186,7 @@ class SpecReporter : ITestCaseLifecycleListener
       failedTests++;
     }
 
-    auto timeDiff = (test.endTime - test.beginTime).total!"msecs";
+    auto timeDiff = (test.end - test.begin).total!"msecs";
 
     if(timeDiff >= settings.warningTestDuration && timeDiff < settings.dangerTestDuration) {
       write!(Type.warning)(" (" ~ timeDiff.to!string ~ "ms)", 0);
@@ -330,8 +330,8 @@ unittest
   auto test = new TestResult("some test");
 
   test.status = TestResult.Status.success;
-  test.endTime = Clock.currTime;
-  test.beginTime = test.endTime - 1.seconds;
+  test.end = Clock.currTime;
+  test.begin = test.end - 1.seconds;
 
   test.throwable = new Exception("Random failure");
 

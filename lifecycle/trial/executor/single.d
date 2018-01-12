@@ -81,6 +81,8 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
     void createTestResult(const(TestCase) testCase)
     {
       testResult = testCase.toTestResult;
+      testResult.begin = Clock.currTime;
+
       testResult.status = TestResult.Status.started;
       currentStep = testResult;
 
@@ -163,4 +165,34 @@ unittest {
 
   result.length.should.equal(1);
   result[0].tests[0].status.should.equal(TestResult.Status.pending);
+}
+
+
+/// Executing a test case should set the right begin and end times
+unittest {
+  import core.thread;
+  auto old = LifeCycleListeners.instance;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new DefaultExecutor);
+
+  scope (exit) {
+    LifeCycleListeners.instance = old;
+  }
+
+  void test() {
+    Thread.sleep(1.msecs);
+  }
+
+  auto testCase = const TestCase("Some.Suite", "test name", &test, []);
+
+  auto begin = Clock.currTime;
+  auto result = [ testCase ].runTests;
+
+  import std.stdio;
+  writeln(result);
+
+  auto testResult = result[0].tests[0];
+
+  testResult.begin.should.be.greaterThan(begin);
+  testResult.end.should.be.greaterThan(begin + 1.msecs);
 }

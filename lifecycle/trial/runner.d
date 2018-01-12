@@ -61,7 +61,7 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "spec-steps":
-        LifeCycleListeners.instance.add(new SpecStepsReporter(settings.glyphs.specSteps));
+        LifeCycleListeners.instance.add(new SpecStepsReporter(settings));
         break;
 
       case "dot-matrix":
