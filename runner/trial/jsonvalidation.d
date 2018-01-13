@@ -79,7 +79,7 @@ void validateJson(T)(const Json data, const string prefix = "", const string pos
   static if (isAggregateType!T) {
     string[] members;
 
-    static foreach (memberName; __traits(allMembers, T)) {
+    foreach (memberName; __traits(allMembers, T)) {
         members ~= memberName;
 
         static if (!isCallable!(__traits(getMember, T, memberName)) && memberName != "Monitor") {

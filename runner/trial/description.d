@@ -213,9 +213,7 @@ class PackageDescriptionCommand : PackageBuildCommand {
       throw new Exception("The Json from `" ~ path ~ "` is invalid.");
     }
 
-    static if(__traits(compiles, validateJson!Settings(Json.emptyObject))) {
-      validateJson!Settings(jsonSettings,"", " in `" ~ path ~ "`");
-    }
+    validateJson!Settings(jsonSettings,"", " in `" ~ path ~ "`");
 
     Settings settings = readText(path).deserializeJson!Settings;
 
