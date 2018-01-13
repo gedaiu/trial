@@ -113,6 +113,10 @@ void validateJson(T)(const Json data, const string prefix = "", const string pos
   }
 }
 
+version(unittest) {
+  import fluent.asserts;
+}
+
 /// validateJson should find a missing field
 unittest {
   struct Test {

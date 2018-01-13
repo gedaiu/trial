@@ -205,3 +205,10 @@ unittest {
     "    ✓ test1\n\n"~
     "*[0s]suite2 ");
 }
+
+unittest {
+  int[] list;
+  ({
+    list[4]++;
+  }).should.throwAnyException;
+}
