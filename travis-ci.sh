@@ -8,12 +8,12 @@ if [ "$DC" == "dmd" ]; then
 fi
 
 # test for successful release build
-dub build :runner -b release --compiler=$DC --registry https://code-mirror.dlang.io/
+dub build :runner -b release --compiler=$DC
 dub clean --all-packages
 
 # run unit tests
-dub test :runner --compiler=$DC --registry https://code-mirror.dlang.io/
-dub run :runner --compiler=$DC -- :lifecycle --coverage -v --registry https://code-mirror.dlang.io/
+dub test :runner --compiler=$DC
+dub run :runner --compiler=$DC -- :lifecycle --coverage -v
 
 # download vibe and run the tests
 git clone https://github.com/vibe-d/vibe.d.git
