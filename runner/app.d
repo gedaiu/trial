@@ -152,12 +152,7 @@ version(unitttest) {} else {
 		try {
 			cmd.execute(dub, remainingArgs);
 		} catch(Exception e) {
-			debug {
-				e.writeln;
-			} else {
-				e.msg.writeln;
-			}
-
+			stderr.writeln(e.msg);
 			return 1;
 		} finally {
 			if(arguments.canFind("--coverage")) {

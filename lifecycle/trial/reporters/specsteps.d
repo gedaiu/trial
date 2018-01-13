@@ -13,6 +13,10 @@ module trial.reporters.specsteps;
 import trial.interfaces;
 import trial.reporters.spec;
 import trial.reporters.writer;
+import trial.settings;
+
+import std.datetime;
+import std.conv;
 
 /// A structure containing the glyphs used for the spec steps reporter
 struct SpecStepsGlyphs {
@@ -49,14 +53,14 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
     size_t indents;
     size_t stepIndents;
 
-    SpecStepsGlyphs glyphs;
+    Settings settings;
   }
 
 
-  this(SpecStepsGlyphs glyphs)
+  this(Settings settings)
   {
-    super();
-    this.glyphs = glyphs;
+    super(settings);
+    this.settings = settings;
   }
 
   this(ReportWriter writer)
@@ -76,32 +80,43 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
     void begin(string suite, ref TestResult test)
     {
       stepIndents = 0;
-      write!(Type.none)(glyphs.testBegin ~ " " ~ test.name ~ "\n", indents);
+      write!(Type.none)(settings.glyphs.specSteps.testBegin ~ " " ~ test.name ~ "\n", indents);
     }
 
     void end(string suite, ref TestResult test)
     {
-      write!(Type.none)(glyphs.testEnd ~ " ", indents);
+      write!(Type.none)(settings.glyphs.specSteps.testEnd ~ " ", indents);
 
       if(test.status == TestResult.Status.success) {
-        write!(Type.success)("Success\n", 0);
+        write!(Type.success)("Success", 0);
       } else if(test.status == TestResult.Status.failure) {
-        write!(Type.failure)("Failure\n", 0);
+        write!(Type.failure)("Failure", 0);
         failedTests++;
       } else if(test.status == TestResult.Status.pending) {
-        write!(Type.pending)("Pending\n", 0);
+        write!(Type.pending)("Pending", 0);
       } else {
-        write!(Type.none)("Unknown\n", 0);
+        write!(Type.none)("Unknown", 0);
       }
+
+      auto timeDiff = (test.end - test.begin).total!"msecs";
+
+      if(timeDiff >= settings.warningTestDuration && timeDiff < settings.dangerTestDuration) {
+        write!(Type.warning)(" (" ~ timeDiff.to!string ~ "ms)", 0);
+      }
+
+      if(timeDiff >= settings.dangerTestDuration) {
+        write!(Type.danger)(" (" ~ timeDiff.to!string ~ "ms)", 0);
+      }
+
+      write!(Type.none)("\n", 0);
     }
   }
 
   void begin(string suite, string test, ref StepResult s)
   {
     stepIndents++;
-    write!(Type.none)(glyphs.step, indents);
+    write!(Type.none)(settings.glyphs.specSteps.step, indents);
     write!(Type.none)(" " ~ s.name ~ "\n", stepIndents);
-
   }
 
   void end(string suite, string test, ref StepResult)
@@ -156,7 +171,6 @@ unittest
         "    └ ✓ Success\n");
 }
 
-
 @("it should format a pending test")
 unittest
 {
@@ -178,6 +192,32 @@ unittest
         "    ┌ some test\n" ~
         "    └ - Pending\n");
 }
+
+
+@("it should print the duration of a long test")
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new SpecStepsReporter(writer);
+
+  auto suite = SuiteResult("some suite");
+  auto test = new TestResult("some test");
+  test.status = TestResult.Status.success;
+  test.end = Clock.currTime;
+  test.begin = test.end - 200.msecs;
+
+  reporter.begin(suite);
+  reporter.begin("some suite", test);
+  reporter.end("some suite", test);
+
+  reporter.end(suite);
+
+  writer.buffer.should.equal("\n" ~
+        "  some suite\n" ~
+        "    ┌ some test\n" ~
+        "    └ ✓ Success (200ms)\n");
+}
+
 
 @("it should format the steps for a failing test")
 unittest

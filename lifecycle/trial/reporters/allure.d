@@ -533,6 +533,9 @@ unittest
 unittest
 {
   string resource = buildPath(getcwd(), "some_image.png");
+  scope(exit) {
+    resource.remove();
+  }
   std.file.write(resource, "");
 
   auto uuid = randomUUID.toString;
