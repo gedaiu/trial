@@ -18,17 +18,17 @@ dub run :runner --compiler=$DC -- :lifecycle --coverage -v
 # download vibe and run the tests
 git clone https://github.com/vibe-d/vibe.d.git
 cd vibe.d
-../trial :data --coverage --registry https://code-mirror.dlang.io/
+../trial :data --coverage
 cd ..
 
 # Test the examples
 cd examples/unittest
-../../trial --coverage --registry https://code-mirror.dlang.io/
+../../trial --coverage
 
 cd ../spec
-../../trial --coverage --registry https://code-mirror.dlang.io/
+../../trial --coverage
 
 cd ../test-class
-../../trial --coverage --registry https://code-mirror.dlang.io/
+../../trial --coverage
 
 cd ../..
