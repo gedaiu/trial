@@ -20,16 +20,25 @@ import std.path;
 import trial.runner;
 import trial.interfaces;
 
+///
 struct Stat
 {
+  ///
   string name;
+  ///
   SysTime begin;
+  ///
   SysTime end;
+  ///
   TestResult.Status status = TestResult.Status.unknown;
+  ///
+  SourceLocation location;
 }
 
+///
 class StatStorage
 {
+  ///
   Stat[] values;
 }
 
@@ -96,7 +105,7 @@ class StatsReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
   void end(string suite, ref TestResult test)
   {
-    storage.values ~= Stat(suite ~ "." ~ test.name, test.begin, Clock.currTime, test.status);
+    storage.values ~= Stat(suite ~ "." ~ test.name, test.begin, Clock.currTime, test.status, SourceLocation(test.fileName, test.line));
   }
 
   void begin(string suite, string test, ref StepResult step)
@@ -191,6 +200,8 @@ unittest
   SuiteResult suite = SuiteResult("suite");
 
   auto test = new TestResult("test1");
+  test.fileName = "file1.d";
+  test.line = 11;
   test.status = TestResult.Status.success;
 
   stats.begin(suite);
@@ -201,15 +212,19 @@ unittest
 
   test.name = "test2";
   test.status = TestResult.Status.failure;
+  test.fileName = "file2.d";
+  test.line = 22;
+
   stats.begin("suite", test);
   stats.end("suite", test);
 
   storage.values.length.should.equal(2);
   storage.values.map!(a => a.name).array.should.equal(["suite.test1", "suite.test2"]);
-  storage.values.map!(a => a.status)
-    .array.should.equal([TestResult.Status.success, TestResult.Status.failure]);
+  storage.values.map!(a => a.status).array.should.equal([TestResult.Status.success, TestResult.Status.failure]);
   storage.values.map!(a => a.begin).array.should.equal([test.begin, test.begin]);
   storage.values.map!(a => a.end > a.begin).array.should.equal([true, true]);
+  storage.values.map!(a => a.location.fileName).array.should.equal(["file1.d", "file2.d"]);
+  storage.values.map!(a => a.location.line).array.should.equal([11, 22].to!(size_t[]));
 }
 
 @("it should add steps to the storage")
@@ -247,26 +262,34 @@ unittest
 string toCsv(const(StatStorage) storage)
 {
   return storage.values.map!(a => [a.name, a.begin.toISOExtString,
-      a.end.toISOExtString, a.status.to!string]).map!(a => a.join(',')).join('\n');
+      a.end.toISOExtString, a.status.to!string, a.location.fileName, a.location.line.to!string]).map!(a => a.join(',')).join('\n');
 }
 
 @("it should convert stat storage to csv")
 unittest
 {
   auto stats = new StatStorage;
-  stats.values = [Stat("1", SysTime.min, SysTime.max), Stat("2", SysTime.min, SysTime.max)];
+  stats.values = [Stat("1", SysTime.min, SysTime.max), Stat("2", SysTime.min, SysTime.max, TestResult.Status.success, SourceLocation("file.d", 2))];
 
-  stats.toCsv.should.equal("1,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown\n"
-      ~ "2,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown");
+  stats.toCsv.should.equal("1,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown,,0\n"
+      ~ "2,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,success,file.d,2");
 }
 
 StatStorage toStatStorage(const(string) data)
 {
   auto stat = new StatStorage;
 
-  stat.values = data.split('\n').map!(a => a.split(',')).map!(a => Stat(a[0],
-      SysTime.fromISOExtString(a[1]), SysTime.fromISOExtString(a[2]),
-      a[3].to!(TestResult.Status))).array;
+  stat.values = data
+    .split('\n')
+    .map!(a => a.split(','))
+    .filter!(a => a.length == 6)
+    .map!(a =>
+      Stat(a[0],
+      SysTime.fromISOExtString(a[1]),
+      SysTime.fromISOExtString(a[2]),
+      a[3].to!(TestResult.Status),
+      SourceLocation(a[4], a[5].to!size_t)))
+    .array;
 
   return stat;
 }
@@ -274,19 +297,23 @@ StatStorage toStatStorage(const(string) data)
 @("it should create stat storage from csv")
 unittest
 {
-  auto storage = ("1,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,success\n"
-      ~ "2,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown").toStatStorage;
+  auto storage = ("1,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,success,,0\n"
+      ~ "2,-29227-04-19T21:11:54.5224192Z,+29228-09-14T02:48:05.4775807Z,unknown,file.d,12").toStatStorage;
 
   storage.values.length.should.equal(2);
   storage.values[0].name.should.equal("1");
   storage.values[0].begin.should.equal(SysTime.min);
   storage.values[0].end.should.equal(SysTime.max);
   storage.values[0].status.should.equal(TestResult.Status.success);
+  storage.values[0].location.fileName.should.equal("");
+  storage.values[0].location.line.should.equal(0);
 
   storage.values[1].name.should.equal("2");
   storage.values[1].begin.should.equal(SysTime.min);
   storage.values[1].end.should.equal(SysTime.max);
   storage.values[1].status.should.equal(TestResult.Status.unknown);
+  storage.values[1].location.fileName.should.equal("file.d");
+  storage.values[1].location.line.should.equal(12);
 }
 
 StatStorage statsFromFile(string fileName)
