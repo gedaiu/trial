@@ -622,9 +622,7 @@ unittest
   LifeCycleListeners.instance = new LifeCycleListeners;
   LifeCycleListeners.instance.add(new DefaultExecutor);
 
-  auto begin = Clock.currTime - 1.msecs;
   auto result = tests.runTests();
-  auto end = Clock.currTime + 1.msecs;
 
   result.length.should.equal(0);
 }
