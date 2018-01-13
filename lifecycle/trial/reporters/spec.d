@@ -18,6 +18,7 @@ import std.string;
 import std.algorithm;
 
 import trial.interfaces;
+import trial.settings;
 import trial.reporters.writer;
 
 /// A structure containing the glyphs used for the spec reporter
@@ -50,7 +51,9 @@ class SpecReporter : ITestCaseLifecycleListener
     failure,
     testBegin,
     testEnd,
-    emptyLine
+    emptyLine,
+    danger,
+    warning
   }
 
   protected
@@ -63,7 +66,7 @@ class SpecReporter : ITestCaseLifecycleListener
 
   private
   {
-    SpecGlyphs glyphs;
+    Settings settings;
   }
 
   this()
@@ -71,10 +74,10 @@ class SpecReporter : ITestCaseLifecycleListener
     writer = defaultWriter;
   }
 
-  this(SpecGlyphs glyphs)
+  this(Settings settings)
   {
     writer = defaultWriter;
-    this.glyphs = glyphs;
+    this.settings = settings;
   }
 
   this(ReportWriter writer)
@@ -101,18 +104,26 @@ class SpecReporter : ITestCaseLifecycleListener
       break;
 
     case Type.success:
-      writer.write(glyphs.ok, ReportWriter.Context.success);
+      writer.write(settings.glyphs.spec.ok, ReportWriter.Context.success);
       writer.write(" " ~ text, ReportWriter.Context.inactive);
       break;
 
     case Type.pending:
-      writer.write(glyphs.pending, ReportWriter.Context.info);
+      writer.write(settings.glyphs.spec.pending, ReportWriter.Context.info);
       writer.write(" " ~ text, ReportWriter.Context.inactive);
       break;
 
     case Type.failure:
       writer.write(failedTests.to!string ~ ") " ~ text,
           ReportWriter.Context.danger);
+      break;
+
+    case Type.danger:
+      writer.write(text, ReportWriter.Context.danger);
+      break;
+
+    case Type.warning:
+      writer.write(text, ReportWriter.Context.warning);
       break;
 
     default:
@@ -173,6 +184,16 @@ class SpecReporter : ITestCaseLifecycleListener
     {
       write!(Type.failure)(test.name, indents);
       failedTests++;
+    }
+
+    auto timeDiff = (test.end - test.begin).total!"msecs";
+
+    if(timeDiff >= settings.warningTestDuration && timeDiff < settings.dangerTestDuration) {
+      write!(Type.warning)(" (" ~ timeDiff.to!string ~ "ms)", 0);
+    }
+
+    if(timeDiff >= settings.dangerTestDuration) {
+      write!(Type.danger)(" (" ~ timeDiff.to!string ~ "ms)", 0);
     }
 
     write!(Type.emptyLine);
@@ -297,4 +318,25 @@ unittest
   writer.buffer.should.equal(
       "\n" ~ "  some\n" ~ "    suite\n" ~ "      0) some test\n\n" ~ "    other\n"
       ~ "      1) some test\n");
+}
+
+/// it should print the test duration
+unittest
+{
+  auto writer = new BufferedWriter;
+  auto reporter = new SpecReporter(writer);
+
+  auto suite = SuiteResult("some.suite");
+  auto test = new TestResult("some test");
+
+  test.status = TestResult.Status.success;
+  test.end = Clock.currTime;
+  test.begin = test.end - 1.seconds;
+
+  test.throwable = new Exception("Random failure");
+
+  reporter.end("some.suite", test);
+
+  writer.buffer.should.equal(
+      "\n" ~ "  some\n" ~ "    suite\n" ~ "      ✓ some test (1000ms)\n");
 }

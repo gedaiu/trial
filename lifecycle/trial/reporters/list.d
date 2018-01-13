@@ -18,6 +18,7 @@ import std.string;
 import std.algorithm;
 
 import trial.interfaces;
+import trial.settings;
 import trial.reporters.spec;
 import trial.reporters.writer;
 
@@ -25,9 +26,9 @@ import trial.reporters.writer;
 /// fail
 class ListReporter : SpecReporter
 {
-  this(SpecGlyphs glyphs)
+  this(Settings settings)
   {
-    super(glyphs);
+    super(settings);
   }
 
   this(ReportWriter writer)
