@@ -16,6 +16,7 @@ import std.traits;
 import std.string;
 import std.conv;
 import std.path;
+import std.getopt;
 
 import trial.settings;
 import trial.executor.single;
@@ -268,13 +269,17 @@ unittest {
 }
 
 /// Runs the tests and returns the results
-auto runTests(const(TestCase)[] tests, string testName = "") {
+auto runTests(const(TestCase)[] tests, string testName = "", string suiteName = "") {
   setupSegmentationHandler!true();
 
   const(TestCase)[] filteredTests = tests;
 
   if(testName != "") {
     filteredTests = tests.filter!(a => a.name.indexOf(testName) != -1).array;
+  }
+
+  if(suiteName != "") {
+    filteredTests = tests.filter!(a => a.suiteName.indexOf(suiteName) != -1).array;
   }
 
   LifeCycleListeners.instance.begin(filteredTests.length);
@@ -292,8 +297,17 @@ auto runTests(const(TestCase)[] tests, string testName = "") {
 }
 
 /// ditto
-auto runTests(string testName = "") {
-  return runTests(LifeCycleListeners.instance.getTestCases, testName);
+auto runTests(string[] arguments) {
+  string testName;
+  string suiteName;
+
+  getopt(
+    arguments,
+    "testName|t",  &testName,
+    "suiteName|s",  &suiteName
+  );
+
+  return runTests(LifeCycleListeners.instance.getTestCases, testName, suiteName);
 }
 
 /// Check if a suite result list is a success
