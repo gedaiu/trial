@@ -237,6 +237,39 @@ unittest
   clearCommentTokens("/+++ text +++/").should.equal("text");
 }
 
+size_t extractLine(string name) {
+  import std.stdio;
+
+  static if(__VERSION__ >= 2077) {
+    auto idx = name.indexOf("_d_");
+
+    if(idx > 0) {
+      idx += 3;
+      auto lastIdx = name.lastIndexOf("_");
+
+      if(idx != -1) {
+        return name[idx .. lastIdx].to!size_t;
+      }
+    }
+  } else {
+    enum len = unitTestKey.length;
+    auto postFix = name[len .. $];
+    auto idx = postFix.indexOf("_");
+
+    if(idx != -1) {
+      return postFix[0 .. idx].to!size_t;
+    }
+  }
+
+  auto pieces = name.split("_").filter!(a => a.isNumeric).map!(a => a.to!size_t).array;
+
+  if(pieces.length > 0) {
+    return pieces[0];
+  }
+
+  return 0;
+}
+
 /// The default test discovery looks for unit test sections and groups them by module
 class UnitTestDiscovery : ITestDiscovery
 {
@@ -382,21 +415,6 @@ class UnitTestDiscovery : ITestDiscovery
       }
 
       return name;
-    }
-
-    size_t extractLine(string name) {
-      static if(__VERSION__ >= 2077) {
-        auto idx = name.indexOf("_d_") + 3;
-        auto lastIdx = name.lastIndexOf("_");
-
-        return idx != -1 ? name[idx .. lastIdx].to!size_t : 0;
-      } else {
-        enum len = unitTestKey.length;
-        auto postFix = name[len .. $];
-        auto idx = postFix.indexOf("_");
-
-        return idx != -1 ? postFix[0 .. idx].to!size_t : 0;
-      }
     }
 
     SourceLocation testSourceLocation(alias test)(string fileName)
@@ -564,6 +582,11 @@ private void testTempl(X...)() if (X.length == 1)
 version (unittest)
 {
   import fluent.asserts;
+}
+
+/// It should extract the line from the default test name
+unittest {
+  extractLine("__unittest_runTestsOnDevices_133_0()").should.equal(133);
 }
 
 /// It should find this test
@@ -743,14 +766,14 @@ unittest
   foreach (index, test; allTests)
   {
     static if(__VERSION__ >= 2077) {
-      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_718") != -1)
+      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_741") != -1)
       {
-        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_718";
+        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_741";
       }
     } else {
-      if (test.name.indexOf(unitTestKey ~ "718") != -1)
+      if (test.name.indexOf(unitTestKey ~ "741") != -1)
       {
-        allTests[index].name = unitTestKey ~ "718";
+        allTests[index].name = unitTestKey ~ "741";
       }
     }
   }
