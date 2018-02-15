@@ -238,8 +238,6 @@ unittest
 }
 
 size_t extractLine(string name) {
-  import std.stdio;
-
   static if(__VERSION__ >= 2077) {
     auto idx = name.indexOf("_d_");
 
@@ -247,7 +245,7 @@ size_t extractLine(string name) {
       idx += 3;
       auto lastIdx = name.lastIndexOf("_");
 
-      if(idx != -1) {
+      if(idx != -1 && isNumeric(name[idx .. lastIdx])) {
         return name[idx .. lastIdx].to!size_t;
       }
     }
@@ -256,7 +254,7 @@ size_t extractLine(string name) {
     auto postFix = name[len .. $];
     auto idx = postFix.indexOf("_");
 
-    if(idx != -1) {
+    if(idx != -1 && isNumeric(postFix[0 .. idx])) {
       return postFix[0 .. idx].to!size_t;
     }
   }
@@ -766,14 +764,14 @@ unittest
   foreach (index, test; allTests)
   {
     static if(__VERSION__ >= 2077) {
-      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_741") != -1)
+      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_739") != -1)
       {
-        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_741";
+        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_739";
       }
     } else {
-      if (test.name.indexOf(unitTestKey ~ "741") != -1)
+      if (test.name.indexOf(unitTestKey ~ "739") != -1)
       {
-        allTests[index].name = unitTestKey ~ "741";
+        allTests[index].name = unitTestKey ~ "739";
       }
     }
   }
