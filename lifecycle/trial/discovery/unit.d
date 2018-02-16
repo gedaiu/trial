@@ -237,12 +237,43 @@ unittest
   clearCommentTokens("/+++ text +++/").should.equal("text");
 }
 
+size_t extractLine(string name) {
+  static if(__VERSION__ >= 2077) {
+    auto idx = name.indexOf("_d_");
+
+    if(idx > 0) {
+      idx += 3;
+      auto lastIdx = name.lastIndexOf("_");
+
+      if(idx != -1 && isNumeric(name[idx .. lastIdx])) {
+        return name[idx .. lastIdx].to!size_t;
+      }
+    }
+  } else {
+    enum len = unitTestKey.length;
+    auto postFix = name[len .. $];
+    auto idx = postFix.indexOf("_");
+
+    if(idx != -1 && isNumeric(postFix[0 .. idx])) {
+      return postFix[0 .. idx].to!size_t;
+    }
+  }
+
+  auto pieces = name.split("_").filter!(a => a.isNumeric).map!(a => a.to!size_t).array;
+
+  if(pieces.length > 0) {
+    return pieces[0];
+  }
+
+  return 0;
+}
+
 /// The default test discovery looks for unit test sections and groups them by module
 class UnitTestDiscovery : ITestDiscovery
 {
   TestCase[string][string] testCases;
 
-  TestCase[] getTestCases()
+  TestCase[] getTestCases()  
   {
     return testCases.values.map!(a => a.values).joiner.array;
   }
@@ -324,11 +355,7 @@ class UnitTestDiscovery : ITestDiscovery
 
             if (lastName == "")
             {
-              static if(__VERSION__ >= 2077) {
-                lastName = moduleName.replace(".", "_") ~ "_d_" ~ token.line.to!string;
-              } else {
-                lastName = unitTestKey ~ token.line.to!string;
-              }
+              lastName = "unnamed test at line " ~ token.line.to!string;
             }
 
             auto testCase = TestCase(moduleName, lastName, &noTest, labels);
@@ -365,13 +392,17 @@ class UnitTestDiscovery : ITestDiscovery
       }
 
       enum len = unitTestKey.length;
+      size_t line;
+
+      try
+      {
+        line = extractLine(name);
+      } catch(Exception) {}
 
       if (name == defaultName && name.indexOf(unitTestKey) == 0)
       {
         try
         {
-          auto line = extractLine(name);
-
           if(line != 0) {
             name = comments.getComment(line, defaultName);
           }
@@ -381,22 +412,11 @@ class UnitTestDiscovery : ITestDiscovery
         }
       }
 
-      return name;
-    }
-
-    size_t extractLine(string name) {
-      static if(__VERSION__ >= 2077) {
-        auto idx = name.indexOf("_d_") + 3;
-        auto lastIdx = name.lastIndexOf("_");
-
-        return idx != -1 ? name[idx .. lastIdx].to!size_t : 0;
-      } else {
-        enum len = unitTestKey.length;
-        auto postFix = name[len .. $];
-        auto idx = postFix.indexOf("_");
-
-        return idx != -1 ? postFix[0 .. idx].to!size_t : 0;
+      if (name == defaultName) {
+        name = "unnamed test at line " ~ line.to!string;
       }
+
+      return name;
     }
 
     SourceLocation testSourceLocation(alias test)(string fileName)
@@ -566,6 +586,16 @@ version (unittest)
   import fluent.asserts;
 }
 
+/// It should extract the line from the default test name
+unittest {
+  extractLine("__unittest_runTestsOnDevices_133_0()").should.equal(133);
+}
+
+/// It should extract the line from the default test name with _d_ in symbol name
+unittest {
+  extractLine("__unittest_runTestsOnDevices_d_133_0()").should.equal(133);
+}
+
 /// It should find this test
 unittest
 {
@@ -721,13 +751,8 @@ unittest
   immutable line = __LINE__ - 3;
   auto testDiscovery = new UnitTestDiscovery;
 
-  static if(__VERSION__ >= 2077) {
-    testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain(__MODULE__.replace(".", "_") ~ "_d_" ~ line.to!string);
-  } else {
-    testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain(unitTestKey ~ line.to!string);
-  }
+  testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
+      .array.should.contain("unnamed test at line 748");
 }
 
 /// discoverTestCases should find the same tests like testCases
@@ -737,24 +762,12 @@ unittest
 
   testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
 
-  auto allTests = testDiscovery.getTestCases.sort!((a,
-      b) => a.location.line < b.location.line).array;
+  auto allTests = testDiscovery
+    .getTestCases
+    .sort!((a, b) => a.location.line < b.location.line)
+    .array;
 
-  foreach (index, test; allTests)
-  {
-    static if(__VERSION__ >= 2077) {
-      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_718") != -1)
-      {
-        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_718";
-      }
-    } else {
-      if (test.name.indexOf(unitTestKey ~ "718") != -1)
-      {
-        allTests[index].name = unitTestKey ~ "718";
-      }
-    }
-  }
-
-  testDiscovery.discoverTestCases(__FILE__).map!(a => a.toString).join("\n")
+  testDiscovery
+    .discoverTestCases(__FILE__).map!(a => a.toString).join("\n")
     .should.equal(allTests.map!(a => a.toString).join("\n"));
 }
