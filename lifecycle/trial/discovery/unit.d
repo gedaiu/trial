@@ -273,7 +273,7 @@ class UnitTestDiscovery : ITestDiscovery
 {
   TestCase[string][string] testCases;
 
-  TestCase[] getTestCases()
+  TestCase[] getTestCases()  
   {
     return testCases.values.map!(a => a.values).joiner.array;
   }
@@ -355,11 +355,7 @@ class UnitTestDiscovery : ITestDiscovery
 
             if (lastName == "")
             {
-              static if(__VERSION__ >= 2077) {
-                lastName = moduleName.replace(".", "_") ~ "_d_" ~ token.line.to!string;
-              } else {
-                lastName = unitTestKey ~ token.line.to!string;
-              }
+              lastName = "unnamed test at line " ~ token.line.to!string;
             }
 
             auto testCase = TestCase(moduleName, lastName, &noTest, labels);
@@ -396,13 +392,17 @@ class UnitTestDiscovery : ITestDiscovery
       }
 
       enum len = unitTestKey.length;
+      size_t line;
+
+      try
+      {
+        line = extractLine(name);
+      } catch(Exception) {}
 
       if (name == defaultName && name.indexOf(unitTestKey) == 0)
       {
         try
         {
-          auto line = extractLine(name);
-
           if(line != 0) {
             name = comments.getComment(line, defaultName);
           }
@@ -410,6 +410,10 @@ class UnitTestDiscovery : ITestDiscovery
         catch (Exception e)
         {
         }
+      }
+
+      if (name == defaultName) {
+        name = "unnamed test at line " ~ line.to!string;
       }
 
       return name;
@@ -587,6 +591,11 @@ unittest {
   extractLine("__unittest_runTestsOnDevices_133_0()").should.equal(133);
 }
 
+/// It should extract the line from the default test name with _d_ in symbol name
+unittest {
+  extractLine("__unittest_runTestsOnDevices_d_133_0()").should.equal(133);
+}
+
 /// It should find this test
 unittest
 {
@@ -742,13 +751,8 @@ unittest
   immutable line = __LINE__ - 3;
   auto testDiscovery = new UnitTestDiscovery;
 
-  static if(__VERSION__ >= 2077) {
-    testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain(__MODULE__.replace(".", "_") ~ "_d_" ~ line.to!string);
-  } else {
-    testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain(unitTestKey ~ line.to!string);
-  }
+  testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
+      .array.should.contain("unnamed test at line 748");
 }
 
 /// discoverTestCases should find the same tests like testCases
@@ -758,24 +762,12 @@ unittest
 
   testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
 
-  auto allTests = testDiscovery.getTestCases.sort!((a,
-      b) => a.location.line < b.location.line).array;
+  auto allTests = testDiscovery
+    .getTestCases
+    .sort!((a, b) => a.location.line < b.location.line)
+    .array;
 
-  foreach (index, test; allTests)
-  {
-    static if(__VERSION__ >= 2077) {
-      if (test.name.indexOf(__MODULE__.replace(".", "_") ~ "_d_739") != -1)
-      {
-        allTests[index].name = __MODULE__.replace(".", "_") ~ "_d_739";
-      }
-    } else {
-      if (test.name.indexOf(unitTestKey ~ "739") != -1)
-      {
-        allTests[index].name = unitTestKey ~ "739";
-      }
-    }
-  }
-
-  testDiscovery.discoverTestCases(__FILE__).map!(a => a.toString).join("\n")
+  testDiscovery
+    .discoverTestCases(__FILE__).map!(a => a.toString).join("\n")
     .should.equal(allTests.map!(a => a.toString).join("\n"));
 }
