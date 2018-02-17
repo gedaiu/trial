@@ -35,10 +35,11 @@ class HtmlReporter : ILifecycleListener
   private
   {
     bool success = true;
+    immutable string destination;
   }
 
   this(string destination) {
-
+    this.destination = destination;
   }
 
   void begin(ulong)
@@ -147,7 +148,7 @@ class HtmlReporter : ILifecycleListener
 
     content ~= details ~ "\n</div>" ~ footer;
 
-    std.file.write("trial-result.html", content);
+    std.file.write(destination, content);
   }
 }
 

@@ -515,7 +515,10 @@ unittest
 @("it should be able to limit the parallel tests number")
 unittest
 {
-  TestCase[] tests = [ TestCase("suite2", "test1", &stepMock1), TestCase("suite2", "test3", &stepMock1), TestCase("suite2", "test2", &stepMock1) ];
+  TestCase[] tests = [ 
+    TestCase("suite2", "test1", &stepMock1), 
+    TestCase("suite2", "test3", &stepMock1), 
+    TestCase("suite2", "test2", &stepMock1) ];
 
   auto old = LifeCycleListeners.instance;
   scope(exit) LifeCycleListeners.instance = old;
