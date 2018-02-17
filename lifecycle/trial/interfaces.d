@@ -33,6 +33,30 @@ interface ILifecycleListener
   void end(SuiteResult[]);
 }
 
+/// Convert a Throwable to a json string
+string toJsonString(Throwable throwable) {
+  if(throwable is null) {
+    return "{}";
+  }
+
+  string fields;
+
+  fields ~= `"file":"` ~ throwable.file ~ `",`;
+  fields ~= `"line":"` ~ throwable.line.to!string ~ `",`;
+  fields ~= `"msg":"` ~ throwable.msg ~ `",`;
+  fields ~= `"info":"` ~ throwable.info.to!string ~ `",`;
+  fields ~= `"raw":"` ~ throwable.toString ~ `"`;
+
+  return "{" ~ fields ~ "}";
+}
+
+/// convert a Throwable to json
+unittest {
+  auto exception = new Exception("some message");
+  exception.toJsonString.should.equal(`{"file":"lifecycle/trial/interfaces.d","line":"55","msg":"some message","info":"null","raw":"object.Exception@lifecycle/trial/interfaces.d(55): some message"}`);
+}
+
+
 /// A listener that provides test cases to be executed
 interface ITestDiscovery {
   /// Get the test cases from the compiled source code
@@ -139,6 +163,23 @@ struct Attachment {
       LifeCycleListeners.instance.attach(a);
     }
   }
+
+  string toString() inout {
+    string fields;
+    fields ~= `"name":"`~name~`",`;
+    fields ~= `"file":"`~file~`",`;
+    fields ~= `"mime":"`~mime~`"`;
+
+    return "{" ~ fields ~ "}";
+  }
+}
+
+/// Convert an attachement to Json string
+unittest {
+
+  Attachment("dub", "dub.json", "text/json").toString.should.equal(
+    `{"name":"dub","file":"dub.json","mime":"text/json"}`
+  );
 }
 
 /// Represents a line of code in a certain file.
@@ -306,6 +347,39 @@ struct SuiteResult
     this.end = end;
     this.tests = tests;
   }
+
+  ///
+  this(string name, SysTime begin, SysTime end, TestResult[] tests, Attachment[] attachments) {
+    this.name = name;
+    this.begin = begin;
+    this.end = end;
+    this.tests = tests;
+    this.attachments = attachments;
+  }
+
+  /// Convert the struct to a json string
+  string toString() {
+    string fields;
+    fields ~= `"name":"` ~ name.escapeJson ~ `",`;
+    fields ~= `"begin":"` ~ begin.toISOExtString ~ `",`;
+    fields ~= `"end":"` ~ end.toISOExtString ~ `",`;
+    fields ~= `"tests":[` ~ tests.map!(a => a.toString).join(",") ~ `],`;
+    fields ~= `"attachments":[` ~ attachments.map!(a => a.toString).join(",") ~ `]`;
+
+    return "{" ~ fields ~ "}";
+  }
+}
+
+unittest {
+  auto result = SuiteResult("suite name",
+    SysTime.fromISOExtString("2000-01-01T00:00:00Z"),
+    SysTime.fromISOExtString("2000-01-01T01:00:00Z"),
+    [ new TestResult("test name") ],
+    [ Attachment() ]);
+
+  result.toString.should.equal(
+    `{"name":"suite name","begin":"2000-01-01T00:00:00Z","end":"2000-01-01T01:00:00Z","tests":[{"name":"test name","begin":"-29227-04-19T21:11:54.5224192Z","end":"-29227-04-19T21:11:54.5224192Z","steps":[],"attachments":[],"fileName":"","line":"0","status":"created","labels":[],"throwable":{}}],"attachments":[{"name":"","file":"","mime":""}]}`
+  );
 }
 
 /// A step result
@@ -330,6 +404,37 @@ class StepResult
     begin = SysTime.min;
     end = SysTime.min;
   }
+
+  protected string fields() {
+    string result;
+    
+    result ~= `"name":"` ~ name.escapeJson ~ `",`;
+    result ~= `"begin":"` ~ begin.toISOExtString ~ `",`;
+    result ~= `"end":"` ~ end.toISOExtString ~ `",`;
+    result ~= `"steps":[` ~ steps.map!(a => a.toString).join(",") ~ `],`;
+    result ~= `"attachments":[` ~ attachments.map!(a => a.toString).join(",") ~ `]`;
+
+    return result;
+  }
+
+  /// Convert the result to a json string
+  override string toString() {
+    return "{" ~ fields ~ "}";
+  }
+}
+
+/// Convert a step result to a json
+unittest {
+  auto step = new StepResult();
+  step.name = "step name";
+  step.begin = SysTime.fromISOExtString("2000-01-01T00:00:00Z");
+  step.end = SysTime.fromISOExtString("2000-01-01T01:00:00Z");
+  step.steps = [ new StepResult() ];
+  step.attachments = [ Attachment() ];
+
+  step.toString.should.equal(`{"name":"step name","begin":"2000-01-01T00:00:00Z","end":"2000-01-01T01:00:00Z","steps":` ~
+  `[{"name":"","begin":"-29227-04-19T21:11:54.5224192Z","end":"-29227-04-19T21:11:54.5224192Z","steps":[],"attachments":`~
+  `[]}],"attachments":[{"name":"","file":"","mime":""}]}`);
 }
 
 /// A test result
@@ -379,6 +484,19 @@ class TestResult : StepResult
   {
     this.name = name;
     super();
+  }
+
+  /// Convert the result to a json string
+  override string toString() {
+    string result = fields ~ ",";
+
+    result ~= `"fileName":"` ~ fileName.escapeJson ~ `",`;
+    result ~= `"line":"` ~ line.to!string ~ `",`;
+    result ~= `"status":"` ~ status.to!string ~ `",`;
+    result ~= `"labels":[` ~ labels.map!(a => a.toString).join(",") ~ `],`;
+    result ~= `"throwable":` ~ throwable.toJsonString;
+
+    return "{" ~ result ~ "}";
   }
 }
 
