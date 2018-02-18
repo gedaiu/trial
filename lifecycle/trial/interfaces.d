@@ -41,11 +41,11 @@ string toJsonString(Throwable throwable) {
 
   string fields;
 
-  fields ~= `"file":"` ~ throwable.file ~ `",`;
-  fields ~= `"line":"` ~ throwable.line.to!string ~ `",`;
-  fields ~= `"msg":"` ~ throwable.msg ~ `",`;
-  fields ~= `"info":"` ~ throwable.info.to!string ~ `",`;
-  fields ~= `"raw":"` ~ throwable.toString ~ `"`;
+  fields ~= `"file":"` ~ throwable.file.escapeJson ~ `",`;
+  fields ~= `"line":"` ~ throwable.line.to!string.escapeJson ~ `",`;
+  fields ~= `"msg":"` ~ throwable.msg.escapeJson ~ `",`;
+  fields ~= `"info":"` ~ throwable.info.to!string.escapeJson ~ `",`;
+  fields ~= `"raw":"` ~ throwable.toString.escapeJson ~ `"`;
 
   return "{" ~ fields ~ "}";
 }
