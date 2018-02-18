@@ -7,6 +7,7 @@ import std.stdio;
 import std.conv;
 import std.file;
 import std.path;
+import std.exception;
 
 import dub.internal.vibecompat.core.log;
 
@@ -54,6 +55,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   setupTemplate!"templates/ignoredTable.html";
   setupTemplate!"templates/page.html";
   setupTemplate!"templates/progress.html";
+  setupTemplate!"templates/htmlReporter.html";
 
   enum d =
     import("reporters/writer.d") ~
@@ -263,6 +265,7 @@ string replaceImports(string source) {
     auto tmpPieces = pieces[i].split(`")`);
     auto path = tmpPieces[0];
 
+    enforce(path in templates, "`" ~ path ~ "` was not found in the template cache");
     pieces[i] = "`" ~ templates[path] ~ "`" ~ tmpPieces[1..$].join(`")`);
   }
 
