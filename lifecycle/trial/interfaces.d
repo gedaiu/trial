@@ -139,7 +139,7 @@ struct Label {
 
 /// Label string representation should be in Json format
 unittest {
-  Label("name", "value").toString.should.equal(`{"name": "name", "value": "value" }`);
+  Label("name", "value").toString.should.equal(`{ "name": "name", "value": "value" }`);
 }
 
 /// A struct representing an attachment for test steps
