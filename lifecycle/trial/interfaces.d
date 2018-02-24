@@ -12,6 +12,9 @@ import std.algorithm;
 import std.array;
 import std.functional;
 import std.conv;
+import std.file;
+import std.path;
+import std.uuid;
 
 /// Alias to a Test Case function type
 alias TestCaseDelegate = void delegate() @system;
@@ -53,7 +56,7 @@ string toJsonString(Throwable throwable) {
 /// convert a Throwable to json
 unittest {
   auto exception = new Exception("some message");
-  exception.toJsonString.should.equal(`{"file":"lifecycle/trial/interfaces.d","line":"55","msg":"some message","info":"null","raw":"object.Exception@lifecycle/trial/interfaces.d(55): some message"}`);
+  exception.toJsonString.should.equal(`{"file":"lifecycle/trial/interfaces.d","line":"58","msg":"some message","info":"null","raw":"object.Exception@lifecycle/trial/interfaces.d(58): some message"}`);
 }
 
 
@@ -153,22 +156,31 @@ struct Attachment {
   /// The file mime path
   string mime;
 
+  /// The attachement destination. All the attached files will be copied in this folder if 
+  /// it is not allready inside
+  static string destination;
+
   /// Add a file to the current test or step
-  static void fromFile(const string name, const string path, const string mime) {
+  static Attachment fromFile(const string name, const string path, const string mime) {
     import trial.runner;
 
-    auto a = const Attachment(name, path, name);
+    auto fileDestination = buildPath(destination, randomUUID.toString ~ "." ~ path.baseName);
+    copy(path, fileDestination);
+
+    auto a = const Attachment(name, fileDestination, mime);
 
     if(LifeCycleListeners.instance !is null) {
       LifeCycleListeners.instance.attach(a);
     }
+
+    return a;
   }
 
   string toString() inout {
     string fields;
-    fields ~= `"name":"`~name~`",`;
-    fields ~= `"file":"`~file~`",`;
-    fields ~= `"mime":"`~mime~`"`;
+    fields ~= `"name":"` ~ name ~ `",`;
+    fields ~= `"file":"` ~ file ~ `",`;
+    fields ~= `"mime":"` ~ mime ~ `"`;
 
     return "{" ~ fields ~ "}";
   }
@@ -789,7 +801,9 @@ struct Story {
 
 /// Attach the readme file
 unittest {
-  Attachment.fromFile("readme file", "README.md", "text/plain");
+  auto attachment = Attachment.fromFile("readme file", "README.md", "text/plain");
+
+  attachment.file.exists.should.equal(true);
 }
 
 /// An exception that should be thrown by the pending test cases

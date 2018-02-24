@@ -6,7 +6,11 @@ var icons = {
   "skip":     "far fa-dot-circle",
   "pending":  "far fa-circle",
   "success":  "fas fa-check",
-  "duration": "fas fa-clock"
+  "duration": "fas fa-clock",
+  "step":     "fas fa-paw",
+  "attachment": "far fa-copy",
+  "issue": "fas fa-bug",
+  "status_details": "fas fa-comment"
 }
 
 var cards = {
@@ -17,7 +21,7 @@ var cards = {
   "unknown":  "bg-warning text-white",
   "failure":  "bg-danger text-white",
   "skip":     "bg-warning text-white",
-  "pending":  "bg-info text-white"
+  "pending":  "bg-info text-white",
 }
 
 var detailsIndex = 0;
@@ -83,6 +87,14 @@ function updateSuiteVisibility() {
       $(this).removeClass("d-none");
     }
   });
+}
+
+function labelIcon(name) {
+  if(!icons[name]) {
+    return "";
+  }
+
+  return `<i class="${icons[name]}"></i>`;
 }
 
 function niceDuration(value) {
@@ -180,15 +192,41 @@ function buildResults(collection, results) {
   });
 }
 
+function stepInfo(stepData) {
+  var extra = "";
+  var duration = new Date(stepData.end) - new Date(stepData.begin);
+  
+  if(duration > 0) {
+    extra += `<span class="${classDuration(duration)}">
+                <span class="${icons["duration"]}" aria-hidden="true"></span>
+              </span> ${niceDuration(duration)}&nbsp;&nbsp;&nbsp;`;
+  }
+
+  if(stepData.steps.length > 0) {
+    extra += `<span class="text-info">
+                <span class="${icons["step"]}" aria-hidden="true"></span>
+              </span> ${stepData.steps.length} &nbsp;&nbsp;&nbsp;`;
+  }
+
+  if(stepData.labels && stepData.labels.length > 0) {
+    extra += stepData.labels.map(a => 
+      `<span class="badge badge-info">${labelIcon(a["name"])} ${a["value"]}</span>`
+    ).join("&nbsp;");
+  }
+
+
+  if(stepData.attachments.length > 0) {
+    extra += stepData.attachments.map(a => `<a href="${a["file"]}">${a["name"]}</a>`).join("&nbsp;&nbsp;");
+  }
+
+  return extra;
+}
+
 function buildTestResults(collection, results) {
   results.forEach(element => {
-    var extra = "";
+    var extra = stepInfo(element);
+    var steps = buildStepResults(element.steps);
     var detailsId = "";
-    var duration = new Date(element.end) - new Date(element.begin);
-    
-    if(duration > 0) {
-      extra = `<span class="${classDuration(duration)}"><span class="${icons["duration"]}" aria-hidden="true"></span></span> ${niceDuration(duration)}`;
-    }
 
     if(element.throwable.raw) {
       detailsId = `test-details-${detailsIndex}`;
@@ -200,12 +238,12 @@ function buildTestResults(collection, results) {
       <h2>
         <span class="result-icon"><span class="${icons[element.status]}" aria-hidden="true"></span></span> ${element.name} 
         <small>${extra}</small>
-        </h2>`;
+      </h2>` + steps;
 
     if(element.throwable.msg) {
       result += `<div class="collapse" id="${detailsId}"><pre class="rounded"><code>${element.throwable.msg}</code><pre></div>`
     }
-    
+
     result += '</div>';
 
     collection.append(result);
@@ -246,4 +284,18 @@ function getSuiteOverview(suite) {
 
   overview.duration = end - begin;
   return overview;
+}
+
+function buildStepResults(results) {
+  var text = "";
+
+  results.forEach(element => {
+
+    var extra = stepInfo(element);
+    var steps = buildStepResults(element.steps);
+
+    text += `<li>${element.name} ${extra} ${steps}</li>`;
+  });
+
+  return `<ol>${text}</ol>`;
 }

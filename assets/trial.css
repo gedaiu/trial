@@ -52,6 +52,10 @@
   padding: 10px;
 }
 
+.test .badge {
+  font-size: 17px;
+}
+
 #overview .card-title {
   font-weight: bold;
   font-size: 30px;

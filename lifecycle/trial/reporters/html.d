@@ -46,8 +46,48 @@ class HtmlReporter : ILifecycleListener
   {
   }
 
+  private {
+    void relativePaths(ref SuiteResult[] results) {
+      foreach(ref result; results) {
+        relativePaths(result);
+      }
+    }
+
+    void relativePaths(ref SuiteResult suite) {
+      relativePaths(suite.attachments);
+      
+      foreach(ref result; suite.tests) {
+        relativePaths(result);
+      }
+    }
+
+    void relativePaths(ref TestResult step) {
+      relativePaths(step.attachments);
+
+      foreach(ref child; step.steps) {
+        relativePaths(child);
+      }
+    }
+
+    void relativePaths(ref StepResult step) {
+      relativePaths(step.attachments);
+
+      foreach(ref child; step.steps) {
+        relativePaths(child);
+      }
+    }
+
+    void relativePaths(ref Attachment[] attachments) {
+      foreach(ref attachment; attachments) {
+        attachment.file = asRelativePath(attachment.file, destination.dirName).array;
+      }
+    }
+  }
+
   void end(SuiteResult[] results)
   {
+    relativePaths(results);
+
     string content = import("templates/htmlReporter.html");
     string trialJs = import("assets/trial.js");
 

@@ -208,16 +208,15 @@ function stepInfo(stepData) {
               </span> ${stepData.steps.length} &nbsp;&nbsp;&nbsp;`;
   }
 
-  if(stepData.attachments.length > 0) {
-    extra += `<span class="text-info">
-                <span class="${icons["attachment"]}" aria-hidden="true"></span>
-              </span> ${stepData.attachments.length} &nbsp;&nbsp;&nbsp;`;
-  }
-
   if(stepData.labels && stepData.labels.length > 0) {
     extra += stepData.labels.map(a => 
       `<span class="badge badge-info">${labelIcon(a["name"])} ${a["value"]}</span>`
     ).join("&nbsp;");
+  }
+
+
+  if(stepData.attachments.length > 0) {
+    extra += stepData.attachments.map(a => `<a href="${a["file"]}">${a["name"]}</a>`).join("&nbsp;&nbsp;");
   }
 
   return extra;
