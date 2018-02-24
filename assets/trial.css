@@ -7,7 +7,8 @@
 }
 
 .suite h1 {
-  padding: 5px 10px;
+  padding: 5px 10px 0 10px;
+  margin-bottom: 0;
 }
 
 #test-results, #overview {
@@ -26,19 +27,22 @@
   font-size: 20px;
 }
 
-.created h2, .started h2, .skip h2, .unknown h2 {
+.created h2 .result-icon,
+.started h2 .result-icon,
+.skip h2 .result-icon,
+.unknown h2 .result-icon {
   color: #888;
 }
 
-.failure h2 {
+.failure h2 .result-icon {
   color: #D8544F;
 }
 
-.skip h2, .pending h2{
+.skip h2 .result-icon, .pending h2 .result-icon{
   color: #62BFDD;
 }
 
-.success h2 {
+.success h2 .result-icon {
   color: #5CB75C;
 }
 
@@ -53,3 +57,7 @@
   font-size: 30px;
 }
 
+.suite-overview {
+  margin-left: 11px;
+  margin-bottom: 0;
+}

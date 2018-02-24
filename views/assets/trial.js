@@ -1,12 +1,12 @@
 var icons = {
-  "created":  "play-circle",
-  "started":  "stop-circle",
-  "unknown":  "question-circle",
-  "failure":  "times-circle",
-  "skip":     "dot-circle",
-  "pending":  "circle",
-  "success":  "check-circle",
-  "duration": "clock"
+  "created":  "hourglass",
+  "started":  "fas fa-hourglass-half",
+  "unknown":  "fas fa-question",
+  "failure":  "fas fa-times",
+  "skip":     "far fa-dot-circle",
+  "pending":  "far fa-circle",
+  "success":  "fas fa-check",
+  "duration": "fas fa-clock"
 }
 
 var cards = {
@@ -86,14 +86,24 @@ function updateSuiteVisibility() {
 }
 
 function niceDuration(value) {
-  var h = parseInt(value / (3600 * 1000));
-  value -= h * (3600 * 1000);
+  let h = 0;
+  let m = 0;
+  let s = 0;
 
-  var m = parseInt(value / (60 * 1000));
-  value -= m * (60 * 1000);
+  if(value >= 3600 * 1000) {
+    h = parseInt(value / (3600 * 1000));
+    value -= h * (3600 * 1000);
+  }
 
-  var s = parseInt(value / 1000);
-  value -= s * 1000;
+  if(value >= 60 * 1000) {
+    m = parseInt(value / (60 * 1000));
+    value -= m * (60 * 1000);
+  }
+
+  if(value >= 1000) {
+    s = parseInt(value / 1000);
+    value -= s * 1000;
+  }
 
   var result = [];
 
@@ -109,12 +119,25 @@ function niceDuration(value) {
     result.push(s + "s")
   }
 
-  if(value > 0) {
+  if(value >= 0) {
     result.push(value + "ms")
   }
 
   return result.join(" ");
 }
+
+function classDuration(value) {
+  if(value >= dangerTestDuration) {
+    return "text-danger";
+  }
+
+  if(value >= warningTestDuration) {
+    return "text-warning";
+  }
+
+  return "text-info";
+}
+
 
 function buildCard(key, value, action) {
   var button = "";
@@ -136,10 +159,22 @@ function buildCard(key, value, action) {
 
 function buildResults(collection, results) {
   results.forEach(element => {
-    collection.append('<div class="suite" data-suite-name="' + encodeURI(element.name) + '">'+
-      '<h1>' + element.name + '</h1><hr>' +
-      '<div class="test-list"></div>' +
-      '</div>');
+    var duration = niceDuration(new Date(element.end) - new Date(element.begin));
+    var overview = getSuiteOverview(element);
+
+    var overviewHtml = Object.keys(overview)
+      .filter(a => a != "duration")
+      .map(a => `<span class="${icons[a]}" aria-hidden="true"></span> ${overview[a]}`)
+      .join("&nbsp;&nbsp;&nbsp;");
+
+    collection.append(`<div class="suite" data-suite-name="${encodeURI(element.name)}">
+      <h1>${element.name}</h1>
+      <p class="suite-overview">
+        <span class="${icons["duration"]}" aria-hidden="true"></span> ${duration}&nbsp;&nbsp;&nbsp;${overviewHtml}
+      </p>
+      <hr>
+      <div class="test-list"></div>
+      </div>`);
 
     buildTestResults($("#test-results .suite:last .test-list"), element.tests);
   });
@@ -149,6 +184,11 @@ function buildTestResults(collection, results) {
   results.forEach(element => {
     var extra = "";
     var detailsId = "";
+    var duration = new Date(element.end) - new Date(element.begin);
+    
+    if(duration > 0) {
+      extra = `<span class="${classDuration(duration)}"><span class="${icons["duration"]}" aria-hidden="true"></span></span> ${niceDuration(duration)}`;
+    }
 
     if(element.throwable.raw) {
       detailsId = `test-details-${detailsIndex}`;
@@ -157,7 +197,10 @@ function buildTestResults(collection, results) {
     }
 
     var result = `<div class="test ${element.status}" data-test-name="${encodeURI(element.name)}">
-    <h2><span class="far fa-${icons[element.status]}" aria-hidden="true"></span> ${element.name} ${extra}</h2>`;
+      <h2>
+        <span class="result-icon"><span class="${icons[element.status]}" aria-hidden="true"></span></span> ${element.name} 
+        <small>${extra}</small>
+        </h2>`;
 
     if(element.throwable.msg) {
       result += `<div class="collapse" id="${detailsId}"><pre class="rounded"><code>${element.throwable.msg}</code><pre></div>`
