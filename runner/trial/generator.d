@@ -120,7 +120,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     code = "version = is_trial_embeded;\n" ~ d.split("\n")
             .filter!(a => !a.startsWith("module"))
             .filter!(a => !a.startsWith("@(\""))
-            .filter!(a => a.indexOf("import") == -1 || a.indexOf("trial.") == -1)
+            .filter!(a => a.indexOf("import ") == -1 || a.indexOf("trial.") == -1)
             .join("\n")
             .removeUnittests
             .replaceImports;
@@ -269,7 +269,7 @@ string replaceImports(string source) {
     auto path = tmpPieces[0];
 
     enforce(path in templates, "`" ~ path ~ "` was not found in the template cache");
-    pieces[i] = "`" ~ templates[path] ~ "`" ~ tmpPieces[1..$].join(`")`);
+    pieces[i] = "`" ~ templates[path].replace("`", "` ~ \"`\" ~ `") ~ "`" ~ tmpPieces[1..$].join(`")`);
   }
 
   return pieces.join("");

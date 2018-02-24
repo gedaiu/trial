@@ -24,7 +24,6 @@ class HtmlReporter : ILifecycleListener
 {
   private
   {
-    string trialCss = import("assets/trial.css");
     bool success = true;
     immutable string destination;
     immutable long warningTestDuration;
@@ -88,8 +87,10 @@ class HtmlReporter : ILifecycleListener
   {
     relativePaths(results);
 
+    immutable string trialCss = import("assets/trial.css");
+    immutable string trialJs = import("assets/trial.js");
+
     string content = import("templates/htmlReporter.html");
-    string trialJs = import("assets/trial.js");
 
     auto assets = buildPath(destination.dirName, "assets");
 
