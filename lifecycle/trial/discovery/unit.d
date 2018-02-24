@@ -412,7 +412,7 @@ class UnitTestDiscovery : ITestDiscovery
         }
       }
 
-      if (name == defaultName) {
+      if (name == defaultName || name == "") {
         name = "unnamed test at line " ~ line.to!string;
       }
 

@@ -149,9 +149,9 @@ class TrialCommand : PackageBuildCommand {
     tcinfo.targetType = TargetType.executable;
     tcinfo.targetName = testConfig;
     tcinfo.excludedSourceFiles[""] ~= tcinfo.mainSourceFile;
-    tcinfo.sourceFiles[""] ~= Path(m_description.mainFile)
+    tcinfo.sourceFiles[""] ~= NativePath(m_description.mainFile)
       .relativeTo(project.rootPackage.path).toNativeString();
-    tcinfo.importPaths[""] ~= Path(m_description.mainFile).parentPath.toNativeString();
+    tcinfo.importPaths[""] ~= NativePath(m_description.mainFile).parentPath.toNativeString();
     tcinfo.mainSourceFile = m_description.mainFile;
     tcinfo.versions[""] ~= "VibeCustomMain";
     project.rootPackage.recipe.buildSettings.versions[""]

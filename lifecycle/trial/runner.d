@@ -17,6 +17,8 @@ import std.string;
 import std.conv;
 import std.path;
 import std.getopt;
+import std.file;
+import std.path;
 
 import trial.settings;
 import trial.executor.single;
@@ -24,6 +26,14 @@ import trial.executor.parallel;
 
 /// setup the LifeCycle collection
 void setupLifecycle(Settings settings) {
+  settings.artifactsLocation = settings.artifactsLocation.asAbsolutePath.array;
+
+  Attachment.destination = buildPath(settings.artifactsLocation, "attachment");
+  
+  if(!Attachment.destination.exists) {
+    Attachment.destination.mkdirRecurse;
+  }
+
   LifeCycleListeners.instance = new LifeCycleListeners;
   settings.reporters.map!(a => a.toLower).each!(a => addReporter(a, settings));
 
@@ -82,7 +92,10 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "html":
-        LifeCycleListeners.instance.add(new HtmlReporter(buildPath(settings.artifactsLocation, "result.html")));
+        LifeCycleListeners.instance.add(
+          new HtmlReporter(buildPath(settings.artifactsLocation, "result.html"), 
+          settings.warningTestDuration, 
+          settings.dangerTestDuration));
         break;
 
       case "allure":

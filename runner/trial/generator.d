@@ -7,6 +7,7 @@ import std.stdio;
 import std.conv;
 import std.file;
 import std.path;
+import std.exception;
 
 import dub.internal.vibecompat.core.log;
 
@@ -54,6 +55,10 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   setupTemplate!"templates/ignoredTable.html";
   setupTemplate!"templates/page.html";
   setupTemplate!"templates/progress.html";
+  setupTemplate!"templates/htmlReporter.html";
+
+  setupTemplate!"assets/trial.css";
+  setupTemplate!"assets/trial.js";
 
   enum d =
     import("reporters/writer.d") ~
@@ -115,7 +120,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
     code = "version = is_trial_embeded;\n" ~ d.split("\n")
             .filter!(a => !a.startsWith("module"))
             .filter!(a => !a.startsWith("@(\""))
-            .filter!(a => a.indexOf("import") == -1 || a.indexOf("trial.") == -1)
+            .filter!(a => a.indexOf("import ") == -1 || a.indexOf("trial.") == -1)
             .join("\n")
             .removeUnittests
             .replaceImports;
@@ -263,7 +268,8 @@ string replaceImports(string source) {
     auto tmpPieces = pieces[i].split(`")`);
     auto path = tmpPieces[0];
 
-    pieces[i] = "`" ~ templates[path] ~ "`" ~ tmpPieces[1..$].join(`")`);
+    enforce(path in templates, "`" ~ path ~ "` was not found in the template cache");
+    pieces[i] = "`" ~ templates[path].replace("`", "` ~ \"`\" ~ `") ~ "`" ~ tmpPieces[1..$].join(`")`);
   }
 
   return pieces.join("");
