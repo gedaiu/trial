@@ -57,6 +57,9 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   setupTemplate!"templates/progress.html";
   setupTemplate!"templates/htmlReporter.html";
 
+  setupTemplate!"assets/trial.css";
+  setupTemplate!"assets/trial.js";
+
   enum d =
     import("reporters/writer.d") ~
     import("reporters/result.d") ~

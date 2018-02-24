@@ -14,6 +14,7 @@ import std.datetime;
 import std.string;
 import std.algorithm;
 import std.file;
+import std.path;
 
 import trial.interfaces;
 import trial.reporters.writer;
@@ -23,6 +24,7 @@ class HtmlReporter : ILifecycleListener
 {
   private
   {
+    string trialCss = import("assets/trial.css");
     bool success = true;
     immutable string destination;
   }
@@ -43,8 +45,21 @@ class HtmlReporter : ILifecycleListener
   void end(SuiteResult[] results)
   {
     string content = import("templates/htmlReporter.html");
+    string trialJs = import("assets/trial.js");
+
+    auto assets = buildPath(destination.dirName, "assets");
+
+    if(!destination.exists) {
+      mkdirRecurse(destination);
+    }
+
+    if(!assets.exists) {
+      mkdirRecurse(assets);
+    }
 
     std.file.write(destination, content.replace("{testResult}", "[" ~ results.map!(a => a.toString).join(",") ~ "]"));
+    std.file.write(buildPath(assets, "trial.css"), trialCss);
+    std.file.write(buildPath(assets, "trial.js"), trialJs);
   }
 }
 
@@ -57,7 +72,7 @@ version (unittest)
 unittest
 {
   auto writer = new BufferedWriter;
-  auto reporter = new HtmlReporter("trial-result.html");
+  auto reporter = new HtmlReporter("trial--result.html");
 
   auto begin = Clock.currTime - 10.seconds;
   auto end = begin + 10.seconds;

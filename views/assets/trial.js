@@ -34,6 +34,29 @@ $(function() {
     $("#overview").append(buildCard(key, suiteOverview[key], action));
   });
 
+  $("#search").on("input", function() {
+    $("#view-options .btn").removeClass("active");
+    $("#view-options .btn:first").addClass("active");
+
+    var value = $(this).val();
+
+    if(value != "") {
+      $(".test").each(function() {
+        var t = $(this);
+
+        if(t.find("h2").text().indexOf(value) == -1) {
+          t.addClass("d-none");
+        } else {
+          t.removeClass("d-none");
+        }
+      });
+    } else {
+      $(".test.d-none").removeClass("d-none");
+    }
+
+    updateSuiteVisibility();
+  }).trigger("input");
+
   if($(".test.failure").length == 0) {
     $("#view-options").addClass("d-none");
   }
@@ -45,20 +68,22 @@ $(function() {
     }
 
     $(".test:not(.failure)").addClass("d-none");
-
-    $(".suite").each(function() {
-      var t = $(this);
-
-      var visibleChilds = t.find(".test:not(.d-none)").length;
-
-      console.log(visibleChilds);
-
-      if(visibleChilds == 0) {
-        $(this).addClass("d-none");
-      }
-    });
+    updateSuiteVisibility();
   });
 });
+
+function updateSuiteVisibility() {
+  $(".suite").each(function() {
+    var t = $(this);
+    var visibleChilds = t.find(".test:not(.d-none)").length;
+
+    if(visibleChilds == 0) {
+      $(this).addClass("d-none");
+    } else {
+      $(this).removeClass("d-none");
+    }
+  });
+}
 
 function niceDuration(value) {
   var h = parseInt(value / (3600 * 1000));
@@ -135,8 +160,6 @@ function buildTestResults(collection, results) {
     <h2><span class="oi oi-${icons[element.status]}" aria-hidden="true"></span> ${element.name} ${extra}</h2>`;
 
     if(element.throwable.msg) {
-      console.log(element.throwable);
-      
       result += `<div class="collapse" id="${detailsId}"><pre class="rounded"><code>${element.throwable.msg}</code><pre></div>`
     }
     
