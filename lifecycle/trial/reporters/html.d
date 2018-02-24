@@ -93,8 +93,8 @@ class HtmlReporter : ILifecycleListener
 
     auto assets = buildPath(destination.dirName, "assets");
 
-    if(!destination.exists) {
-      mkdirRecurse(destination);
+    if(!destination.dirName.exists) {
+      mkdirRecurse(destination.dirName);
     }
 
     if(!assets.exists) {
