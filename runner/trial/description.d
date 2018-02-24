@@ -37,8 +37,8 @@ Dub createDub(CommonOptions options) {
   Dub dub;
 
   if (options.bare) {
-    dub = new Dub(Path(getcwd()));
-    dub.rootPath = Path(options.root_path);
+    dub = new Dub(NativePath(getcwd()));
+    dub.rootPath = NativePath(options.root_path);
     dub.defaultPlacementLocation = options.placementLocation;
 
     return dub;
@@ -55,7 +55,7 @@ Dub createDub(CommonOptions options) {
   // make the CWD package available so that for example sub packages can reference their
   // parent package.
   try {
-    dub.packageManager.getOrLoadPackage(Path(options.root_path));
+    dub.packageManager.getOrLoadPackage(NativePath(options.root_path));
   }
   catch (Exception e) {
     logDiagnostic("No package found in current working directory.");
@@ -150,8 +150,8 @@ class PackageDescriptionCommand : PackageBuildCommand {
   }
 
   string[] subPackages() {
-    auto subpackages = dub.packageManager.getOrLoadPackage(Path(options.root_path),
-        Path.init, true).subPackages;
+    auto subpackages = dub.packageManager.getOrLoadPackage(NativePath(options.root_path),
+        NativePath.init, true).subPackages;
 
     auto outsidePackages = subpackages.filter!(a => a.path != "").array;
     auto embeddedPackages = subpackages.filter!(a => a.path == "").array;
@@ -159,7 +159,7 @@ class PackageDescriptionCommand : PackageBuildCommand {
     auto packages = embeddedPackages.map!(a => a.recipe.name).map!(a => ":" ~ a).array;
 
     packages ~= outsidePackages.map!(
-        a => ":" ~ dub.packageManager.getOrLoadPackage(Path(a.path)).name).array;
+        a => ":" ~ dub.packageManager.getOrLoadPackage(NativePath(a.path)).name).array;
 
     return packages;
   }

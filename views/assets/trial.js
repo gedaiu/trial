@@ -1,12 +1,12 @@
 var icons = {
-  "created": "clock",
-  "started": "loop-square",
-  "unknown": "question-mark",
-  "failure": "x",
-  "skip": "media-step-forward",
-  "pending": "clock",
-  "duration": "clock",
-  "success": "check"
+  "created": "play-circle",
+  "started": "stop-circle",
+  "unknown": "question-circle",
+  "failure": "times-circle",
+  "skip": "dot-circle",
+  "pending": "circle",
+  "success": "check-circle",
+  "duration": "clock"
 }
 
 var cards = {
@@ -157,7 +157,7 @@ function buildTestResults(collection, results) {
     }
 
     var result = `<div class="test ${element.status}" data-test-name="${encodeURI(element.name)}">
-    <h2><span class="oi oi-${icons[element.status]}" aria-hidden="true"></span> ${element.name} ${extra}</h2>`;
+    <h2><span class="far fa-${icons[element.status]}" aria-hidden="true"></span> ${element.name} ${extra}</h2>`;
 
     if(element.throwable.msg) {
       result += `<div class="collapse" id="${detailsId}"><pre class="rounded"><code>${element.throwable.msg}</code><pre></div>`

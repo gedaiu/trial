@@ -72,7 +72,7 @@ version (unittest)
 unittest
 {
   auto writer = new BufferedWriter;
-  auto reporter = new HtmlReporter("trial--result.html");
+  auto reporter = new HtmlReporter("trial-result.html");
 
   auto begin = Clock.currTime - 10.seconds;
   auto end = begin + 10.seconds;
