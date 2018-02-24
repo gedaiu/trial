@@ -82,7 +82,10 @@ void addReporter(string name, Settings settings) {
         break;
 
       case "html":
-        LifeCycleListeners.instance.add(new HtmlReporter(buildPath(settings.artifactsLocation, "result.html")));
+        LifeCycleListeners.instance.add(
+          new HtmlReporter(buildPath(settings.artifactsLocation, "result.html"), 
+          settings.warningTestDuration, 
+          settings.dangerTestDuration));
         break;
 
       case "allure":

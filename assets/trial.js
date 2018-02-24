@@ -135,9 +135,7 @@ function classDuration(value) {
     return "text-warning";
   }
 
-  if(value >= warningTestDuration) {
-    return "text-info";
-  }
+  return "text-info";
 }
 
 
@@ -188,7 +186,9 @@ function buildTestResults(collection, results) {
     var detailsId = "";
     var duration = new Date(element.end) - new Date(element.begin);
     
-    extra = `<span class="${classDuration(duration)}"><span class="${icons["duration"]}" aria-hidden="true"></span></span> ${niceDuration(duration)}`;
+    if(duration > 0) {
+      extra = `<span class="${classDuration(duration)}"><span class="${icons["duration"]}" aria-hidden="true"></span></span> ${niceDuration(duration)}`;
+    }
 
     if(element.throwable.raw) {
       detailsId = `test-details-${detailsIndex}`;

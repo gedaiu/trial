@@ -27,11 +27,15 @@ class HtmlReporter : ILifecycleListener
     string trialCss = import("assets/trial.css");
     bool success = true;
     immutable string destination;
+    immutable long warningTestDuration;
+    immutable long dangerTestDuration;
   }
 
-  this(string destination)
+  this(string destination, long warningTestDuration, long dangerTestDuration)
   {
     this.destination = destination;
+    this.warningTestDuration = warningTestDuration;
+    this.dangerTestDuration = dangerTestDuration;
   }
 
   void begin(ulong)
@@ -57,7 +61,14 @@ class HtmlReporter : ILifecycleListener
       mkdirRecurse(assets);
     }
 
-    std.file.write(destination, content.replace("{testResult}", "[" ~ results.map!(a => a.toString).join(",") ~ "]"));
+    content = content
+      .replace("{testResult}", "[" ~ results.map!(a => a.toString).join(",") ~ "]")
+      .replace("{warningTestDuration}", warningTestDuration.to!string)
+      .replace("{dangerTestDuration}", dangerTestDuration.to!string);
+
+
+    std.file.write(destination, content);
+
     std.file.write(buildPath(assets, "trial.css"), trialCss);
     std.file.write(buildPath(assets, "trial.js"), trialJs);
   }
@@ -72,7 +83,7 @@ version (unittest)
 unittest
 {
   auto writer = new BufferedWriter;
-  auto reporter = new HtmlReporter("trial-result.html");
+  auto reporter = new HtmlReporter("trial-result.html", 0, 0);
 
   auto begin = Clock.currTime - 10.seconds;
   auto end = begin + 10.seconds;
