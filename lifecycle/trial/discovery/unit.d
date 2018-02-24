@@ -761,7 +761,7 @@ unittest
   auto testDiscovery = new UnitTestDiscovery;
 
   testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain("unnamed test at line 748");
+      .array.should.contain("unnamed test at line 757");
 }
 
 /// discoverTestCases should find the same tests like testCases
