@@ -187,10 +187,6 @@ unittest {
 
   auto begin = Clock.currTime;
   auto result = [ testCase ].runTests;
-
-  import std.stdio;
-  writeln(result);
-
   auto testResult = result[0].tests[0];
 
   testResult.begin.should.be.greaterThan(begin);
