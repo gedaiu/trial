@@ -259,7 +259,11 @@ size_t extractLine(string name) {
     }
   }
 
-  auto pieces = name.split("_").filter!(a => a.isNumeric).map!(a => a.to!size_t).array;
+  auto pieces = name.split("_")
+    .filter!(a => a != "")
+    .map!(a => a[0] == 'L' ? a[1..$] : a)
+    .filter!(a => a.isNumeric)
+    .map!(a => a.to!size_t).array;
 
   if(pieces.length > 0) {
     return pieces[0];
@@ -596,6 +600,11 @@ unittest {
   extractLine("__unittest_runTestsOnDevices_d_133_0()").should.equal(133);
 }
 
+@("It should extract the line from the default test name with _L in symbol name")
+unittest {
+  extractLine("__unittest_L607_C1()").should.equal(607);
+}
+
 /// It should find this test
 unittest
 {
@@ -752,7 +761,7 @@ unittest
   auto testDiscovery = new UnitTestDiscovery;
 
   testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain("unnamed test at line 748");
+      .array.should.contain("unnamed test at line 757");
 }
 
 /// discoverTestCases should find the same tests like testCases
