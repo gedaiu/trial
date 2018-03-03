@@ -19,9 +19,9 @@
 		{
 			"name": "trial",
 			"excludedSourceFiles": ["source/app.d", "runner/app.d"],
-			"sourcePaths": ["lifecycle", "runner"],
+			"sourcePaths": ["lifecycle", "runner", "tests"],
 			"stringImportPaths": ["lifecycle/trial"],
-			"importPaths": ["lifecycle", "runner"],
+			"importPaths": ["lifecycle", "runner", "tests"],
 			"mainSourceFile": "source/app.d",
 
 			"dependencies": {
