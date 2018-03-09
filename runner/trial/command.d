@@ -46,9 +46,6 @@ class TrialProject : Project {
     this.m_description = description;
 
     project.rootPackage.recipe.configurations = [ConfigurationInfo(m_description.buildFile, testBuildSettings)];
-    
-    import std.stdio;
-    project.selections.serialize.writeln;
 
     super(project.packageManager, project.rootPackage);
     this.reinit;
@@ -74,12 +71,7 @@ class TrialProject : Project {
       auto hasTrialConfigurations = recipe.configurations.canFind!(a => a.name == "trial");
 
       if(basename != rootPackage.basePackage.name && hasTrialConfigurations) {
-        import std.stdio;
-        writeln("getDependency: ", name, " ", cast(Package) result);
-      
         recipe.configurations = recipe.configurations.filter!(a => a.name != "trial").array;
-
-        writeln(recipe.configurations.map!"a.name".array);
 
         return cast(inout Package) new Package(recipe, result.path, cast(Package) result.parentPackage, result.recipe.version_);
       }
@@ -98,14 +90,11 @@ class TrialProject : Project {
     tcinfo.mainSourceFile = m_description.mainFile;
     tcinfo.versions[""] ~= "VibeCustomMain";
 
-    auto trialPackage = getPackage("trial:lifecycle", Dependency.any);
+    if(getBasePackageName(project.rootPackage.name) != "trial") {
+      auto trialPackage = getPackage("trial:lifecycle", Dependency.any);
+      tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
+    }
 
-    writeln("TRIAL:");
-    writeln("========================");
-    writeln(trialPackage.recipe.buildSettings.dependencies);
-    writeln("========================");
-
-    tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
     project.saveSelections;
 
     return tcinfo;
@@ -131,19 +120,9 @@ class TrialProject : Project {
     }
 
     if(pack !is null) {
-      writeln(name, ":");
-      writeln("========================");
-      writeln(pack.recipe.buildSettings.dependencies);
-      writeln("========================");
-    }
-
-    if(pack !is null) {
       project.selections.selectVersion(pack.basePackage.name, pack.version_);
-      pack.recipe.configurations.writeln("<=== configurations:", name, ";");
-      pack.getAllDependencies.writeln("<=== dependencies:", name, ";");
 
       foreach(dependency; pack.getAllDependencies) {
-        writeln("GET ", dependency.name);
         getPackage(dependency.name, dependency.spec);
       }
     }
@@ -209,40 +188,32 @@ class TrialCommand : PackageBuildCommand {
   override int execute(Dub dub, string[] free_args, string[] app_args = []) {
     string package_name;
 
-    writeln(1);
     enforce(free_args.length <= 1, "Expected one or zero arguments.");
 
     if (free_args.length >= 1) {
       package_name = free_args[0];
     }
 
-    writeln(2);
     logInfo("Generate main file: " ~ m_description.mainFile);
     m_description.writeTestFile(m_reporters);
 
-    writeln(3);
     setupPackage(dub, package_name, m_buildType);
 
-    writeln(4);
     m_buildSettings.addOptions([BuildOption.unittests, BuildOption.debugMode,
         BuildOption.debugInfo]);
 
-    writeln(5);
     string[] arguments;
 
     if (m_testName != "") {
       arguments ~= ["-t", m_testName];
     }
 
-    writeln(6);
     if (m_suiteName != "") {
       arguments ~= ["-s", m_suiteName];
     }
 
-    writeln(7);
     run(arguments);
 
-    writeln(8);
     return 0;
   }
 
@@ -253,12 +224,8 @@ class TrialCommand : PackageBuildCommand {
 
     auto project = m_description.project;
     auto config = settings.config;
-    import std.stdio;
 
-    writeln("===========================================================");
     auto trialProject = new TrialProject(project, m_description);
-    writeln("===========================================================");
-
     auto generator = createProjectGenerator("build", trialProject);
  
     generator.generate(settings);
