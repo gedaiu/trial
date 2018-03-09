@@ -51,17 +51,9 @@ class TrialProject : Project {
     this.reinit;
   }
 
-
-	/** Retrieves a particular dependency by name.
-
-		Params:
-			name = (Qualified) package name of the dependency
-			is_optional = If set to true, will return `null` for unsatisfiable
-				dependencies instead of throwing an exception.
-	*/
   override
-	inout(Package) getDependency(string name, bool is_optional)
-	inout {
+  inout(Package) getDependency(string name, bool is_optional)
+  inout {
     auto result = super.getDependency(name, is_optional);
 
 
