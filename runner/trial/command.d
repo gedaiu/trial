@@ -7,6 +7,7 @@ import std.string;
 import std.file;
 import std.datetime;
 import std.path;
+import std.array;
 import trial.description;
 
 import dub.internal.vibecompat.data.json;
@@ -29,6 +30,127 @@ import dub.description;
 import dub.internal.utils;
 
 import trial.generator;
+
+class TrialProject : Project {
+
+  private {
+    Project project;
+    Project trialProject;
+    PackageDescriptionCommand m_description;
+  }
+  alias getDependency = Project.getDependency;
+  alias getTopologicalPackageList = Project.getTopologicalPackageList;
+
+  this(Project project, PackageDescriptionCommand description) {
+    this.project = project;
+    this.m_description = description;
+
+    project.rootPackage.recipe.configurations = [ConfigurationInfo(m_description.buildFile, testBuildSettings)];
+    
+    import std.stdio;
+    project.selections.serialize.writeln;
+
+    super(project.packageManager, project.rootPackage);
+    this.reinit;
+  }
+
+
+	/** Retrieves a particular dependency by name.
+
+		Params:
+			name = (Qualified) package name of the dependency
+			is_optional = If set to true, will return `null` for unsatisfiable
+				dependencies instead of throwing an exception.
+	*/
+  override
+	inout(Package) getDependency(string name, bool is_optional)
+	inout {
+    auto result = super.getDependency(name, is_optional);
+
+
+    if(result !is null) {
+      auto basename = getBasePackageName(name);
+      auto recipe = result.recipe.clone;
+      auto hasTrialConfigurations = recipe.configurations.canFind!(a => a.name == "trial");
+
+      if(basename != rootPackage.basePackage.name && hasTrialConfigurations) {
+        import std.stdio;
+        writeln("getDependency: ", name, " ", cast(Package) result);
+      
+        recipe.configurations = recipe.configurations.filter!(a => a.name != "trial").array;
+
+        writeln(recipe.configurations.map!"a.name".array);
+
+        return cast(inout Package) new Package(recipe, result.path, cast(Package) result.parentPackage, result.recipe.version_);
+      }
+    }
+
+    return result;
+  }
+
+  BuildSettingsTemplate testBuildSettings() {
+    BuildSettingsTemplate tcinfo = project.rootPackage.recipe.getConfiguration(m_description.configuration).buildSettings;
+
+    tcinfo.targetType = TargetType.executable;
+    tcinfo.targetName = m_description.buildFile;
+    tcinfo.excludedSourceFiles[""] ~= tcinfo.mainSourceFile;
+    tcinfo.importPaths[""] ~= NativePath(m_description.mainFile).parentPath.toNativeString();
+    tcinfo.mainSourceFile = m_description.mainFile;
+    tcinfo.versions[""] ~= "VibeCustomMain";
+
+    auto trialPackage = getPackage("trial:lifecycle", Dependency.any);
+
+    writeln("TRIAL:");
+    writeln("========================");
+    writeln(trialPackage.recipe.buildSettings.dependencies);
+    writeln("========================");
+
+    tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
+    project.saveSelections;
+
+    return tcinfo;
+  }
+
+  Package getPackage(string name, Dependency dep) {
+    auto baseName = name.canFind(":") ? name.split(":")[0] : name;
+
+    if(project.selections.hasSelectedVersion(baseName)) {
+      dep = project.selections.getSelectedVersion(baseName);
+      dep.optional = false;
+    }
+
+    Package pack;
+
+    if(!dep.optional) {
+      pack = project.packageManager.getBestPackage(name, dep);
+    }
+
+    if(pack is null && !dep.optional) {
+      m_description.dub.fetch(baseName, Dependency.any, PlacementLocation.user, FetchOptions.none);
+      pack = project.packageManager.getBestPackage(baseName, dep);
+    }
+
+    if(pack !is null) {
+      writeln(name, ":");
+      writeln("========================");
+      writeln(pack.recipe.buildSettings.dependencies);
+      writeln("========================");
+    }
+
+    if(pack !is null) {
+      project.selections.selectVersion(pack.basePackage.name, pack.version_);
+      pack.recipe.configurations.writeln("<=== configurations:", name, ";");
+      pack.getAllDependencies.writeln("<=== dependencies:", name, ";");
+
+      foreach(dependency; pack.getAllDependencies) {
+        writeln("GET ", dependency.name);
+        getPackage(dependency.name, dependency.spec);
+      }
+    }
+
+    return pack;
+  }
+}
 
 class TrialCommand : PackageBuildCommand {
   protected {
@@ -87,33 +209,59 @@ class TrialCommand : PackageBuildCommand {
   override int execute(Dub dub, string[] free_args, string[] app_args = []) {
     string package_name;
 
+    writeln(1);
     enforce(free_args.length <= 1, "Expected one or zero arguments.");
 
     if (free_args.length >= 1) {
       package_name = free_args[0];
     }
 
+    writeln(2);
     logInfo("Generate main file: " ~ m_description.mainFile);
     m_description.writeTestFile(m_reporters);
 
+    writeln(3);
     setupPackage(dub, package_name, m_buildType);
 
+    writeln(4);
     m_buildSettings.addOptions([BuildOption.unittests, BuildOption.debugMode,
         BuildOption.debugInfo]);
 
+    writeln(5);
     string[] arguments;
 
     if (m_testName != "") {
       arguments ~= ["-t", m_testName];
     }
 
+    writeln(6);
     if (m_suiteName != "") {
       arguments ~= ["-s", m_suiteName];
     }
 
+    writeln(7);
     run(arguments);
 
+    writeln(8);
     return 0;
+  }
+
+  void run(string[] runArgs = []) {
+    auto settings = getSettings;
+
+    settings.runArgs = runArgs;
+
+    auto project = m_description.project;
+    auto config = settings.config;
+    import std.stdio;
+
+    writeln("===========================================================");
+    auto trialProject = new TrialProject(project, m_description);
+    writeln("===========================================================");
+
+    auto generator = createProjectGenerator("build", trialProject);
+ 
+    generator.generate(settings);
   }
 
   protected GeneratorSettings getSettings() {
@@ -130,41 +278,10 @@ class TrialCommand : PackageBuildCommand {
     settings.tempBuild = m_single;
     settings.run = true;
     settings.runArgs = [];
+    settings.buildSettings.mainSourceFile = m_description.mainFile;
+    settings.config = m_description.buildFile;
 
     return settings;
-  }
-
-  void run(string[] runArgs = []) {
-    auto settings = getSettings;
-
-    settings.runArgs = runArgs;
-
-    auto project = m_description.project;
-    auto config = settings.config;
-    auto testConfig = m_description.buildFile;
-
-    BuildSettingsTemplate tcinfo = project.rootPackage.recipe.getConfiguration(config)
-      .buildSettings;
-
-    tcinfo.targetType = TargetType.executable;
-    tcinfo.targetName = testConfig;
-    tcinfo.excludedSourceFiles[""] ~= tcinfo.mainSourceFile;
-    tcinfo.importPaths[""] ~= NativePath(m_description.mainFile).parentPath.toNativeString();
-    tcinfo.mainSourceFile = m_description.mainFile;
-    tcinfo.versions[""] ~= "VibeCustomMain";
-    project.rootPackage.recipe.buildSettings.versions[""]
-      = project.rootPackage.recipe.buildSettings.versions.get("", null)
-      .remove!(v => v == "VibeDefaultMain");
-
-    settings.buildSettings.mainSourceFile = m_description.mainFile;
-
-    auto generator = createProjectGenerator("build", project);
-
-    project.rootPackage.recipe.configurations = [ConfigurationInfo(testConfig, tcinfo)];
-
-    settings.config = testConfig;
-
-    generator.generate(settings);
   }
 }
 

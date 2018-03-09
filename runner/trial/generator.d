@@ -94,7 +94,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
 
   string code;
 
-  if(hasTrialDependency) {
+  //if(hasTrialDependency) {
     code = "
       import trial.discovery.unit;
       import trial.discovery.spec;
@@ -114,7 +114,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
       import trial.reporters.tap;
       import trial.reporters.visualtrial;
       import trial.reporters.result;\n";
-  } else {
+  /*} else {
     logInfo("We will embed the `trial:lifecycle` code inside the project.");
 
     code = "version = is_trial_embeded;\n" ~ d.split("\n")
@@ -124,7 +124,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
             .join("\n")
             .removeUnittests
             .replaceImports;
-  }
+  }*/
 
   code ~= `
   int main(string[] arguments) {
