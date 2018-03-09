@@ -367,7 +367,7 @@ unittest {
 
 /// It should return the name of this test
 unittest {
-  if(LifeCycleListeners.instance is null) {
+  if(LifeCycleListeners.instance is null || !LifeCycleListeners.instance.isRunning) {
     return;
   }
 

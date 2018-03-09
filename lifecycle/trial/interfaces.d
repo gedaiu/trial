@@ -589,6 +589,7 @@ class LifeCycleListeners {
     ITestExecutor executor;
 
     string currentTest;
+    bool started;
   }
 
   @property {
@@ -596,6 +597,11 @@ class LifeCycleListeners {
     /// will return an empty string
     string runningTest() const nothrow {
       return currentTest;
+    }
+
+    /// True if the tests are being executed
+    bool isRunning() {
+      return started;
     }
   }
 
@@ -699,6 +705,8 @@ class LifeCycleListeners {
 
   /// Send the execute test to the executor listener
   SuiteResult[] execute(ref const(TestCase) func) {
+    started = true;
+    scope(exit) started = false;
     return executor.execute(func);
   }
 
