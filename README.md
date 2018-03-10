@@ -55,8 +55,8 @@ setup for the test build, you can add a `trial` configuration inside your packag
   "configurations": [ {
       "name": "trial",
       "dependencies": {
-        "arsd-official:terminal": "~>1.2.2",
-        "fluent-asserts": "~>0.6.0"
+        "trial:lifecycle": "~>0.6.2",
+        "fluent-asserts": "~>0.9.0"
       }
     }
   ]
