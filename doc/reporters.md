@@ -149,7 +149,7 @@ The stats reporter creates a csv file with the duration and the result of all yo
 
 To use it, add `stats` to the reporters list inisde `trial.json`.
 
-[example](http://trial.szabobogdan.com/artifacts/trial-stats.csv)
+[example](http://trial.szabobogdan.com/artifacts/stats.csv)
 
 ## Spec progress
 
