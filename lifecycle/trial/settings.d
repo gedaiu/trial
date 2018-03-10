@@ -62,6 +62,14 @@ mixin template SettingsFields()
 
   /// Show the duration with red if it takes more `dangerTestDuration` msecs
   uint dangerTestDuration = 100;
+
+  /// A list of plugins that will be added as dependencies from
+  /// code.dlang.org. The plugins will be imported in the main file.
+  ///
+  /// For `trial-my-plugin` the import will be `import trialmyplugin.plugin`.
+  /// You will be able to create a module constructor that will add all your needed 
+  /// lifecycle listeners.
+  string[] plugins = [];
 }
 
 /// A structure representing the `trial.json` file
