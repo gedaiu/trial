@@ -132,7 +132,6 @@ class PackageDescriptionCommand : PackageBuildCommand {
     logInfo("Looking for files inside `" ~ rootPackage ~ "`");
 
     auto currentPackage = this.desc.packages.filter!(a => a.name == rootPackage).front;
-
     auto packagePath = currentPackage.path;
 
     if (neededTarget.empty) {
@@ -220,11 +219,15 @@ class PackageDescriptionCommand : PackageBuildCommand {
     return settings;
   }
 
-  void writeTestFile(string reporters = "") {
+  void writeTestFile(string reporters = "", string plugins = "") {
     auto settings = readSettings();
 
     if (reporters != "") {
       settings.reporters = reporters.split(",").map!(a => a.strip).array;
+    }
+
+    if (plugins != "") {
+      settings.plugins = plugins.split(",").map!(a => a.strip).array;
     }
 
     auto content = generateTestFile(settings, hasTrial, modules, externalModules);

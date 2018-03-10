@@ -125,12 +125,13 @@ class TrialProject : Project {
 
 class TrialCommand : PackageBuildCommand {
   protected {
-    bool m_combined = false;
-    bool m_parallel = false;
-    bool m_force = false;
-    string m_testName = "";
-    string m_suiteName = "";
-    string m_reporters = "";
+    bool m_combined;
+    bool m_parallel;
+    bool m_force;
+    string m_testName;
+    string m_suiteName;
+    string m_reporters;
+    string m_plugins;
     PackageDescriptionCommand m_description;
   }
 
@@ -143,6 +144,7 @@ class TrialCommand : PackageBuildCommand {
       ~ `configuration will be preferred for testing. If none exists, the `
       ~ `first library type configuration will be used, and if that doesn't `
       ~ `exist either, the first executable configuration is chosen.`];
+
     this.acceptsAppArgs = false;
   }
 
@@ -155,8 +157,10 @@ class TrialCommand : PackageBuildCommand {
 
     args.getopt("combined", &m_combined,
         ["Tries to build the whole project in a single compiler run."]);
+
     args.getopt("parallel", &m_parallel,
         ["Runs multiple compiler instances in parallel, if possible."]);
+
     args.getopt("f|force", &m_force,
         ["Forces a recompilation even if the target is up to date."]);
 
@@ -168,6 +172,9 @@ class TrialCommand : PackageBuildCommand {
 
     args.getopt("r|reporters", &m_reporters,
         ["Override the reporters from the `trial.json` file. eg. -r spec,result,stats"]);
+
+    args.getopt("p|plugins", &m_plugins,
+        ["Add a trial plugin as dependency from code.dlang.org. eg. -p trial-plugin1,trial-plugin2"]);
 
     bool coverage = false;
     args.getopt("coverage", &coverage, ["Enables code coverage statistics to be generated."]);
@@ -187,7 +194,7 @@ class TrialCommand : PackageBuildCommand {
     }
 
     logInfo("Generate main file: " ~ m_description.mainFile);
-    m_description.writeTestFile(m_reporters);
+    m_description.writeTestFile(m_reporters, m_plugins);
 
     setupPackage(dub, package_name, m_buildType);
 

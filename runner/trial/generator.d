@@ -61,6 +61,11 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
       import trial.reporters.visualtrial;
       import trial.reporters.result;\n";
 
+  code ~= settings.plugins
+    .map!(a => a.toLower.replace("-", ""))
+    .map!(a => "      import " ~ a ~ ".plugin;")
+    .join("\n");
+
   code ~= `
   int main(string[] arguments) {
       setupLifecycle(` ~ settings.toCode ~ `);` ~ "\n\n";
