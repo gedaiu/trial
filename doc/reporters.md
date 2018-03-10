@@ -118,7 +118,7 @@ and you will have a nice report for your build.
 
 To use it, add `html` to the reporters list inisde `trial.json`.
 
-[example](http://trial.szabobogdan.com/artifacts/trial-result.html)
+[example](http://trial.szabobogdan.com/artifacts/result.html)
 
 ## Allure
 
