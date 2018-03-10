@@ -87,6 +87,15 @@ class TrialProject : Project {
       tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
     }
 
+    foreach(plugin; m_description.settings.plugins) {
+      if(plugin in tcinfo.dependencies) {
+        continue;
+      }
+
+      auto pluginPackage = getPackage(plugin, Dependency.any);
+      tcinfo.dependencies[plugin] = Dependency(pluginPackage.version_);
+    }
+
     project.saveSelections;
 
     return tcinfo;

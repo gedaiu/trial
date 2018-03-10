@@ -63,6 +63,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
 
   code ~= settings.plugins
     .map!(a => a.toLower.replace("-", ""))
+    .map!(a => a.toLower.replace(":", "."))
     .map!(a => "      import " ~ a ~ ".plugin;")
     .join("\n");
 

@@ -75,6 +75,8 @@ class PackageDescriptionCommand : PackageBuildCommand {
     CommonOptions options;
   }
 
+  Settings settings;
+
   this(CommonOptions options, string subPackageName) {
     this.options = options;
     dub = createDub(options);
@@ -220,7 +222,7 @@ class PackageDescriptionCommand : PackageBuildCommand {
   }
 
   void writeTestFile(string reporters = "", string plugins = "") {
-    auto settings = readSettings();
+    settings = readSettings();
 
     if (reporters != "") {
       settings.reporters = reporters.split(",").map!(a => a.strip).array;
