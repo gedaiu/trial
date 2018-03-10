@@ -15,6 +15,9 @@ import std.conv;
 import std.file;
 import std.path;
 import std.uuid;
+import std.exception;
+
+version(unittest) import fluent.asserts;
 
 /// Alias to a Test Case function type
 alias TestCaseDelegate = void delegate() @system;
@@ -55,7 +58,7 @@ string toJsonString(Throwable throwable) {
 
 /// convert a Throwable to json
 unittest {
-  auto exception = new Exception("some message");
+  auto exception = new Exception("some message", __FILE__, 58);
   exception.toJsonString.should.equal(`{"file":"lifecycle/trial/interfaces.d","line":"58","msg":"some message","info":"null","raw":"object.Exception@lifecycle/trial/interfaces.d(58): some message"}`);
 }
 
@@ -162,8 +165,6 @@ struct Attachment {
 
   /// Add a file to the current test or step
   static Attachment fromFile(const string name, const string path, const string mime) {
-    import trial.runner;
-
     auto fileDestination = buildPath(destination, randomUUID.toString ~ "." ~ path.baseName);
     copy(path, fileDestination);
 
@@ -512,251 +513,6 @@ class TestResult : StepResult
   }
 }
 
-version (unittest)
-{
-  import std.stdio;
-  import std.conv;
-  import std.algorithm;
-  import core.thread;
-
-  import trial.step;
-  import trial.runner;
-  import fluent.asserts;
-  import trial.executor.single;
-
-  __gshared bool executed;
-
-  void mock() @system
-  {
-    executed = true;
-  }
-
-  void failureMock() @system
-  {
-    executed = true;
-    assert(false);
-  }
-
-  void stepFunction(int i)
-  {
-    Step("Step " ~ i.to!string);
-  }
-
-  void stepMock() @system
-  {
-    auto a = Step("some step");
-    executed = true;
-
-    for (int i; i < 3; i++)
-    {
-      stepFunction(i);
-    }
-  }
-}
-
-/// Convert a test case to test result
-unittest {
-  auto testCase = TestCase("Suite name", "test name", &stepMock, [ Label("label", "value") ]);
-  auto testResult = testCase.toTestResult;
-
-  testResult.name.should.equal("test name");
-  testResult.labels.should.equal([ Label("label", "value") ]);
-  testResult.begin.should.be.greaterThan(Clock.currTime - 1.seconds);
-  testResult.end.should.be.greaterThan(Clock.currTime - 1.seconds);
-  testResult.status.should.equal(TestResult.Status.created);
-}
-
-@("A suite runner should run a success test case and add it to the result")
-unittest
-{
-  TestCase[] tests = [TestCase("Suite name1", "someTestCase", &mock)];
-
-  executed = false;
-
-  auto old = LifeCycleListeners.instance;
-  scope (exit)
-    LifeCycleListeners.instance = old;
-
-  LifeCycleListeners.instance = new LifeCycleListeners;
-  LifeCycleListeners.instance.add(new DefaultExecutor);
-
-  auto begin = Clock.currTime - 1.msecs;
-  auto result = tests.runTests;
-  auto end = Clock.currTime + 1.msecs;
-
-  result.length.should.equal(1);
-  result[0].tests.length.should.equal(1);
-  result[0].tests[0].begin.should.be.between(begin, end);
-  result[0].tests[0].end.should.be.between(begin, end);
-  result[0].tests[0].status.should.be.equal(TestResult.Status.success);
-  executed.should.equal(true);
-}
-
-@("A suite runner should run a failing test case and add it to the result")
-unittest
-{
-  TestCase[] tests = [TestCase("Suite name2", "someTestCase", &failureMock)];
-
-  executed = false;
-  auto old = LifeCycleListeners.instance;
-  scope (exit)
-    LifeCycleListeners.instance = old;
-
-  LifeCycleListeners.instance = new LifeCycleListeners;
-  LifeCycleListeners.instance.add(new DefaultExecutor);
-
-  auto begin = Clock.currTime - 1.msecs;
-  auto result = tests.runTests;
-  auto end = Clock.currTime + 1.msecs;
-
-  result.length.should.equal(1);
-  result[0].tests.length.should.equal(1);
-  result[0].tests[0].begin.should.be.between(begin, end);
-  result[0].tests[0].end.should.be.between(begin, end);
-  result[0].tests[0].status.should.be.equal(TestResult.Status.failure);
-
-  executed.should.equal(true);
-}
-
-@("A suite runner should call the suite lifecycle listener methods")
-unittest
-{
-  auto old = LifeCycleListeners.instance;
-  LifeCycleListeners.instance = new LifeCycleListeners;
-  LifeCycleListeners.instance.add(new DefaultExecutor);
-  scope (exit)
-    LifeCycleListeners.instance = old;
-
-  auto beginTime = Clock.currTime - 1.msecs;
-  TestCase[] tests = [TestCase("Suite name", "someTestCase", &mock)];
-
-  string[] order = [];
-  class TestSuiteListener : ISuiteLifecycleListener, ITestCaseLifecycleListener
-  {
-    void begin(ref SuiteResult suite)
-    {
-      suite.name.should.equal("Suite name");
-      suite.begin.should.be.greaterThan(beginTime);
-      suite.end.should.be.greaterThan(beginTime);
-
-      suite.tests.length.should.equal(0);
-
-      order ~= "beginSuite";
-    }
-
-    void end(ref SuiteResult suite)
-    {
-      suite.name.should.equal("Suite name");
-      suite.begin.should.be.greaterThan(beginTime);
-      suite.end.should.be.greaterThan(beginTime);
-      suite.tests[0].status.should.equal(TestResult.Status.success);
-
-      order ~= "endSuite";
-    }
-
-    void begin(string suite, ref TestResult test)
-    {
-      test.name.should.equal("someTestCase");
-      test.begin.should.be.greaterThan(beginTime);
-      test.end.should.be.greaterThan(beginTime);
-      test.status.should.equal(TestResult.Status.started);
-
-      order ~= "beginTest";
-    }
-
-    void end(string suite, ref TestResult test)
-    {
-      test.name.should.equal("someTestCase");
-      test.begin.should.be.greaterThan(beginTime);
-      test.end.should.be.greaterThan(beginTime);
-      test.status.should.equal(TestResult.Status.success);
-
-      order ~= "endTest";
-    }
-  }
-
-  LifeCycleListeners.instance.add(new TestSuiteListener);
-
-  tests.runTests;
-
-  order.should.equal(["beginSuite", "beginTest", "endTest", "endSuite"]);
-}
-
-@("A test runner should add the steps to the report")
-unittest
-{
-  auto beginTime = Clock.currTime - 1.msecs;
-  auto const test = TestCase("Suite name", "someTestCase", &stepMock);
-
-  auto old = LifeCycleListeners.instance;
-  scope (exit)
-  {
-    LifeCycleListeners.instance = old;
-  }
-
-  LifeCycleListeners.instance = new LifeCycleListeners;
-  LifeCycleListeners.instance.add(new DefaultExecutor);
-
-  auto result = [ test ].runTests;
-
-  result[0].tests[0].steps.length.should.equal(1);
-  result[0].tests[0].steps[0].name.should.equal("some step");
-  result[0].tests[0].steps[0].begin.should.be.greaterThan(beginTime);
-  result[0].tests[0].steps[0].end.should.be.greaterThan(beginTime);
-
-  result[0].tests[0].steps[0].steps.length.should.equal(3);
-  result[0].tests[0].steps[0].steps.each!(step => step.name.should.startWith("Step "));
-}
-
-@("A test runner should call the test listeners in the right order")
-unittest
-{
-  auto const test = TestCase("Suite name", "someTestCase", &stepMock);
-  string[] order = [];
-
-  class StepListener : IStepLifecycleListener
-  {
-    void begin(string suite, string test, ref StepResult step)
-    {
-      order ~= "begin " ~ step.name;
-    }
-
-    void end(string suite, string test, ref StepResult step)
-    {
-      order ~= "end " ~ step.name;
-    }
-  }
-
-  auto old = LifeCycleListeners.instance;
-  scope (exit)
-    LifeCycleListeners.instance = old;
-
-  LifeCycleListeners.instance = new LifeCycleListeners;
-  LifeCycleListeners.instance.add(new DefaultExecutor);
-  LifeCycleListeners.instance.add(new StepListener);
-
-  auto result = [test].runTests;
-
-  order.should.equal(["begin some step", "begin Step 0", "end Step 0",
-      "begin Step 1", "end Step 1", "begin Step 2", "end Step 2", "end some step"]);
-}
-
-@("A suite runner should set the data to an empty suite runner")
-unittest
-{
-  TestCase[] tests;
-  auto old = LifeCycleListeners.instance;
-  scope (exit)
-    LifeCycleListeners.instance = old;
-
-  LifeCycleListeners.instance = new LifeCycleListeners;
-  LifeCycleListeners.instance.add(new DefaultExecutor);
-
-  auto result = tests.runTests();
-
-  result.length.should.equal(0);
-}
-
 /// Attribute that marks the test as flaky. Different reporters will interpret this information
 /// in different ways.
 struct Flaky {
@@ -812,5 +568,156 @@ class PendingTestException : Exception {
   ///
   this(string file = __FILE__, size_t line = __LINE__, Throwable next = null)  {
     super("You cannot run pending tests", file, line, next);
+  }
+}
+
+/// The lifecycle listeners collections. You must use this instance in order
+/// to extend the runner. You can have as many listeners as you want. The only restriction
+/// is for ITestExecutor, which has no sense to have more than one instance for a run
+class LifeCycleListeners {
+
+  /// The global instange.
+  static LifeCycleListeners instance;
+
+  private {
+    ISuiteLifecycleListener[] suiteListeners;
+    ITestCaseLifecycleListener[] testListeners;
+    IStepLifecycleListener[] stepListeners;
+    ILifecycleListener[] lifecycleListeners;
+    ITestDiscovery[] testDiscoveryListeners;
+    IAttachmentListener[] attachmentListeners;
+    ITestExecutor executor;
+
+    string currentTest;
+    bool started;
+  }
+
+  @property {
+    /// Return an unique name for the current running test. If there is no test running it
+    /// will return an empty string
+    string runningTest() const nothrow {
+      return currentTest;
+    }
+
+    /// True if the tests are being executed
+    bool isRunning() {
+      return started;
+    }
+  }
+
+  ///
+  TestCase[] getTestCases() {
+    return testDiscoveryListeners.map!(a => a.getTestCases).join;
+  }
+
+  /// Add a listener to the collection
+  void add(T)(T listener) {
+    static if(!is(CommonType!(ISuiteLifecycleListener, T) == void)) {
+      suiteListeners ~= cast(ISuiteLifecycleListener) listener;
+      suiteListeners = suiteListeners.filter!(a => a !is null).array;
+    }
+
+    static if(!is(CommonType!(ITestCaseLifecycleListener, T) == void)) {
+      testListeners ~= cast(ITestCaseLifecycleListener) listener;
+      testListeners = testListeners.filter!(a => a !is null).array;
+    }
+
+    static if(!is(CommonType!(IStepLifecycleListener, T) == void)) {
+      stepListeners ~= cast(IStepLifecycleListener) listener;
+      stepListeners = stepListeners.filter!(a => a !is null).array;
+    }
+
+    static if(!is(CommonType!(ILifecycleListener, T) == void)) {
+      lifecycleListeners ~= cast(ILifecycleListener) listener;
+      lifecycleListeners = lifecycleListeners.filter!(a => a !is null).array;
+    }
+
+    static if(!is(CommonType!(ITestExecutor, T) == void)) {
+      if(cast(ITestExecutor) listener !is null) {
+        executor = cast(ITestExecutor) listener;
+      }
+    }
+
+    static if(!is(CommonType!(ITestDiscovery, T) == void)) {
+      testDiscoveryListeners ~= cast(ITestDiscovery) listener;
+      testDiscoveryListeners = testDiscoveryListeners.filter!(a => a !is null).array;
+    }
+
+    static if(!is(CommonType!(IAttachmentListener, T) == void)) {
+      attachmentListeners ~= cast(IAttachmentListener) listener;
+      attachmentListeners = attachmentListeners.filter!(a => a !is null).array;
+    }
+  }
+
+  /// Send the attachment to all listeners
+  void attach(ref const Attachment attachment) {
+    attachmentListeners.each!(a => a.attach(attachment));
+  }
+
+  /// Send the update event to all listeners
+  void update() {
+    lifecycleListeners.each!"a.update";
+  }
+
+  /// Send the begin run event to all listeners
+  void begin(ulong testCount) {
+    lifecycleListeners.each!(a => a.begin(testCount));
+  }
+
+  /// Send the end runer event to all listeners
+  void end(SuiteResult[] result) {
+    lifecycleListeners.each!(a => a.end(result));
+  }
+
+  /// Send the begin suite event to all listeners
+  void begin(ref SuiteResult suite) {
+    suiteListeners.each!(a => a.begin(suite));
+  }
+
+  /// Send the end suite event to all listeners
+  void end(ref SuiteResult suite) {
+    suiteListeners.each!(a => a.end(suite));
+  }
+
+  /// Send the begin test event to all listeners
+  void begin(string suite, ref TestResult test) {
+    currentTest = suite ~ "." ~ test.name;
+    testListeners.each!(a => a.begin(suite, test));
+  }
+
+  /// Send the end test event to all listeners
+  void end(string suite, ref TestResult test) {
+    currentTest = "";
+    testListeners.each!(a => a.end(suite, test));
+  }
+
+  /// Send the begin step event to all listeners
+  void begin(string suite, string test, ref StepResult step) {
+    currentTest = suite ~ "." ~ test ~ "." ~ step.name;
+    stepListeners.each!(a => a.begin(suite, test, step));
+  }
+
+  /// Send the end step event to all listeners
+  void end(string suite, string test, ref StepResult step) {
+    currentTest = "";
+    stepListeners.each!(a => a.end(suite, test, step));
+  }
+
+  /// Send the execute test to the executor listener
+  SuiteResult[] execute(ref const(TestCase) func) {
+    started = true;
+    scope(exit) started = false;
+    return executor.execute(func);
+  }
+
+  /// Send the begin execution with the test case list to the executor listener
+  SuiteResult[] beginExecution(ref const(TestCase)[] tests) {
+    enforce(executor !is null, "The test executor was not set.");
+    return executor.beginExecution(tests);
+  }
+
+  /// Send the end execution the executor listener
+  SuiteResult[] endExecution() {
+    return executor.endExecution();
   }
 }

@@ -19,15 +19,15 @@
 		{
 			"name": "trial",
 			"excludedSourceFiles": ["source/app.d", "runner/app.d"],
-			"sourcePaths": ["lifecycle", "runner"],
+			"sourcePaths": ["lifecycle", "runner", "tests"],
 			"stringImportPaths": ["lifecycle/trial"],
-			"importPaths": ["lifecycle", "runner"],
+			"importPaths": ["lifecycle", "runner", "tests"],
 			"mainSourceFile": "source/app.d",
 
 			"dependencies": {
-				"dub": "~>1.7.0",
-				"fluent-asserts:core": "~>0.9.0",
-				"libdparse": "~>0.7.2-alpha.5"
+				"dub": "~>1.8.0",
+				"fluent-asserts": "~>0.9.0",
+				"libdparse": "~>0.7.2-alpha.3"
 			}
 		}
 	],
@@ -40,7 +40,7 @@
 			"importPaths": ["lifecycle"],
 			"dependencies": {
 				"fluent-asserts": "~>0.9.0",
-				"libdparse": "~>0.7.2-alpha.5"
+				"libdparse": "~>0.7.2-alpha.3"
 			}
 		},
 		{
@@ -52,9 +52,9 @@
 			"stringImportPaths": ["lifecycle/trial"],
 
 			"dependencies": {
-				"dub": "~>1.7.0",
+				"dub": "~>1.8.0",
 				"trial:lifecycle": "*",
-				"libdparse": "~>0.7.2-alpha.5",
+				"libdparse": "~>0.7.2-alpha.3",
 				"fluent-asserts:core": "~>0.9.0"
 			}
 		}

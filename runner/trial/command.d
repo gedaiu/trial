@@ -7,6 +7,7 @@ import std.string;
 import std.file;
 import std.datetime;
 import std.path;
+import std.array;
 import trial.description;
 
 import dub.internal.vibecompat.data.json;
@@ -29,6 +30,98 @@ import dub.description;
 import dub.internal.utils;
 
 import trial.generator;
+
+class TrialProject : Project {
+
+  private {
+    Project project;
+    Project trialProject;
+    PackageDescriptionCommand m_description;
+  }
+  alias getDependency = Project.getDependency;
+  alias getTopologicalPackageList = Project.getTopologicalPackageList;
+
+  this(Project project, PackageDescriptionCommand description) {
+    this.project = project;
+    this.m_description = description;
+
+    project.rootPackage.recipe.configurations = [ConfigurationInfo(m_description.buildFile, testBuildSettings)];
+
+    super(project.packageManager, project.rootPackage);
+    this.reinit;
+  }
+
+  override
+  inout(Package) getDependency(string name, bool is_optional)
+  inout {
+    auto result = super.getDependency(name, is_optional);
+
+
+    if(result !is null) {
+      auto basename = getBasePackageName(name);
+      auto recipe = result.recipe.clone;
+      auto hasTrialConfigurations = recipe.configurations.canFind!(a => a.name == "trial");
+
+      if(basename != rootPackage.basePackage.name && hasTrialConfigurations) {
+        recipe.configurations = recipe.configurations.filter!(a => a.name != "trial").array;
+
+        return cast(inout Package) new Package(recipe, result.path, cast(Package) result.parentPackage, result.recipe.version_);
+      }
+    }
+
+    return result;
+  }
+
+  BuildSettingsTemplate testBuildSettings() {
+    BuildSettingsTemplate tcinfo = project.rootPackage.recipe.getConfiguration(m_description.configuration).buildSettings;
+
+    tcinfo.targetType = TargetType.executable;
+    tcinfo.targetName = m_description.buildFile;
+    tcinfo.excludedSourceFiles[""] ~= tcinfo.mainSourceFile;
+    tcinfo.importPaths[""] ~= NativePath(m_description.mainFile).parentPath.toNativeString();
+    tcinfo.mainSourceFile = m_description.mainFile;
+    tcinfo.versions[""] ~= "VibeCustomMain";
+
+    if(getBasePackageName(project.rootPackage.name) != "trial") {
+      auto trialPackage = getPackage("trial:lifecycle", Dependency.any);
+      tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
+    }
+
+    project.saveSelections;
+
+    return tcinfo;
+  }
+
+  Package getPackage(string name, Dependency dep) {
+    auto baseName = name.canFind(":") ? name.split(":")[0] : name;
+
+    if(project.selections.hasSelectedVersion(baseName)) {
+      dep = project.selections.getSelectedVersion(baseName);
+      dep.optional = false;
+    }
+
+    Package pack;
+
+    if(!dep.optional) {
+      pack = project.packageManager.getBestPackage(name, dep);
+    }
+
+    if(pack is null && !dep.optional) {
+      m_description.dub.fetch(baseName, Dependency.any, PlacementLocation.user, FetchOptions.none);
+      pack = project.packageManager.getBestPackage(baseName, dep);
+    }
+
+    if(pack !is null) {
+      project.selections.selectVersion(pack.basePackage.name, pack.version_);
+
+      foreach(dependency; pack.getAllDependencies) {
+        getPackage(dependency.name, dependency.spec);
+      }
+    }
+
+    return pack;
+  }
+}
 
 class TrialCommand : PackageBuildCommand {
   protected {
@@ -116,6 +209,20 @@ class TrialCommand : PackageBuildCommand {
     return 0;
   }
 
+  void run(string[] runArgs = []) {
+    auto settings = getSettings;
+
+    settings.runArgs = runArgs;
+
+    auto project = m_description.project;
+    auto config = settings.config;
+
+    auto trialProject = new TrialProject(project, m_description);
+    auto generator = createProjectGenerator("build", trialProject);
+ 
+    generator.generate(settings);
+  }
+
   protected GeneratorSettings getSettings() {
     GeneratorSettings settings;
     settings.config = m_description.configuration;
@@ -130,43 +237,10 @@ class TrialCommand : PackageBuildCommand {
     settings.tempBuild = m_single;
     settings.run = true;
     settings.runArgs = [];
+    settings.buildSettings.mainSourceFile = m_description.mainFile;
+    settings.config = m_description.buildFile;
 
     return settings;
-  }
-
-  void run(string[] runArgs = []) {
-    auto settings = getSettings;
-
-    settings.runArgs = runArgs;
-
-    auto project = m_description.project;
-    auto config = settings.config;
-    auto testConfig = m_description.buildFile;
-
-    BuildSettingsTemplate tcinfo = project.rootPackage.recipe.getConfiguration(config)
-      .buildSettings;
-
-    tcinfo.targetType = TargetType.executable;
-    tcinfo.targetName = testConfig;
-    tcinfo.excludedSourceFiles[""] ~= tcinfo.mainSourceFile;
-    tcinfo.sourceFiles[""] ~= NativePath(m_description.mainFile)
-      .relativeTo(project.rootPackage.path).toNativeString();
-    tcinfo.importPaths[""] ~= NativePath(m_description.mainFile).parentPath.toNativeString();
-    tcinfo.mainSourceFile = m_description.mainFile;
-    tcinfo.versions[""] ~= "VibeCustomMain";
-    project.rootPackage.recipe.buildSettings.versions[""]
-      = project.rootPackage.recipe.buildSettings.versions.get("", null)
-      .remove!(v => v == "VibeDefaultMain");
-
-    settings.buildSettings.mainSourceFile = m_description.mainFile;
-
-    auto generator = createProjectGenerator("build", project);
-
-    project.rootPackage.recipe.configurations = [ConfigurationInfo(testConfig, tcinfo)];
-
-    settings.config = testConfig;
-
-    generator.generate(settings);
   }
 }
 

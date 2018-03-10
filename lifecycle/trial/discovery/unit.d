@@ -7,7 +7,6 @@
 +/
 module trial.discovery.unit;
 
-import std.stdio;
 import std.string;
 import std.traits;
 import std.conv;
@@ -730,6 +729,7 @@ unittest
   auto testDiscovery = new UnitTestDiscovery;
 
   auto tests = testDiscovery.discoverTestCases(__FILE__);
+
   tests.length.should.be.greaterThan(0);
 
   auto testFilter = tests.filter!(a => a.name == "The discoverTestCases should find this test");

@@ -19,10 +19,17 @@ import std.path;
 import std.getopt;
 import std.file;
 import std.path;
+import std.exception;
 
 import trial.settings;
 import trial.executor.single;
 import trial.executor.parallel;
+
+static this() {
+  if(LifeCycleListeners.instance is null) {
+    LifeCycleListeners.instance = new LifeCycleListeners;
+  }
+}
 
 /// setup the LifeCycle collection
 void setupLifecycle(Settings settings) {
@@ -34,7 +41,10 @@ void setupLifecycle(Settings settings) {
     Attachment.destination.mkdirRecurse;
   }
 
-  LifeCycleListeners.instance = new LifeCycleListeners;
+  if(LifeCycleListeners.instance is null) {
+    LifeCycleListeners.instance = new LifeCycleListeners;
+  }
+
   settings.reporters.map!(a => a.toLower).each!(a => addReporter(a, settings));
 
   if(settings.runInParallel) {
@@ -292,7 +302,7 @@ auto runTests(const(TestCase)[] tests, string testName = "", string suiteName = 
   }
 
   if(suiteName != "") {
-    filteredTests = tests.filter!(a => a.suiteName.indexOf(suiteName) != -1).array;
+    filteredTests = filteredTests.filter!(a => a.suiteName.indexOf(suiteName) != -1).array;
   }
 
   LifeCycleListeners.instance.begin(filteredTests.length);
@@ -355,149 +365,9 @@ unittest {
   results.isSuccess.should.equal(false);
 }
 
-/// The lifecycle listeners collections. You must use this instance in order
-/// to extend the runner. You can have as many listeners as you want. The only restriction
-/// is for ITestExecutor, which has no sense to have more than one instance for a run
-class LifeCycleListeners {
-
-  /// The global instange.
-  static LifeCycleListeners instance;
-
-  private {
-    ISuiteLifecycleListener[] suiteListeners;
-    ITestCaseLifecycleListener[] testListeners;
-    IStepLifecycleListener[] stepListeners;
-    ILifecycleListener[] lifecycleListeners;
-    ITestDiscovery[] testDiscoveryListeners;
-    IAttachmentListener[] attachmentListeners;
-    ITestExecutor executor;
-
-    string currentTest;
-  }
-
-  @property {
-    /// Return an unique name for the current running test. If there is no test running it
-    /// will return an empty string
-    string runningTest() const nothrow {
-      return currentTest;
-    }
-  }
-
-  ///
-  TestCase[] getTestCases() {
-    return testDiscoveryListeners.map!(a => a.getTestCases).join;
-  }
-
-  /// Add a listener to the collection
-  void add(T)(T listener) {
-    static if(!is(CommonType!(ISuiteLifecycleListener, T) == void)) {
-      suiteListeners ~= cast(ISuiteLifecycleListener) listener;
-      suiteListeners = suiteListeners.filter!(a => a !is null).array;
-    }
-
-    static if(!is(CommonType!(ITestCaseLifecycleListener, T) == void)) {
-      testListeners ~= cast(ITestCaseLifecycleListener) listener;
-      testListeners = testListeners.filter!(a => a !is null).array;
-    }
-
-    static if(!is(CommonType!(IStepLifecycleListener, T) == void)) {
-      stepListeners ~= cast(IStepLifecycleListener) listener;
-      stepListeners = stepListeners.filter!(a => a !is null).array;
-    }
-
-    static if(!is(CommonType!(ILifecycleListener, T) == void)) {
-      lifecycleListeners ~= cast(ILifecycleListener) listener;
-      lifecycleListeners = lifecycleListeners.filter!(a => a !is null).array;
-    }
-
-    static if(!is(CommonType!(ITestExecutor, T) == void)) {
-      executor = cast(ITestExecutor) listener;
-    }
-
-    static if(!is(CommonType!(ITestDiscovery, T) == void)) {
-      testDiscoveryListeners ~= cast(ITestDiscovery) listener;
-      testDiscoveryListeners = testDiscoveryListeners.filter!(a => a !is null).array;
-    }
-
-    static if(!is(CommonType!(IAttachmentListener, T) == void)) {
-      attachmentListeners ~= cast(IAttachmentListener) listener;
-      attachmentListeners = attachmentListeners.filter!(a => a !is null).array;
-    }
-  }
-
-  /// Send the attachment to all listeners
-  void attach(ref const Attachment attachment) {
-    attachmentListeners.each!(a => a.attach(attachment));
-  }
-
-  /// Send the update event to all listeners
-  void update() {
-    lifecycleListeners.each!"a.update";
-  }
-
-  /// Send the begin run event to all listeners
-  void begin(ulong testCount) {
-    lifecycleListeners.each!(a => a.begin(testCount));
-  }
-
-  /// Send the end runer event to all listeners
-  void end(SuiteResult[] result) {
-    lifecycleListeners.each!(a => a.end(result));
-  }
-
-  /// Send the begin suite event to all listeners
-  void begin(ref SuiteResult suite) {
-    suiteListeners.each!(a => a.begin(suite));
-  }
-
-  /// Send the end suite event to all listeners
-  void end(ref SuiteResult suite) {
-    suiteListeners.each!(a => a.end(suite));
-  }
-
-  /// Send the begin test event to all listeners
-  void begin(string suite, ref TestResult test) {
-    currentTest = suite ~ "." ~ test.name;
-    testListeners.each!(a => a.begin(suite, test));
-  }
-
-  /// Send the end test event to all listeners
-  void end(string suite, ref TestResult test) {
-    currentTest = "";
-    testListeners.each!(a => a.end(suite, test));
-  }
-
-  /// Send the begin step event to all listeners
-  void begin(string suite, string test, ref StepResult step) {
-    currentTest = suite ~ "." ~ test ~ "." ~ step.name;
-    stepListeners.each!(a => a.begin(suite, test, step));
-  }
-
-  /// Send the end step event to all listeners
-  void end(string suite, string test, ref StepResult step) {
-    currentTest = "";
-    stepListeners.each!(a => a.end(suite, test, step));
-  }
-
-  /// Send the execute test to the executor listener
-  SuiteResult[] execute(ref const(TestCase) func) {
-    return executor.execute(func);
-  }
-
-  /// Send the begin execution with the test case list to the executor listener
-  SuiteResult[] beginExecution(ref const(TestCase)[] tests) {
-    return executor.beginExecution(tests);
-  }
-
-  /// Send the end execution the executor listener
-  SuiteResult[] endExecution() {
-    return executor.endExecution();
-  }
-}
-
 /// It should return the name of this test
 unittest {
-  if(LifeCycleListeners.instance is null) {
+  if(LifeCycleListeners.instance is null || !LifeCycleListeners.instance.isRunning) {
     return;
   }
 
