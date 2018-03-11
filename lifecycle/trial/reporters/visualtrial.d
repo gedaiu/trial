@@ -21,6 +21,15 @@ version(Have_fluent_asserts_core) {
 import trial.interfaces;
 import trial.reporters.writer;
 
+enum Tokens : string {
+  beginTest = "BEGIN TEST;",
+  suite = "suite",
+  test = "test",
+  file = "file",
+  line = "line",
+  labels = "labels"
+}
+
 /// This reporter will print the results using thr Test anything protocol version 13
 class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
 {
@@ -126,7 +135,6 @@ unittest
     `labels:[{ "name": "name", "value": "value" }, { "name": "name1", "value": "value1" }]` ~ "\n");
 }
 
-
 /// it should print a sucess test
 unittest
 {
@@ -202,4 +210,75 @@ unittest {
          "    Extra:a\n" ~
          "  Missing:b\n\n" ~
          "END TEST;\n");
+}
+
+/// Parse the output from the visual trial reporter
+class VisualTrialReporterParser {
+  TestResult testResult;
+  string suite;
+
+  /// add a line to the parser
+  void add(string line) {
+    if(line == Tokens.beginTest) {
+      testResult = new TestResult("unknown");
+      return;
+    }
+
+    auto pos = line.indexOf(":");
+
+    if(pos == -1) {
+      return;
+    }
+
+    string token = line[0 .. pos];
+    string value = line[pos+1 .. $];
+
+    switch(token) {
+      case Tokens.suite:
+        suite = value;
+        break;
+
+      case Tokens.test:
+        testResult.name = value;
+        break;
+
+      case Tokens.file:
+        testResult.fileName = value;
+        break;
+
+      case Tokens.line:
+        testResult.line = value.to!size_t;
+        break;
+
+      case Tokens.labels:
+        testResult.labels = Label.fromJsonArray(value);
+        break;
+
+      default:
+    }
+  }
+}
+
+/// Parse a successful test
+unittest {
+  auto parser = new VisualTrialReporterParser();
+  parser.testResult.should.beNull;
+
+  parser.add("BEGIN TEST;");
+  parser.testResult.should.not.beNull;
+
+  parser.add("suite:suite name");
+  parser.suite.should.equal("suite name");
+
+  parser.add("test:test name");
+  parser.testResult.name.should.equal("test name");
+
+  parser.add("file:some file.d");
+  parser.testResult.fileName.should.equal("some file.d");
+
+  parser.add("line:22");
+  parser.testResult.line.should.equal(22);
+
+  parser.add(`labels:[ { "name": "name1", "value": "label1" }, { "name": "name2", "value": "label2" }]`);
+  parser.testResult.labels.should.equal([Label("name1", "label1"), Label("name2", "label2")]);
 }

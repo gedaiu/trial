@@ -16,6 +16,8 @@ import std.file;
 import std.path;
 import std.uuid;
 import std.exception;
+import std.json;
+import std.algorithm;
 
 version(unittest) import fluent.asserts;
 
@@ -141,11 +143,38 @@ struct Label {
   string toString() inout {
     return `{ "name": "` ~ name.escapeJson ~ `", "value": "` ~ value.escapeJson ~ `" }`;
   }
+
+  ///
+  static Label[] fromJsonArray(string value) {
+    return parseJSON(value).array.map!(a => Label(a["name"].str, a["value"].str)).array;
+  }
+
+  ///
+  static Label fromJson(string value) {
+    auto parsedValue = parseJSON(value);
+
+    return Label(parsedValue["name"].str, parsedValue["value"].str);
+  }
 }
 
 /// Label string representation should be in Json format
 unittest {
   Label("name", "value").toString.should.equal(`{ "name": "name", "value": "value" }`);
+}
+
+/// create a label from a json object
+unittest {
+  auto label = Label.fromJson(`{ "name": "name", "value": "value" }`);
+
+  label.name.should.equal("name");
+  label.value.should.equal("value");
+}
+
+/// create a label list from a json array
+unittest {
+  auto labels = Label.fromJsonArray(`[{ "name": "name1", "value": "value1" }, { "name": "name2", "value": "value2" }]`);
+
+  labels.should.equal([ Label("name1", "value1"), Label("name2", "value2") ]);
 }
 
 /// A struct representing an attachment for test steps

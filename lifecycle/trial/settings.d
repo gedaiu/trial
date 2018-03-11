@@ -154,14 +154,14 @@ unittest {
   mixin("auto settings = " ~ Settings().toCode ~ ";");
 }
 
-/// it should be able to transform the Settings to code.
+/// it should be able to transform the Settings to code
 unittest
 {
 	Settings settings;
 
 	settings.toCode.should.equal(`Settings(` ~
      `["spec", "result"], ` ~
-     `["trial.discovery.unit.UnitTestDiscovery"], false, 0, ` ~
+     `["trial.discovery.unit.UnitTestDiscovery"], "default", 0, ` ~
       "GlyphSettings(SpecGlyphs(`✓`), " ~
                     "SpecStepsGlyphs(`┌`, `└`, `│`), "~
                     "TestResultGlyphs(`✖`), " ~

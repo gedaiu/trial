@@ -81,7 +81,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
         "testName|t",  &testName,
         "suiteName|s", &suiteName,
         "executor|e",  &executor,
-        "reporters|r",  &reporters
+        "reporters|r", &reporters
       );
 
       auto settings = ` ~ settings.toCode ~ `;
