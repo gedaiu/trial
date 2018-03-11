@@ -90,12 +90,34 @@ struct Settings
   this(string[] reporters, 
     string[] testDiscovery, 
     string executor, 
-    uint maxThreads,
+    int maxThreads,
     GlyphSettings glyphs,
     string artifactsLocation,
-    uint warningTestDuration,
-    uint dangerTestDuration,
-    string[] plugins) {
+    int warningTestDuration,
+    int dangerTestDuration,
+    string[] plugins = []) {
+
+      this.reporters = reporters;
+      this.testDiscovery = testDiscovery;
+      this.executor = executor;
+      this.maxThreads = maxThreads;
+      this.glyphs = glyphs;
+      this.artifactsLocation = artifactsLocation;
+      this.warningTestDuration = warningTestDuration;
+      this.dangerTestDuration = dangerTestDuration;
+      this.plugins = plugins;
+  }
+
+  this(string[] reporters, 
+    string[] testDiscovery,
+    bool, // deprecated
+    int maxThreads,
+    GlyphSettings glyphs,
+    string artifactsLocation,
+    int warningTestDuration,
+    int dangerTestDuration,
+    string[] plugins = [],
+    string executor = "default") {
 
       this.reporters = reporters;
       this.testDiscovery = testDiscovery;
@@ -188,7 +210,7 @@ unittest
 
 	settings.toCode.should.equal(`Settings(` ~
      `["spec", "result"], ` ~
-     `["trial.discovery.unit.UnitTestDiscovery"], "default", 0, ` ~
+     `["trial.discovery.unit.UnitTestDiscovery"], false,0, ` ~
       "GlyphSettings(SpecGlyphs(`✓`), " ~
                     "SpecStepsGlyphs(`┌`, `└`, `│`), "~
                     "TestResultGlyphs(`✖`), " ~
