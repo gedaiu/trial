@@ -12,6 +12,8 @@ import std.conv;
 import std.string;
 import std.algorithm;
 import std.stdio;
+import std.datetime;
+import std.exception;
 
 version(Have_fluent_asserts_core) {
   import fluentasserts.core.base;
@@ -23,11 +25,16 @@ import trial.reporters.writer;
 
 enum Tokens : string {
   beginTest = "BEGIN TEST;",
+  endTest = "END TEST;",
   suite = "suite",
   test = "test",
   file = "file",
   line = "line",
-  labels = "labels"
+  labels = "labels",
+  status = "status",
+  errorFile = "errorFile",
+  errorLine = "errorLine",
+  message = "message"
 }
 
 /// This reporter will print the results using thr Test anything protocol version 13
@@ -217,10 +224,40 @@ class VisualTrialReporterParser {
   TestResult testResult;
   string suite;
 
+  alias ResultEvent = void delegate(TestResult);
+
+  ResultEvent onResult;
+
+  private {
+    bool readingErrorMessage;
+  }
+
   /// add a line to the parser
   void add(string line) {
     if(line == Tokens.beginTest) {
-      testResult = new TestResult("unknown");
+      if(testResult is null) {
+        testResult = new TestResult("unknown");
+      }
+
+      testResult.begin = Clock.currTime;
+      testResult.end = Clock.currTime;
+      return;
+    }
+
+    if(line == Tokens.endTest) {
+      enforce(testResult !is null, "The test result was not created!");
+
+      if(onResult !is null) {
+        onResult(testResult);
+      }
+      
+      readingErrorMessage = false;
+      testResult = null;
+      return;
+    }
+
+    if(readingErrorMessage) {
+      testResult.throwable.msg ~= "\n" ~ line;
       return;
     }
 
@@ -254,6 +291,31 @@ class VisualTrialReporterParser {
         testResult.labels = Label.fromJsonArray(value);
         break;
 
+      case Tokens.status:
+        testResult.status = value.to!(TestResult.Status);
+        break;
+
+      case Tokens.errorFile:
+        if(testResult.throwable is null) {
+          testResult.throwable = new ParsedVisualTrialException();
+        }
+        testResult.throwable.file = value;
+
+        break;
+
+      case Tokens.errorLine:
+        if(testResult.throwable is null) {
+          testResult.throwable = new ParsedVisualTrialException();
+        }
+        testResult.throwable.line = value.to!size_t;
+        break;
+
+      case Tokens.message:
+        enforce(testResult.throwable !is null, "The throwable must exist!");
+        testResult.throwable.msg = value;
+        readingErrorMessage = true;
+        break;
+
       default:
     }
   }
@@ -263,9 +325,13 @@ class VisualTrialReporterParser {
 unittest {
   auto parser = new VisualTrialReporterParser();
   parser.testResult.should.beNull;
+  auto begin = Clock.currTime;
 
   parser.add("BEGIN TEST;");
   parser.testResult.should.not.beNull;
+  parser.testResult.begin.should.be.greaterThan(begin);
+  parser.testResult.end.should.be.greaterThan(begin);
+  parser.testResult.status.should.equal(TestResult.Status.created);
 
   parser.add("suite:suite name");
   parser.suite.should.equal("suite name");
@@ -281,4 +347,70 @@ unittest {
 
   parser.add(`labels:[ { "name": "name1", "value": "label1" }, { "name": "name2", "value": "label2" }]`);
   parser.testResult.labels.should.equal([Label("name1", "label1"), Label("name2", "label2")]);
+
+  parser.add("status:success");
+  parser.testResult.status.should.equal(TestResult.Status.success);
+
+  parser.add("END TEST;");
+  parser.testResult.should.beNull;
+}
+
+
+/// Parse a failing test
+unittest {
+  auto parser = new VisualTrialReporterParser();
+  parser.testResult.should.beNull;
+  auto begin = Clock.currTime;
+
+  parser.add("BEGIN TEST;");
+
+  parser.add("errorFile:file.d");
+  parser.add("errorLine:147");
+  parser.add("message:line1");
+  parser.add("line2");
+  parser.add("line3");
+
+  parser.testResult.throwable.should.not.beNull;
+  parser.testResult.throwable.file.should.equal("file.d");
+  parser.testResult.throwable.line.should.equal(147);
+
+  parser.add("END TEST;");
+  parser.testResult.should.beNull;
+}
+
+/// Raise an event when the test is ended
+unittest {
+  bool called;
+
+  void checkResult(TestResult result) {
+    called = true;
+    result.should.not.beNull;
+  }
+
+  auto parser = new VisualTrialReporterParser();
+  parser.onResult = &checkResult;
+
+  parser.add("BEGIN TEST;");
+  parser.add("END TEST;");
+
+  called.should.equal(true);
+}
+
+/// It should not replace a test result that was already assigned
+unittest {
+  auto testResult = new TestResult("");
+
+  auto parser = new VisualTrialReporterParser();
+  parser.testResult = testResult;
+  parser.add("BEGIN TEST;");
+  parser.testResult.should.equal(testResult);
+
+  parser.add("END TEST;");
+  parser.testResult.should.beNull;
+}
+
+class ParsedVisualTrialException : Exception {
+  this() { 
+    super("");
+  }
 }

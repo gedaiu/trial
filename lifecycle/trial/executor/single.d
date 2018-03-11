@@ -79,7 +79,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
   protected
   {
     /// Run a test case
-    void runTest(ref const(TestCase) testCase, ref TestResult testResult) {
+    void runTest(ref const(TestCase) testCase, TestResult testResult) {
       try
       {
         testCase.func();

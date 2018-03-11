@@ -4,13 +4,15 @@ import std.datetime;
 
 import trial.executor.process;
 import trial.discovery.spec;
+import trial.reporters.visualtrial;
 
 import fluent.asserts;
 
 private string[] testHistory;
 
-void mockProcessExecutor(string suite, string testName) {
+void mockProcessExecutor(string suite, string testName, VisualTrialReporterParser parser) {
   testHistory ~= suite ~ ":" ~ testName;
+  parser.testResult.status = TestResult.Status.success;
 }
 
 void pendingTest() {
@@ -27,9 +29,14 @@ alias s = Spec!({
       executor = new ProcessExecutor(&mockProcessExecutor);
       listeners = LifeCycleListeners.instance;
       LifeCycleListeners.instance = new LifeCycleListeners();
+      LifeCycleListeners.instance.add(executor);
     });
 
     afterEach({
+      LifeCycleListeners.instance = listeners;
+    });
+
+    after({
       LifeCycleListeners.instance = listeners;
     });
 
