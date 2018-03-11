@@ -19,10 +19,17 @@ import std.datetime;
 void testProcessRuner(string suiteName, string testName) {
   import std.stdio;
   writeln([thisExePath, "-s", suiteName, "-t", testName]);
+  auto command = [ thisExePath, 
+    "-s", suiteName,
+    "-t", testName,
+    "-r", "visualtrial",
+    "-e", "default" ];
 
-  auto pipes = pipeProcess([thisExePath, "-s", suiteName, "-t", testName], Redirect.stdout | Redirect.stderr);
+  //auto pipes = pipeProcess(, Redirect.stdout | Redirect.stderr);
 
-  wait(pipes.pid);
+  auto pid = spawnProcess(command);
+
+  wait(pid);
 }
 
 /// An executor that will run every test in a separate

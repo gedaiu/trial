@@ -43,6 +43,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
 
   string code = "
       import std.getopt;
+      import std.string;
       import trial.discovery.unit;
       import trial.discovery.spec;
       import trial.discovery.testclass;
@@ -73,17 +74,23 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
       string testName;
       string suiteName;
       string executor;
+      string reporters;
 
       getopt(
         arguments,
         "testName|t",  &testName,
-        "suiteName|s",  &suiteName,
-        "executor|e",  &executor
+        "suiteName|s", &suiteName,
+        "executor|e",  &executor,
+        "reporters|r",  &reporters
       );
 
       auto settings = ` ~ settings.toCode ~ `;
       if(executor != "") {
         settings.executor = executor;
+      }
+
+      if(reporters != "") {
+        settings.reporters = reporters.split(",");
       }
 
       setupLifecycle(settings);` ~ "\n\n";
