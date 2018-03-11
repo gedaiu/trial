@@ -73,7 +73,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
 
     LifeCycleListeners.instance.update();
     LifeCycleListeners.instance.end(suiteResult);
-    return [suiteResult];
+    return [ suiteResult ];
   }
 
   private

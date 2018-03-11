@@ -347,6 +347,12 @@ struct SuiteResult
   }
 
   ///
+  this(string name, SysTime begin) {
+    this.name = name;
+    this.begin = begin;
+  }
+
+  ///
   this(string name, SysTime begin, SysTime end) {
     this.name = name;
     this.begin = begin;
