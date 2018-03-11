@@ -44,8 +44,9 @@ mixin template SettingsFields()
   string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
 
   /// The default executor is `SingleRunner`. If you want to use the
-  /// `ParallelExecutor` set this flag true.
-  bool runInParallel = false;
+  /// `ParallelExecutor` set this option to `parallel` or if you want
+  /// to use the `ProcessExecutor` set it to `process`.
+  string executor = "default";
 
   /// The number of threads tha you want to use
   /// `0` means the number of cores that your processor has
@@ -122,7 +123,7 @@ string toCode(Settings settings)
   return "Settings(" ~
     settings.reporters.to!string ~ ", " ~
     settings.testDiscovery.to!string ~ ", " ~
-    settings.runInParallel.to!string ~ ", " ~
+    `"` ~ settings.executor.to!string ~ `", ` ~
     settings.maxThreads.to!string ~ ", " ~
     settings.glyphs.toCode ~ ", " ~
     `"` ~ settings.artifactsLocation ~ `", ` ~
@@ -153,7 +154,7 @@ unittest {
   mixin("auto settings = " ~ Settings().toCode ~ ";");
 }
 
-/// it should be able to transform  the Settings to code.
+/// it should be able to transform the Settings to code.
 unittest
 {
 	Settings settings;

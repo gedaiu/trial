@@ -42,6 +42,7 @@ string generateDiscoveries(string[] discoveries, string[2][] modules) {
 string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] modules, string[] externalModules) {
 
   string code = "
+      import std.getopt;
       import trial.discovery.unit;
       import trial.discovery.spec;
       import trial.discovery.testclass;
@@ -69,7 +70,23 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
 
   code ~= `
   int main(string[] arguments) {
-      setupLifecycle(` ~ settings.toCode ~ `);` ~ "\n\n";
+      string testName;
+      string suiteName;
+      string executor;
+
+      getopt(
+        arguments,
+        "testName|t",  &testName,
+        "suiteName|s",  &suiteName,
+        "executor|e",  &executor
+      );
+
+      auto settings = ` ~ settings.toCode ~ `;
+      if(executor != "") {
+        settings.executor = executor;
+      }
+
+      setupLifecycle(settings);` ~ "\n\n";
 
   if(hasTrialDependency) {
     externalModules ~= [ "_d_assert", "std.", "core." ];
@@ -87,7 +104,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
         describeTests.toJSONHierarchy.write;
         return 0;
       } else {
-        return runTests(arguments).isSuccess ? 0 : 1;
+        return runTests(LifeCycleListeners.instance.getTestCases, testName, suiteName).isSuccess ? 0 : 1;
       }
   }
 

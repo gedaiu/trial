@@ -2,7 +2,7 @@ module tests.trial.executors.process;
 
 import std.datetime;
 
-import trial.executors.process;
+import trial.executor.process;
 import trial.discovery.spec;
 
 import fluent.asserts;

@@ -15,6 +15,6 @@
 	],
 
 	"artifactsLocation": ".trial",
-	"runInParallel": false,
+	"executor": "default",
 	"maxThreads": 1
 }
