@@ -85,8 +85,11 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
       );
 
       auto settings = ` ~ settings.toCode ~ `;
-      if(executor != "") {
-        settings.executor = executor;
+
+      static if(__traits(hasMember, Settings, "executor")) {
+        if(executor != "") {
+          settings.executor = executor;
+        }
       }
 
       if(reporters != "") {

@@ -18,6 +18,7 @@ import trial.reporters.progress;
 version(Have_dub) {
   import dub.internal.vibecompat.data.serialization;
 }
+
 ///
 mixin template SettingsFields()
 {
@@ -43,10 +44,7 @@ mixin template SettingsFields()
   /// The test discovery classes that you want to use
   string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
 
-  /// The default executor is `SingleRunner`. If you want to use the
-  /// `ParallelExecutor` set this option to `parallel` or if you want
-  /// to use the `ProcessExecutor` set it to `process`.
-  string executor = "default";
+  deprecated("use .executor instead") bool runInParallel = false;
 
   /// The number of threads tha you want to use
   /// `0` means the number of cores that your processor has
@@ -71,6 +69,11 @@ mixin template SettingsFields()
   /// You will be able to create a module constructor that will add all your needed 
   /// lifecycle listeners.
   string[] plugins = [];
+
+  /// The default executor is `SingleRunner`. If you want to use the
+  /// `ParallelExecutor` set this option to `parallel` or if you want
+  /// to use the `ProcessExecutor` set it to `process`.
+  string executor = "default";
 }
 
 /// A structure representing the `trial.json` file
@@ -82,6 +85,27 @@ struct Settings
     }
   } else {
     mixin SettingsFields;
+  }
+
+  this(string[] reporters, 
+    string[] testDiscovery, 
+    string executor, 
+    uint maxThreads,
+    GlyphSettings glyphs,
+    string artifactsLocation,
+    uint warningTestDuration,
+    uint dangerTestDuration,
+    string[] plugins) {
+
+      this.reporters = reporters;
+      this.testDiscovery = testDiscovery;
+      this.executor = executor;
+      this.maxThreads = maxThreads;
+      this.glyphs = glyphs;
+      this.artifactsLocation = artifactsLocation;
+      this.warningTestDuration = warningTestDuration;
+      this.dangerTestDuration = dangerTestDuration;
+      this.plugins = plugins;
   }
 }
 
@@ -120,15 +144,18 @@ struct GlyphSettings {
 /// Converts the settings object to DLang code. It's used by the generator
 string toCode(Settings settings)
 {
+  auto executor = settings.executor == "default" ? "" : `"` ~ settings.executor ~ `"`;
+
   return "Settings(" ~
     settings.reporters.to!string ~ ", " ~
     settings.testDiscovery.to!string ~ ", " ~
-    `"` ~ settings.executor.to!string ~ `", ` ~
+    `false,` ~ 
     settings.maxThreads.to!string ~ ", " ~
     settings.glyphs.toCode ~ ", " ~
     `"` ~ settings.artifactsLocation ~ `", ` ~
     settings.warningTestDuration.to!string ~ `, ` ~
     settings.dangerTestDuration.to!string ~
+    executor ~
     ")";
 }
 
