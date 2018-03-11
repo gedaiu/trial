@@ -35,7 +35,7 @@
       "dependencies": {
         "dub": "~>1.8.0",
         "fluent-asserts": "~>0.9.0",
-        "libdparse": "~>0.7.2-alpha.3"
+        "libdparse": "*"
       }
     }
   ],
@@ -76,7 +76,7 @@
       "dependencies": {
         "dub": "~>1.8.0",
         "trial:lifecycle": "*",
-        "libdparse": "~>0.7.2-alpha.3",
+        "libdparse": "*",
         "fluent-asserts:core": "~>0.9.0"
       }
     }
