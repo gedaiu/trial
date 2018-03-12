@@ -11,6 +11,7 @@ import std.exception;
 
 import dub.internal.vibecompat.core.log;
 
+import trial.discovery.unit;
 import trial.settings;
 
 ///
@@ -27,6 +28,12 @@ string generateDiscoveries(string[] discoveries, string[2][] modules) {
     }
 
     code ~= "      auto testDiscovery" ~ index.to!string ~ " = new " ~ cls ~ ";\n";
+
+    if(discovery == "trial.discovery.unit.UnitTestDiscovery") {
+      foreach(m; modules) {
+        code ~= `      UnitTestDiscovery.comments["` ~ m[0] ~ `"] = [` ~ m[0].readText.compressComments.map!"a.toCode".join(",\n            ").array.to!string ~ `];` ~ "\n";
+      }
+    }
 
     foreach(m; modules) {
       code ~= `      testDiscovery` ~ index.to!string ~ `.addModule!(` ~ "`" ~ m[0] ~ "`" ~ `, ` ~ "`" ~ m[1] ~ "`" ~ `);` ~ "\n";

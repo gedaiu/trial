@@ -102,6 +102,10 @@ struct Comment
 {
   ulong line;
   string value;
+
+  string toCode() {
+    return `Comment(` ~ line.to!string ~ `, "` ~ value.replace(`\`, `\\`).replace(`"`, `\"`) ~ `")`;
+  }
 }
 
 Comment[] commentGroupToString(T)(T[] group)
@@ -275,10 +279,7 @@ size_t extractLine(string name) {
 class UnitTestDiscovery : ITestDiscovery
 {
   TestCase[string][string] testCases;
-
-  private {
-    Comment[][string] comments;
-  }
+  static Comment[][string] comments;
 
   TestCase[] getTestCases()  
   {
