@@ -9,6 +9,7 @@ Here are informations about how the tests are executed and how you can extend th
   - [About](#about)
   - [The default executor](#the-default-executor)
   - [Parallel executor](#parallel-executor)
+  - [Process executor](#process-executor)
   - [Extending](#extending)
 
 ## About
@@ -26,6 +27,24 @@ The parallel executor run the tests in parallel. In order to use this executor, 
 
 This executor is experimental and it does not work with all reporters.
 
+
+The parallel executor run the tests in parallel. In order to use this executor, you have to add in your `trial.json`:
+```
+  "executor": "parallel"
+```
+The `maxThreads` will set determine how many threads will be used in the same time. Any value that's equal or less than `0` will set the number of threads equal to the number of the threads that your CPU supports.
+
+This executor is experimental and it does not work with all reporters.
+
+## Process executor
+
+This executor will run each test in a sepparate process. Right now it does not support parallization, and this feature will be adedd
+in the future.
+
+To use this executor, add in yout `trial.json`:
+```
+  "executor": "process"
+```
 ## Extending
 
 In order to write your executor, your class must implement the `ITestExecutor` method.
