@@ -30,9 +30,11 @@ string generateDiscoveries(string[] discoveries, string[2][] modules) {
     code ~= "      auto testDiscovery" ~ index.to!string ~ " = new " ~ cls ~ ";\n";
 
     if(discovery == "trial.discovery.unit.UnitTestDiscovery") {
+      code ~= `static if(__traits(hasMember, UnitTestDiscovery, "comments")) {`;
       foreach(m; modules) {
         code ~= `      UnitTestDiscovery.comments["` ~ m[0] ~ `"] = [` ~ m[0].readText.compressComments.map!"a.toCode".join(",\n            ").array.to!string ~ `];` ~ "\n";
       }
+      code ~= "}";
     }
 
     foreach(m; modules) {
