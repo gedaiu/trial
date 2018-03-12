@@ -16,9 +16,10 @@ import std.path;
 import std.file;
 import std.datetime;
 import std.conv;
+import std.stdio;
 
 void testProcessRuner(string suiteName, string testName, VisualTrialReporterParser parser) {
-  import std.stdio;
+  TestResult testResult;
 
   auto command = [ thisExePath, 
     "-s", suiteName,
@@ -30,9 +31,18 @@ void testProcessRuner(string suiteName, string testName, VisualTrialReporterPars
 
   foreach(line; pipes.stdout.byLine) {
     parser.add(line.to!string);
+
+    if(testResult is null && parser.testResult !is null) {
+      testResult = parser.testResult;
+    }
   }
 
-  wait(pipes.pid);
+  auto code = wait(pipes.pid);
+
+  if(testResult !is null && testResult.throwable is null && code != 0) {
+    testResult.throwable = new Exception("The process exited with code `" ~ code.to!string ~ "`", testResult.fileName, testResult.line);
+    testResult.status = TestResult.Status.failure;
+  }
 }
 
 /// An executor that will run every test in a separate
@@ -53,12 +63,17 @@ class ProcessExecutor : DefaultExecutor {
     super();
 
     this.parser = new VisualTrialReporterParser();
+    this.parser.onOutput = &this.onOutput;
     this.testProcessRun = testProcessRun;
   }
 
   /// Instantiate the executor with a custom process runner
   this() {
     this(&testProcessRuner);
+  }
+
+  void onOutput(string line) {
+    writeln(line);
   }
 
   /// Run a test case

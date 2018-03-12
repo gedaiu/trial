@@ -223,10 +223,13 @@ unittest {
 class VisualTrialReporterParser {
   TestResult testResult;
   string suite;
+  bool readingTest;
 
   alias ResultEvent = void delegate(TestResult);
+  alias OutputEvent = void delegate(string);
 
   ResultEvent onResult;
+  OutputEvent onOutput;
 
   private {
     bool readingErrorMessage;
@@ -238,7 +241,7 @@ class VisualTrialReporterParser {
       if(testResult is null) {
         testResult = new TestResult("unknown");
       }
-
+      readingTest = true;
       testResult.begin = Clock.currTime;
       testResult.end = Clock.currTime;
       return;
@@ -246,7 +249,7 @@ class VisualTrialReporterParser {
 
     if(line == Tokens.endTest) {
       enforce(testResult !is null, "The test result was not created!");
-
+      readingTest = false;
       if(onResult !is null) {
         onResult(testResult);
       }
@@ -256,14 +259,22 @@ class VisualTrialReporterParser {
       return;
     }
 
+    if(!readingTest) {
+      return;
+    }
+
     if(readingErrorMessage) {
       testResult.throwable.msg ~= "\n" ~ line;
       return;
     }
 
     auto pos = line.indexOf(":");
-
+    
     if(pos == -1) {
+      if(onOutput !is null) {
+        onOutput(line);
+      }
+
       return;
     }
 
@@ -317,6 +328,9 @@ class VisualTrialReporterParser {
         break;
 
       default:
+        if(onOutput !is null) {
+          onOutput(line);
+        }
     }
   }
 }
@@ -407,6 +421,23 @@ unittest {
 
   parser.add("END TEST;");
   parser.testResult.should.beNull;
+}
+
+/// It should raise an event with unparsed lines
+unittest {
+  bool raised;
+  auto parser = new VisualTrialReporterParser();
+
+  void onOutput(string line) {
+    line.should.equal("some output");
+    raised = true;
+  }
+
+  parser.onOutput = &onOutput;
+  parser.add("BEGIN TEST;");
+  parser.add("some output");
+
+  raised.should.equal(true);
 }
 
 class ParsedVisualTrialException : Exception {
