@@ -28,9 +28,12 @@ version(D_Coverage) {
       rmdirRecurse("coverage");
     }
 
-    mkdirRecurse(buildPath("coverage", "raw"));
+    auto destination = buildPath("coverage", "raw").asAbsolutePath.array.idup.to!string;
+    mkdirRecurse(destination);
 
-    dmd_coverDestPath(buildPath("coverage", "raw"));
+    dmd_coverSetMerge(false);
+    //dmd_coverSourcePath(thisExePath);
+    dmd_coverDestPath(destination);
   }
 }
 
