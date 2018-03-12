@@ -31,7 +31,31 @@
         "runner",
         "tests"
       ],
-      "mainSourceFile": "source/app.d",
+      "dependencies": {
+        "dub": "~>1.8.0",
+        "fluent-asserts": "~>0.9.0",
+        "libdparse": "*"
+      }
+    },
+    {
+      "name": "unittest",
+      "excludedSourceFiles": [
+        "source/app.d",
+        "runner/app.d"
+      ],
+      "sourcePaths": [
+        "lifecycle",
+        "runner",
+        "tests"
+      ],
+      "stringImportPaths": [
+        "lifecycle/trial"
+      ],
+      "importPaths": [
+        "lifecycle",
+        "runner",
+        "tests"
+      ],
       "dependencies": {
         "dub": "~>1.8.0",
         "fluent-asserts": "~>0.9.0",
