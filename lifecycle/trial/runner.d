@@ -24,6 +24,7 @@ import std.exception;
 import trial.settings;
 import trial.executor.single;
 import trial.executor.parallel;
+import trial.executor.process;
 
 static this() {
   if(LifeCycleListeners.instance is null) {
@@ -47,10 +48,24 @@ void setupLifecycle(Settings settings) {
 
   settings.reporters.map!(a => a.toLower).each!(a => addReporter(a, settings));
 
-  if(settings.runInParallel) {
-    LifeCycleListeners.instance.add(new ParallelExecutor(settings.maxThreads));
-  } else {
-    LifeCycleListeners.instance.add(new DefaultExecutor);
+  addExecutor(settings.executor, settings);
+}
+
+void addExecutor(string name, Settings settings) {
+  switch(name) {
+      case "default":
+        LifeCycleListeners.instance.add(new DefaultExecutor);
+        break;
+      case "parallel":
+        LifeCycleListeners.instance.add(new ParallelExecutor(settings.maxThreads));
+        break;
+      case "process":
+        LifeCycleListeners.instance.add(new ProcessExecutor());
+        break;
+      
+      default:
+        writeln("There is no `" ~ name ~ "` executor. Using the default.");
+        LifeCycleListeners.instance.add(new DefaultExecutor);
   }
 }
 
@@ -317,20 +332,6 @@ auto runTests(const(TestCase)[] tests, string testName = "", string suiteName = 
   LifeCycleListeners.instance.end(results);
 
   return results;
-}
-
-/// ditto
-auto runTests(string[] arguments) {
-  string testName;
-  string suiteName;
-
-  getopt(
-    arguments,
-    "testName|t",  &testName,
-    "suiteName|s",  &suiteName
-  );
-
-  return runTests(LifeCycleListeners.instance.getTestCases, testName, suiteName);
 }
 
 /// Check if a suite result list is a success

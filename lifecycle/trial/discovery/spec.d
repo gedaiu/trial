@@ -495,6 +495,10 @@ unittest
 {
   auto testDiscovery = new SpecTestDiscovery;
 
-  testDiscovery.discoverTestCases(__FILE__).map!(a => a.toString).join("\n")
-    .should.equal(testDiscovery.getTestCases.map!(a => a.toString).join("\n"));
+  testDiscovery
+    .discoverTestCases(__FILE__).map!(a => a.toString).join("\n")
+      .should.equal(
+        testDiscovery.getTestCases
+        .filter!(a => a.location.fileName.canFind(__FILE__))
+        .map!(a => a.toString).join("\n"));
 }

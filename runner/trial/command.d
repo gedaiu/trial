@@ -84,6 +84,8 @@ class TrialProject : Project {
 
     if(getBasePackageName(project.rootPackage.name) != "trial") {
       auto trialPackage = getPackage("trial:lifecycle", Dependency.any);
+      enforce(trialPackage !is null, "Can not get the trial lifecycle package!");
+
       tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
     }
 
@@ -140,6 +142,7 @@ class TrialCommand : PackageBuildCommand {
     string m_testName;
     string m_suiteName;
     string m_reporters;
+    string m_executor;
     string m_plugins;
     PackageDescriptionCommand m_description;
   }
@@ -181,6 +184,9 @@ class TrialCommand : PackageBuildCommand {
 
     args.getopt("r|reporters", &m_reporters,
         ["Override the reporters from the `trial.json` file. eg. -r spec,result,stats"]);
+    
+    args.getopt("e|executor", &m_executor,
+        ["Override the test executor"]);
 
     args.getopt("p|plugins", &m_plugins,
         ["Add a trial plugin as dependency from code.dlang.org. eg. -p trial-plugin1,trial-plugin2"]);
@@ -218,6 +224,10 @@ class TrialCommand : PackageBuildCommand {
 
     if (m_suiteName != "") {
       arguments ~= ["-s", m_suiteName];
+    }
+
+    if (m_executor != "") {
+      arguments ~= ["-e", m_executor];
     }
 
     run(arguments);
