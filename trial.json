@@ -15,6 +15,5 @@
 	],
 
 	"artifactsLocation": ".trial",
-	"executor": "default",
 	"maxThreads": 1
 }

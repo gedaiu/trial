@@ -84,6 +84,8 @@ class TrialProject : Project {
 
     if(getBasePackageName(project.rootPackage.name) != "trial") {
       auto trialPackage = getPackage("trial:lifecycle", Dependency.any);
+      enforce(trialPackage !is null, "Can not get the trial lifecycle package!");
+
       tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
     }
 
