@@ -103,12 +103,16 @@ class TrialProject : Project {
     Package pack;
 
     if(!dep.optional) {
-      pack = project.packageManager.getBestPackage(name, dep);
+      pack = project.packageManager.getBestPackage(name, dep, true);
     }
 
     if(pack is null && !dep.optional) {
       m_description.dub.fetch(baseName, Dependency.any, PlacementLocation.user, FetchOptions.none);
-      pack = project.packageManager.getBestPackage(baseName, dep);
+      pack = project.packageManager.getBestPackage(baseName, dep, true);
+
+      if(pack is null) {
+        pack = project.packageManager.getPackage(baseName, dep.version_);
+      }
     }
 
     if(pack !is null) {

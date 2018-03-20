@@ -13,7 +13,6 @@
 		"trial.discovery.spec.SpecTestDiscovery",
 		"trial.discovery.testclass.TestClassDiscovery"
 	],
-
 	"artifactsLocation": ".trial",
 	"runInParallel": false,
 	"maxThreads": 1

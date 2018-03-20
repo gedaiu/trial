@@ -16,14 +16,14 @@ import std.algorithm;
 
 import core.demangle;
 
-version (Have_fluent_asserts_core) { } else {
+version (Have_fluent_asserts) { } else {
   auto toTestException(Throwable t)
   {
     return t;
   }
 }
 
-version (Have_fluent_asserts_core) {
+version (Have_fluent_asserts) {
 
   import fluentasserts.core.base;
   import fluentasserts.core.results;
@@ -124,7 +124,7 @@ struct ExternalValidator
   string[] externalModules;
 
   /// Check if the provided name comes from an external dependency
-  bool isExternal(const string name)
+  bool isExternal(const string name) @safe
   {
     auto reversed = name.dup;
     reverse(reversed);
@@ -222,7 +222,7 @@ class StackResult : IResult
   override
   {
     /// Converts the result to a string
-    string toString()
+    string toString() @safe
     {
       string result = "Stack trace:\n-------------------\n...\n";
 
@@ -305,7 +305,7 @@ struct Frame
   ///
   int line = -1;
 
-  string toString() const {
+  string toString() const @safe {
     string result;
 
     if(index >= 0) {
@@ -336,7 +336,7 @@ struct Frame
     return result;
   }
 
-  void print(ResultPrinter printer)
+  void print(ResultPrinter printer) @safe
   {
     if(index >= 0) {
       printer.info(leftJustifier(index.to!string, 4).to!string);
