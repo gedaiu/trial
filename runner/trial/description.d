@@ -45,8 +45,12 @@ Dub createDub(CommonOptions options) {
   }
 
   // initialize DUB
-  auto package_suppliers = options.registry_urls.map!(
-      url => cast(PackageSupplier) new RegistryPackageSupplier(URL(url))).array;
+  auto package_suppliers = options
+      .registry_urls
+      .map!(url => URL(url))
+      .map!(url => cast(PackageSupplier) new RegistryPackageSupplier(url))
+        .array;
+
   dub = new Dub(options.root_path, package_suppliers, options.skipRegistry);
 
   dub.dryRun = options.annotate;

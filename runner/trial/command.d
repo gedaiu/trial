@@ -82,7 +82,7 @@ class TrialProject : Project {
     tcinfo.mainSourceFile = m_description.mainFile;
     tcinfo.versions[""] ~= "VibeCustomMain";
 
-    if(getBasePackageName(project.rootPackage.name) != "trial") {
+    if(getBasePackageName(project.rootPackage.name) != "trial" && m_description.configuration != "trial") {
       auto trialPackage = getPackage("trial:lifecycle", Dependency.any);
       enforce(trialPackage !is null, "Can not get the trial lifecycle package!");
 
@@ -108,18 +108,26 @@ class TrialProject : Project {
 
     if(project.selections.hasSelectedVersion(baseName)) {
       dep = project.selections.getSelectedVersion(baseName);
+      import std.stdio;
+
+      writeln("selected: ", name, " : ", dep);
+
       dep.optional = false;
     }
 
     Package pack;
 
     if(!dep.optional) {
-      pack = project.packageManager.getBestPackage(name, dep);
+      pack = project.packageManager.getBestPackage(name, dep, true);
     }
 
     if(pack is null && !dep.optional) {
       m_description.dub.fetch(baseName, Dependency.any, PlacementLocation.user, FetchOptions.none);
-      pack = project.packageManager.getBestPackage(baseName, dep);
+      pack = project.packageManager.getBestPackage(baseName, dep, true);
+
+      if(pack is null) {
+        pack = project.packageManager.getPackage(baseName, dep.version_);
+      }
     }
 
     if(pack !is null) {

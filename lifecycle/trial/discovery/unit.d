@@ -254,6 +254,11 @@ size_t extractLine(string name) {
     }
   } else {
     enum len = unitTestKey.length;
+
+    if(name.length < len) {
+      return 0;
+    }
+
     auto postFix = name[len .. $];
     auto idx = postFix.indexOf("_");
 
@@ -768,7 +773,7 @@ unittest
   auto testDiscovery = new UnitTestDiscovery;
 
   testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain("unnamed test at line 764");
+      .array.should.contain("unnamed test at line 769");
 }
 
 /// discoverTestCases should find the same tests like testCases

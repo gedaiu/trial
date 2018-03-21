@@ -35,3 +35,6 @@ trial-lifecycle
 trial-runner
 trial-root
 .trial/
+some_image.png
+trial-root-cov
+trial-test-unittest

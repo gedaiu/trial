@@ -33,8 +33,12 @@
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "fluent-asserts": "~>0.9.0",
-        "libdparse": "*"
+        "fluent-asserts:core": "~>0.10.1",
+        "libdparse": "*",
+        "vibe-d": "*"
+      },
+      "subConfigurations": {
+        "dub": "library-nonet"
       }
     },
     {
@@ -58,8 +62,12 @@
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "fluent-asserts": "~>0.9.0",
-        "libdparse": "*"
+        "fluent-asserts:core": "~>0.10.1",
+        "libdparse": "*",
+        "vibe-d": "~>0.8.0"
+      },
+      "subConfigurations": {
+        "dub": "library-nonet"
       }
     }
   ],
@@ -74,8 +82,8 @@
         "lifecycle"
       ],
       "dependencies": {
-        "fluent-asserts": {
-          "version": "~>0.9.0",
+        "fluent-asserts:core": {
+          "version": "~>0.10.1",
           "optional": true
         },
         "libdparse": {
@@ -85,23 +93,38 @@
       }
     },
     {
+      "name": "lifecycle-core",
+      "targetType": "library",
+      "sourcePaths": [
+        "lifecycle"
+      ],
+      "importPaths": [
+        "lifecycle"
+      ]
+    },
+    {
       "name": "runner",
       "targetType": "executable",
       "targetName": "trial",
       "sourcePaths": [
-        "runner"
+        "runner",
+        "lifecycle"
       ],
       "importPaths": [
-        "runner"
+        "runner",
+        "lifecycle"
       ],
       "stringImportPaths": [
-        "lifecycle/trial"
+        "views"
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "trial:lifecycle": "*",
+        "fluent-asserts:core": "~>0.10.1",
         "libdparse": "*",
-        "fluent-asserts": "~>0.9.0"
+        "vibe-d": "*"
+      },
+      "subConfigurations": {
+        "dub": "library-nonet"
       }
     }
   ]

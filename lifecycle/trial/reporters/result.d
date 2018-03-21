@@ -235,6 +235,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
 version (Have_fluent_asserts_core) {
   class TrialResultPrinter : ResultPrinter {
+    @trusted:
     ReportWriter writer;
 
     this(ReportWriter writer) {
