@@ -18,6 +18,10 @@ import std.datetime;
 import trial.interfaces;
 import trial.reporters.writer;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
 version (Have_fluent_asserts_core)
 {
   import fluentasserts.core.base;
@@ -235,6 +239,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
 version (Have_fluent_asserts_core) {
   class TrialResultPrinter : ResultPrinter {
+    @trusted:
     ReportWriter writer;
 
     this(ReportWriter writer) {

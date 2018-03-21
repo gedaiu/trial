@@ -73,11 +73,30 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
 
     LifeCycleListeners.instance.update();
     LifeCycleListeners.instance.end(suiteResult);
-    return [suiteResult];
+    return [ suiteResult ];
   }
 
-  private
+  protected
   {
+    /// Run a test case
+    void runTest(ref const(TestCase) testCase, TestResult testResult) {
+      try
+      {
+        testCase.func();
+        testResult.status = TestResult.Status.success;
+      }
+      catch (PendingTestException) 
+      {
+        testResult.status = TestResult.Status.pending;
+      }
+      catch (Throwable t)
+      {
+        testResult.status = TestResult.Status.failure;
+        testResult.throwable = t.toTestException;
+      }
+    }
+
+    /// Convert a test case to a test result
     void createTestResult(const(TestCase) testCase)
     {
       testResult = testCase.toTestResult;
@@ -93,19 +112,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
 
       LifeCycleListeners.instance.begin(testCase.suiteName, testResult);
 
-      try
-      {
-        testCase.func();
-        testResult.status = TestResult.Status.success;
-      }
-      catch (PendingTestException) {
-        testResult.status = TestResult.Status.pending;
-      }
-      catch (Throwable t)
-      {
-        testResult.status = TestResult.Status.failure;
-        testResult.throwable = t.toTestException;
-      }
+      runTest(testCase, testResult);
 
       testResult.end = Clock.currTime;
 

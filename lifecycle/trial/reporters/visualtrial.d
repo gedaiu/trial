@@ -12,6 +12,8 @@ import std.conv;
 import std.string;
 import std.algorithm;
 import std.stdio;
+import std.datetime;
+import std.exception;
 
 version(Have_fluent_asserts_core) {
   import fluentasserts.core.base;
@@ -20,6 +22,20 @@ version(Have_fluent_asserts_core) {
 
 import trial.interfaces;
 import trial.reporters.writer;
+
+enum Tokens : string {
+  beginTest = "BEGIN TEST;",
+  endTest = "END TEST;",
+  suite = "suite",
+  test = "test",
+  file = "file",
+  line = "line",
+  labels = "labels",
+  status = "status",
+  errorFile = "errorFile",
+  errorLine = "errorLine",
+  message = "message"
+}
 
 /// This reporter will print the results using thr Test anything protocol version 13
 class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
@@ -126,7 +142,6 @@ unittest
     `labels:[{ "name": "name", "value": "value" }, { "name": "name1", "value": "value1" }]` ~ "\n");
 }
 
-
 /// it should print a sucess test
 unittest
 {
@@ -202,4 +217,231 @@ unittest {
          "    Extra:a\n" ~
          "  Missing:b\n\n" ~
          "END TEST;\n");
+}
+
+/// Parse the output from the visual trial reporter
+class VisualTrialReporterParser {
+  TestResult testResult;
+  string suite;
+  bool readingTest;
+
+  alias ResultEvent = void delegate(TestResult);
+  alias OutputEvent = void delegate(string);
+
+  ResultEvent onResult;
+  OutputEvent onOutput;
+
+  private {
+    bool readingErrorMessage;
+  }
+
+  /// add a line to the parser
+  void add(string line) {
+    if(line == Tokens.beginTest) {
+      if(testResult is null) {
+        testResult = new TestResult("unknown");
+      }
+      readingTest = true;
+      testResult.begin = Clock.currTime;
+      testResult.end = Clock.currTime;
+      return;
+    }
+
+    if(line == Tokens.endTest) {
+      enforce(testResult !is null, "The test result was not created!");
+      readingTest = false;
+      if(onResult !is null) {
+        onResult(testResult);
+      }
+      
+      readingErrorMessage = false;
+      testResult = null;
+      return;
+    }
+
+    if(!readingTest) {
+      return;
+    }
+
+    if(readingErrorMessage) {
+      testResult.throwable.msg ~= "\n" ~ line;
+      return;
+    }
+
+    auto pos = line.indexOf(":");
+    
+    if(pos == -1) {
+      if(onOutput !is null) {
+        onOutput(line);
+      }
+
+      return;
+    }
+
+    string token = line[0 .. pos];
+    string value = line[pos+1 .. $];
+
+    switch(token) {
+      case Tokens.suite:
+        suite = value;
+        break;
+
+      case Tokens.test:
+        testResult.name = value;
+        break;
+
+      case Tokens.file:
+        testResult.fileName = value;
+        break;
+
+      case Tokens.line:
+        testResult.line = value.to!size_t;
+        break;
+
+      case Tokens.labels:
+        testResult.labels = Label.fromJsonArray(value);
+        break;
+
+      case Tokens.status:
+        testResult.status = value.to!(TestResult.Status);
+        break;
+
+      case Tokens.errorFile:
+        if(testResult.throwable is null) {
+          testResult.throwable = new ParsedVisualTrialException();
+        }
+        testResult.throwable.file = value;
+
+        break;
+
+      case Tokens.errorLine:
+        if(testResult.throwable is null) {
+          testResult.throwable = new ParsedVisualTrialException();
+        }
+        testResult.throwable.line = value.to!size_t;
+        break;
+
+      case Tokens.message:
+        enforce(testResult.throwable !is null, "The throwable must exist!");
+        testResult.throwable.msg = value;
+        readingErrorMessage = true;
+        break;
+
+      default:
+        if(onOutput !is null) {
+          onOutput(line);
+        }
+    }
+  }
+}
+
+/// Parse a successful test
+unittest {
+  auto parser = new VisualTrialReporterParser();
+  parser.testResult.should.beNull;
+  auto begin = Clock.currTime;
+
+  parser.add("BEGIN TEST;");
+  parser.testResult.should.not.beNull;
+  parser.testResult.begin.should.be.greaterThan(begin);
+  parser.testResult.end.should.be.greaterThan(begin);
+  parser.testResult.status.should.equal(TestResult.Status.created);
+
+  parser.add("suite:suite name");
+  parser.suite.should.equal("suite name");
+
+  parser.add("test:test name");
+  parser.testResult.name.should.equal("test name");
+
+  parser.add("file:some file.d");
+  parser.testResult.fileName.should.equal("some file.d");
+
+  parser.add("line:22");
+  parser.testResult.line.should.equal(22);
+
+  parser.add(`labels:[ { "name": "name1", "value": "label1" }, { "name": "name2", "value": "label2" }]`);
+  parser.testResult.labels.should.equal([Label("name1", "label1"), Label("name2", "label2")]);
+
+  parser.add("status:success");
+  parser.testResult.status.should.equal(TestResult.Status.success);
+
+  parser.add("END TEST;");
+  parser.testResult.should.beNull;
+}
+
+
+/// Parse a failing test
+unittest {
+  auto parser = new VisualTrialReporterParser();
+  parser.testResult.should.beNull;
+  auto begin = Clock.currTime;
+
+  parser.add("BEGIN TEST;");
+
+  parser.add("errorFile:file.d");
+  parser.add("errorLine:147");
+  parser.add("message:line1");
+  parser.add("line2");
+  parser.add("line3");
+
+  parser.testResult.throwable.should.not.beNull;
+  parser.testResult.throwable.file.should.equal("file.d");
+  parser.testResult.throwable.line.should.equal(147);
+
+  parser.add("END TEST;");
+  parser.testResult.should.beNull;
+}
+
+/// Raise an event when the test is ended
+unittest {
+  bool called;
+
+  void checkResult(TestResult result) {
+    called = true;
+    result.should.not.beNull;
+  }
+
+  auto parser = new VisualTrialReporterParser();
+  parser.onResult = &checkResult;
+
+  parser.add("BEGIN TEST;");
+  parser.add("END TEST;");
+
+  called.should.equal(true);
+}
+
+/// It should not replace a test result that was already assigned
+unittest {
+  auto testResult = new TestResult("");
+
+  auto parser = new VisualTrialReporterParser();
+  parser.testResult = testResult;
+  parser.add("BEGIN TEST;");
+  parser.testResult.should.equal(testResult);
+
+  parser.add("END TEST;");
+  parser.testResult.should.beNull;
+}
+
+/// It should raise an event with unparsed lines
+unittest {
+  bool raised;
+  auto parser = new VisualTrialReporterParser();
+
+  void onOutput(string line) {
+    line.should.equal("some output");
+    raised = true;
+  }
+
+  parser.onOutput = &onOutput;
+  parser.add("BEGIN TEST;");
+  parser.add("some output");
+
+  raised.should.equal(true);
+}
+
+class ParsedVisualTrialException : Exception {
+  this() { 
+    super("");
+  }
 }

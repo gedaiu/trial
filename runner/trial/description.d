@@ -79,6 +79,8 @@ class PackageDescriptionCommand : PackageBuildCommand {
     CommonOptions options;
   }
 
+  Settings settings;
+
   this(CommonOptions options, string subPackageName) {
     this.options = options;
     dub = createDub(options);
@@ -136,7 +138,6 @@ class PackageDescriptionCommand : PackageBuildCommand {
     logInfo("Looking for files inside `" ~ rootPackage ~ "`");
 
     auto currentPackage = this.desc.packages.filter!(a => a.name == rootPackage).front;
-
     auto packagePath = currentPackage.path;
 
     if (neededTarget.empty) {
@@ -224,11 +225,15 @@ class PackageDescriptionCommand : PackageBuildCommand {
     return settings;
   }
 
-  void writeTestFile(string reporters = "") {
-    auto settings = readSettings();
+  void writeTestFile(string reporters = "", string plugins = "") {
+    settings = readSettings();
 
     if (reporters != "") {
       settings.reporters = reporters.split(",").map!(a => a.strip).array;
+    }
+
+    if (plugins != "") {
+      settings.plugins = plugins.split(",").map!(a => a.strip).array;
     }
 
     auto content = generateTestFile(settings, hasTrial, modules, externalModules);

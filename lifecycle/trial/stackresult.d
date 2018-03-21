@@ -16,14 +16,18 @@ import std.algorithm;
 
 import core.demangle;
 
-version (Have_fluent_asserts) { } else {
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
+version (Have_fluent_asserts_core) { } else {
   auto toTestException(Throwable t)
   {
     return t;
   }
 }
 
-version (Have_fluent_asserts) {
+version (Have_fluent_asserts_core) {
 
   import fluentasserts.core.base;
   import fluentasserts.core.results;

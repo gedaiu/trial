@@ -11,6 +11,7 @@ import std.exception;
 
 import dub.internal.vibecompat.core.log;
 
+import trial.discovery.unit;
 import trial.settings;
 
 ///
@@ -28,6 +29,14 @@ string generateDiscoveries(string[] discoveries, string[2][] modules) {
 
     code ~= "      auto testDiscovery" ~ index.to!string ~ " = new " ~ cls ~ ";\n";
 
+    if(discovery == "trial.discovery.unit.UnitTestDiscovery") {
+      code ~= `static if(__traits(hasMember, UnitTestDiscovery, "comments")) {`;
+      foreach(m; modules) {
+        code ~= `      UnitTestDiscovery.comments["` ~ m[0] ~ `"] = [` ~ m[0].readText.compressComments.map!"a.toCode".join(",\n            ").array.to!string ~ `];` ~ "\n";
+      }
+      code ~= "}";
+    }
+
     foreach(m; modules) {
       code ~= `      testDiscovery` ~ index.to!string ~ `.addModule!(` ~ "`" ~ m[0] ~ "`" ~ `, ` ~ "`" ~ m[1] ~ "`" ~ `);` ~ "\n";
     }
@@ -42,6 +51,8 @@ string generateDiscoveries(string[] discoveries, string[2][] modules) {
 string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] modules, string[] externalModules) {
 
   string code = "
+      import std.getopt;
+      import std.string;
       import trial.discovery.unit;
       import trial.discovery.spec;
       import trial.discovery.testclass;
@@ -61,9 +72,40 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
       import trial.reporters.visualtrial;
       import trial.reporters.result;\n";
 
+  code ~= settings.plugins
+    .map!(a => a.toLower.replace("-", ""))
+    .map!(a => a.toLower.replace(":", "."))
+    .map!(a => "      import " ~ a ~ ".plugin;")
+    .join("\n");
+
   code ~= `
   int main(string[] arguments) {
-      setupLifecycle(` ~ settings.toCode ~ `);` ~ "\n\n";
+      string testName;
+      string suiteName;
+      string executor;
+      string reporters;
+
+      getopt(
+        arguments,
+        "testName|t",  &testName,
+        "suiteName|s", &suiteName,
+        "executor|e",  &executor,
+        "reporters|r", &reporters
+      );
+
+      auto settings = ` ~ settings.toCode ~ `;
+
+      static if(__traits(hasMember, Settings, "executor")) {
+        if(executor != "") {
+          settings.executor = executor;
+        }
+      }
+
+      if(reporters != "") {
+        settings.reporters = reporters.split(",");
+      }
+
+      setupLifecycle(settings);` ~ "\n\n";
 
   if(hasTrialDependency) {
     externalModules ~= [ "_d_assert", "std.", "core." ];
@@ -81,7 +123,7 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
         describeTests.toJSONHierarchy.write;
         return 0;
       } else {
-        return runTests(arguments).isSuccess ? 0 : 1;
+        return runTests(LifeCycleListeners.instance.getTestCases, testName, suiteName).isSuccess ? 0 : 1;
       }
   }
 

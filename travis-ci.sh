@@ -3,7 +3,7 @@ set -e -x -o pipefail
 
 # test for successful 32-bit build
 if [ "$DC" == "dmd" ]; then
-	dub test :lifecycle --arch=x86
+	dub test --arch=x86
 	dub clean --all-packages
 fi
 
@@ -12,7 +12,7 @@ dub build :runner -b release --compiler=$DC
 dub clean --all-packages
 
 # run unit tests
-dub test :runner --compiler=$DC
+# dub test :runner --compiler=$DC
 dub run :runner --compiler=$DC -- :lifecycle --coverage -v
 
 # download vibe and run the tests

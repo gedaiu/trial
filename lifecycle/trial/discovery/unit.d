@@ -102,6 +102,10 @@ struct Comment
 {
   ulong line;
   string value;
+
+  string toCode() {
+    return `Comment(` ~ line.to!string ~ `, "` ~ value.replace(`\`, `\\`).replace(`"`, `\"`) ~ `")`;
+  }
 }
 
 Comment[] commentGroupToString(T)(T[] group)
@@ -275,6 +279,7 @@ size_t extractLine(string name) {
 class UnitTestDiscovery : ITestDiscovery
 {
   TestCase[string][string] testCases;
+  static Comment[][string] comments;
 
   TestCase[] getTestCases()  
   {
@@ -459,11 +464,13 @@ class UnitTestDiscovery : ITestDiscovery
     auto addTestCases(string file, alias moduleName, composite...)()
         if (composite.length == 1 && isUnitTestContainer!(composite))
     {
-      Comment[] comments = file.readText.compressComments;
+      if(file !in comments) {
+        comments[file] = file.readText.compressComments;
+      }
 
       foreach (test; __traits(getUnitTests, composite))
       {
-        auto testCase = TestCase(moduleName, testName!(test)(comments), {
+        auto testCase = TestCase(moduleName, testName!(test)(comments[file]), {
           test();
         }, testLabels!(test));
 
@@ -761,7 +768,7 @@ unittest
   auto testDiscovery = new UnitTestDiscovery;
 
   testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain("unnamed test at line 757");
+      .array.should.contain("unnamed test at line 764");
 }
 
 /// discoverTestCases should find the same tests like testCases
