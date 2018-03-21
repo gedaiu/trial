@@ -108,6 +108,10 @@ class TrialProject : Project {
 
     if(project.selections.hasSelectedVersion(baseName)) {
       dep = project.selections.getSelectedVersion(baseName);
+      import std.stdio;
+
+      writeln("selected: ", name, " : ", dep);
+
       dep.optional = false;
     }
 
