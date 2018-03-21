@@ -100,7 +100,12 @@
       ],
       "importPaths": [
         "lifecycle"
-      ]
+      ],
+      "dependencies": {
+        "fluent-asserts:core": "~>0.10.1",
+        "libdparse": "~>0.8.0-alpha.5",
+        "ddmp": "~>0.0.1-0.dev.3"
+      }
     },
     {
       "name": "runner",
