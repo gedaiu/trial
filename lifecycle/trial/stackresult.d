@@ -70,219 +70,269 @@ version (Have_fluent_asserts_core) {
     wrappedException.msg.should.equal("first message\n\nsecond message\n");
   }
 
-/// Converts a Throwable to a TestException which improves the failure verbosity
-TestException toTestException(Throwable t)
-{
-  auto exception = cast(TestException) t;
-
-  if (exception is null)
+  /// Converts a Throwable to a TestException which improves the failure verbosity
+  TestException toTestException(Throwable t)
   {
-    IResult[] results = [cast(IResult) new MessageResult(t.classinfo.name ~ ": " ~ t.msg)];
+    auto exception = cast(TestException) t;
 
-    if (t.file.indexOf("../") == -1)
+    if (exception is null)
     {
-      results ~= cast(IResult) new SourceResult(t.file, t.line);
+      IResult[] results = [cast(IResult) new MessageResult(t.classinfo.name ~ ": " ~ t.msg)];
+
+      if (t.file.indexOf("../") == -1)
+      {
+        results ~= cast(IResult) new SourceResult(t.file, t.line);
+      }
+
+      if (t !is null && t.info !is null)
+      {
+        results ~= cast(IResult) new StackResult(t.info);
+      }
+
+      exception = new TestException(results, t.file, t.line, t);
+    } else {
+      exception = new TestExceptionWrapper(exception, [ cast(IResult) new StackResult(t.info) ], t.file, t.line, t);
     }
 
-    if (t !is null && t.info !is null)
-    {
-      results ~= cast(IResult) new StackResult(t.info);
-    }
-
-    exception = new TestException(results, t.file, t.line, t);
-  } else {
-    exception = new TestExceptionWrapper(exception, [ cast(IResult) new StackResult(t.info) ], t.file, t.line, t);
+    return exception;
   }
 
-  return exception;
-}
-
-
-@("toTestException should convert an Exception from the current project to a TestException with 2 reporters")
-unittest
-{
-  auto exception = new Exception("random text");
-  auto testException = exception.toTestException;
-
-  (testException !is null).should.equal(true);
-  testException.toString.should.contain("random text");
-  testException.toString.should.contain("lifecycle/trial/runner.d");
-}
-
-@("toTestException should convert an Exception from other project to a TestException with 1 reporter")
-unittest
-{
-  auto exception = new Exception("random text", "../file.d");
-  auto testException = exception.toTestException;
-
-  (testException !is null).should.equal(true);
-  testException.toString.should.contain("random text");
-  testException.toString.should.not.contain("lifecycle/trial/runner.d");
-}
-
-/// A structure that allows you to detect which modules are relevant to display
-struct ExternalValidator
-{
-
-  /// The list of external modules like the standard library or dub dependencies
-  string[] externalModules;
-
-  /// Check if the provided name comes from an external dependency
-  bool isExternal(const string name) @safe
+  @("toTestException should convert an Exception from the current project to a TestException with 2 reporters")
+  unittest
   {
-    auto reversed = name.dup;
-    reverse(reversed);
+    auto exception = new Exception("random text");
+    auto testException = exception.toTestException;
 
-    string substring = name;
-    int sum = 0;
-    int index = 0;
-    foreach (ch; reversed)
-    {
-      if (ch == ')')
-      {
-        sum++;
-      }
-
-      if (ch == '(')
-      {
-        sum--;
-      }
-
-      if (sum == 0)
-      {
-        break;
-      }
-      index++;
-    }
-
-    auto tmpSubstring = reversed[index .. $];
-    reverse(tmpSubstring);
-    substring = tmpSubstring.to!string;
-
-    auto wordEnd = substring.lastIndexOf(' ') + 1;
-    auto chainEnd = substring.lastIndexOf(").") + 1;
-
-    if (chainEnd > wordEnd)
-    {
-      return isExternal(name[0 .. chainEnd]);
-    }
-
-    auto functionName = substring[wordEnd .. $];
-
-    return !externalModules.filter!(a => functionName.indexOf(a) == 0).empty;
+    (testException !is null).should.equal(true);
+    testException.toString.should.contain("random text");
+    testException.toString.should.contain("lifecycle/trial/runner.d");
   }
-}
 
-@("It should detect external functions")
-unittest
-{
-  auto validator = ExternalValidator(["selenium.api", "selenium.session"]);
-
-  validator.isExternal("selenium.api.SeleniumApiConnector selenium.api.SeleniumApiConnector.__ctor()")
-    .should.equal(true);
-
-  validator.isExternal("void selenium.api.SeleniumApiConnector.__ctor()").should.equal(true);
-
-  validator.isExternal(
-      "pure @safe bool selenium.api.enforce!(Exception, bool).enforce(bool, lazy const(char)[], immutable(char)[], ulong)")
-    .should.equal(true);
-
-  validator.isExternal("immutable(immutable(selenium.session.SeleniumSession) function(immutable(char)[], selenium.api.Capabilities, selenium.api.Capabilities, selenium.api.Capabilities)) selenium.session.SeleniumSession.__ctor")
-    .should.equal(true);
-}
-
-/// Used to display the stack
-class StackResult : IResult
-{
-  static
+  @("toTestException should convert an Exception from other project to a TestException with 1 reporter")
+  unittest
   {
-    ///
+    auto exception = new Exception("random text", "../file.d");
+    auto testException = exception.toTestException;
+
+    (testException !is null).should.equal(true);
+    testException.toString.should.contain("random text");
+    testException.toString.should.not.contain("lifecycle/trial/runner.d");
+  }
+
+  /// A structure that allows you to detect which modules are relevant to display
+  struct ExternalValidator
+  {
+
+    /// The list of external modules like the standard library or dub dependencies
     string[] externalModules;
-  }
 
-  ///
-  Frame[] frames;
-
-  ///
-  this(Throwable.TraceInfo t)
-  {
-    foreach (line; t)
+    /// Check if the provided name comes from an external dependency
+    bool isExternal(const string name) @safe
     {
-      auto frame = line.to!string.toFrame;
-      frame.name = demangle(frame.name).to!string;
-      frames ~= frame;
-    }
-  }
+      auto reversed = name.dup;
+      reverse(reversed);
 
-  private
-  {
-    auto getFrames()
-    {
-      return frames.until!(a => a.name.indexOf("generated") != -1)
-        .until!(a => a.name.indexOf("D5trial") != -1);
-    }
-  }
-
-  override
-  {
-    /// Converts the result to a string
-    string toString() @safe
-    {
-      string result = "Stack trace:\n-------------------\n...\n";
-
-      foreach (frame; getFrames)
+      string substring = name;
+      int sum = 0;
+      int index = 0;
+      foreach (ch; reversed)
       {
-        result ~= frame.toString ~ "\n";
-      }
-
-      return result ~ "...";
-    }
-
-    /// Prints the stack using the default writer
-    void print(ResultPrinter printer)
-    {
-      int colorIndex = 0;
-      printer.primary("Stack trace:\n-------------------\n...\n");
-
-      auto validator = ExternalValidator(externalModules);
-
-      foreach (frame; getFrames)
-      {
-        if (validator.isExternal(frame.name))
+        if (ch == ')')
         {
-          printer.primary(frame.toString);
-        }
-        else
-        {
-          frame.print(printer);
+          sum++;
         }
 
-        printer.primary("\n");
+        if (ch == '(')
+        {
+          sum--;
+        }
+
+        if (sum == 0)
+        {
+          break;
+        }
+        index++;
       }
 
-      printer.primary("...");
+      auto tmpSubstring = reversed[index .. $];
+      reverse(tmpSubstring);
+      substring = tmpSubstring.to!string;
+
+      auto wordEnd = substring.lastIndexOf(' ') + 1;
+      auto chainEnd = substring.lastIndexOf(").") + 1;
+
+      if (chainEnd > wordEnd)
+      {
+        return isExternal(name[0 .. chainEnd]);
+      }
+
+      auto functionName = substring[wordEnd .. $];
+
+      return !externalModules.filter!(a => functionName.indexOf(a) == 0).empty;
     }
   }
-}
 
-@("The stack result should display the stack in a readable form")
-unittest
-{
-  Throwable exception;
-
-  try
+  @("It should detect external functions")
+  unittest
   {
-    assert(false, "random message");
+    auto validator = ExternalValidator(["selenium.api", "selenium.session"]);
+
+    validator.isExternal("selenium.api.SeleniumApiConnector selenium.api.SeleniumApiConnector.__ctor()")
+      .should.equal(true);
+
+    validator.isExternal("void selenium.api.SeleniumApiConnector.__ctor()").should.equal(true);
+
+    validator.isExternal(
+        "pure @safe bool selenium.api.enforce!(Exception, bool).enforce(bool, lazy const(char)[], immutable(char)[], ulong)")
+      .should.equal(true);
+
+    validator.isExternal("immutable(immutable(selenium.session.SeleniumSession) function(immutable(char)[], selenium.api.Capabilities, selenium.api.Capabilities, selenium.api.Capabilities)) selenium.session.SeleniumSession.__ctor")
+      .should.equal(true);
   }
-  catch (Throwable t)
+
+  /// Used to display the stack
+  class StackResult : IResult
   {
-    exception = t;
+    static
+    {
+      ///
+      string[] externalModules;
+    }
+
+    ///
+    Frame[] frames;
+
+    ///
+    this(Throwable.TraceInfo t)
+    {
+      foreach (line; t)
+      {
+        auto frame = line.to!string.toFrame;
+        frame.name = demangle(frame.name).to!string;
+        frames ~= frame;
+      }
+    }
+
+    private
+    {
+      auto getFrames()
+      {
+        return frames.until!(a => a.name.indexOf("generated") != -1)
+          .until!(a => a.name.indexOf("D5trial") != -1);
+      }
+    }
+
+    override
+    {
+      /// Converts the result to a string
+      string toString() @safe
+      {
+        string result = "Stack trace:\n-------------------\n...\n";
+
+        foreach (frame; getFrames)
+        {
+          result ~= frame.toString ~ "\n";
+        }
+
+        return result ~ "...";
+      }
+
+      /// Prints the stack using the default writer
+      void print(ResultPrinter printer)
+      {
+        int colorIndex = 0;
+        printer.primary("Stack trace:\n-------------------\n...\n");
+
+        auto validator = ExternalValidator(externalModules);
+
+        foreach (frame; getFrames)
+        {
+          if (validator.isExternal(frame.name))
+          {
+            printer.primary(frame.toString);
+          }
+          else
+          {
+            frame.print(printer);
+          }
+
+          printer.primary("\n");
+        }
+
+        printer.primary("...");
+      }
+    }
   }
 
-  auto result = new StackResult(exception.info).toString;
+  @("The stack result should display the stack in a readable form")
+  unittest
+  {
+    Throwable exception;
 
-  result.should.startWith("Stack trace:\n-------------------\n...");
-  result.should.endWith("\n...");
+    try
+    {
+      assert(false, "random message");
+    }
+    catch (Throwable t)
+    {
+      exception = t;
+    }
+
+    auto result = new StackResult(exception.info).toString;
+
+    result.should.startWith("Stack trace:\n-------------------\n...");
+    result.should.endWith("\n...");
+  }
+} else {
+
+  /// Used to display the stack
+  class StackResult
+  {
+    static
+    {
+      ///
+      string[] externalModules;
+    }
+
+    ///
+    Frame[] frames;
+
+    ///
+    this(Throwable.TraceInfo t)
+    {
+      foreach (line; t)
+      {
+        auto frame = line.to!string.toFrame;
+        frame.name = demangle(frame.name).to!string;
+        frames ~= frame;
+      }
+    }
+
+    private
+    {
+      auto getFrames()
+      {
+        return frames.until!(a => a.name.indexOf("generated") != -1)
+          .until!(a => a.name.indexOf("D5trial") != -1);
+      }
+    }
+
+    override
+    {
+      /// Converts the result to a string
+      string toString() @safe
+      {
+        string result = "Stack trace:\n-------------------\n...\n";
+
+        foreach (frame; getFrames)
+        {
+          result ~= frame.toString ~ "\n";
+        }
+
+        return result ~ "...";
+      }
+    }
+  }
 }
 
 /// Represents a stack frame
@@ -340,35 +390,37 @@ struct Frame
     return result;
   }
 
-  void print(ResultPrinter printer) @safe
-  {
-    if(index >= 0) {
-      printer.info(leftJustifier(index.to!string, 4).to!string);
-    }
-
-    printer.primary(address ~ " ");
-    printer.info(name == "" ? "????" : name);
-
-    if(moduleName != "") {
-      printer.primary(" at ");
-      printer.info(moduleName);
-    }
-
-    if(offset != "") {
-      printer.primary(" + ");
-      printer.info(offset);
-    }
-
-    if(file != "") {
-      printer.primary(" (");
-      printer.info(file);
-
-      if(line > 0) {
-        printer.primary(":");
-        printer.info(line.to!string);
+  version(Have_fluent_asserts_core) {
+    void print(ResultPrinter printer) @safe
+    {
+      if(index >= 0) {
+        printer.info(leftJustifier(index.to!string, 4).to!string);
       }
 
-      printer.primary(")");
+      printer.primary(address ~ " ");
+      printer.info(name == "" ? "????" : name);
+
+      if(moduleName != "") {
+        printer.primary(" at ");
+        printer.info(moduleName);
+      }
+
+      if(offset != "") {
+        printer.primary(" + ");
+        printer.info(offset);
+      }
+
+      if(file != "") {
+        printer.primary(" (");
+        printer.info(file);
+
+        if(line > 0) {
+          printer.primary(":");
+          printer.info(line.to!string);
+        }
+
+        printer.primary(")");
+      }
     }
   }
 }
@@ -867,7 +919,6 @@ unittest {
   frame.offset.should.equal("");
 }
 
-
 /// Get an missing info function frame info from linux format
 unittest {
   auto line = `??:? __libc_start_main [0x174bbf44]`;
@@ -880,21 +931,4 @@ unittest {
   frame.address.should.equal("0x174bbf44");
   frame.index.should.equal(-1);
   frame.offset.should.equal("");
-}
-
-/*
-
-lifecycle/trial/executor/single.d:96 void trial.executor.single.DefaultExecutor.createTestResult(const(trial.interfaces.TestCase)) [0x8653dd6]
-lifecycle/trial/executor/single.d:130 trial.interfaces.SuiteResult[] trial.executor.single.DefaultExecutor.execute(ref const(trial.interfaces.TestCase)) [0x86540f0]
-lifecycle/trial/runner.d:456 trial.interfaces.SuiteResult[] trial.runner.LifeCycleListeners.execute(ref const(trial.interfaces.TestCase)) [0x86773fd]
-lifecycle/trial/runner.d:284 trial.interfaces.SuiteResult[] trial.runner.runTests(const(trial.interfaces.TestCase)[], immutable(char)[]) [0x86768a7]
-lifecycle/trial/interfaces.d:477 void trial.interfaces.__unittestL464_146() [0x8655f7a]
-??:? void trial.interfaces.__modtest() [0x86589b0]
-??:? int core.runtime.runModuleUnitTests().__foreachbody2(object.ModuleInfo*) [0x8770420]
-??:? int object.ModuleInfo.opApply(scope int delegate(object.ModuleInfo*)).__lambda2(immutable(object.ModuleInfo*)) [0x8745e20]
-??:? int rt.minfo.moduleinfos_apply(scope int delegate(immutable(object.ModuleInfo*))).__foreachbody2(ref rt.sections_elf_shared.DSO) [0x874f2ca]
-*/
-
-
-
 }

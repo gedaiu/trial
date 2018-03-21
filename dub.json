@@ -93,6 +93,16 @@
       }
     },
     {
+      "name": "lifecycle-core",
+      "targetType": "library",
+      "sourcePaths": [
+        "lifecycle"
+      ],
+      "importPaths": [
+        "lifecycle"
+      ]
+    },
+    {
       "name": "runner",
       "targetType": "executable",
       "targetName": "trial",

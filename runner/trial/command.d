@@ -82,7 +82,7 @@ class TrialProject : Project {
     tcinfo.mainSourceFile = m_description.mainFile;
     tcinfo.versions[""] ~= "VibeCustomMain";
 
-    if(getBasePackageName(project.rootPackage.name) != "trial") {
+    if(getBasePackageName(project.rootPackage.name) != "trial" && m_description.configuration != "trial") {
       auto trialPackage = getPackage("trial:lifecycle", Dependency.any);
       enforce(trialPackage !is null, "Can not get the trial lifecycle package!");
 
