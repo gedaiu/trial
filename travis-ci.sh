@@ -31,4 +31,7 @@ cd ../spec
 cd ../test-class
 ../../trial --coverage
 
+cd ../optional-fluent-asserts
+../../trial
+
 cd ../..

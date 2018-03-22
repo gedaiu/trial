@@ -1,0 +1,45 @@
+{
+	"reporters": [
+		"spec",
+		"result"
+	],
+	"executor": "default",
+	"glyphs": {
+		"landing": {
+			"margin": "━",
+			"lane": "⋅",
+			"plane": "✈"
+		},
+		"result": {
+			"error": "✖"
+		},
+		"progress": {
+			"empty": "░",
+			"fill": "▓"
+		},
+		"specSteps": {
+			"testEnd": "└",
+			"step": "│",
+			"testBegin": "┌"
+		},
+		"dotMatrix": {
+			"success": ".",
+			"unknown": "?",
+			"failure": "!",
+			"pending": "-"
+		},
+		"spec": {
+			"pending": "-",
+			"ok": "✓"
+		}
+	},
+	"plugins": [],
+	"artifactsLocation": ".trial",
+	"runInParallel": false,
+	"maxThreads": 0,
+	"dangerTestDuration": 100,
+	"warningTestDuration": 20,
+	"testDiscovery": [
+		"trial.discovery.unit.UnitTestDiscovery"
+	]
+}
