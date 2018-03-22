@@ -8,6 +8,6 @@
 	"license": "MIT",
 
 	"dependencies": {
-		"fluent-asserts": "*"
+		"fluent-asserts": "0.10.2"
 	}
 }
