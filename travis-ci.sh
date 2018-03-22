@@ -20,23 +20,3 @@ cp tests/relative.dub.selections.json vibe.d/data/dub.selections.json
 cd vibe.d
 dub clean --all-packages
 ../trial :data --coverage -v
-cd ..
-
-# Test the examples
-cp tests/relative.dub.selections.json examples/unittest/dub.selections.json
-cp tests/relative.dub.selections.json examples/spec/dub.selections.json
-cp tests/relative.dub.selections.json examples/test-class/dub.selections.json
-
-cd examples/unittest
-../../trial --coverage
-
-cd ../spec
-../../trial --coverage
-
-cd ../test-class
-../../trial --coverage
-
-cd ../optional-fluent-asserts
-../../trial
-
-cd ../..
