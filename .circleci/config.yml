@@ -9,7 +9,7 @@ jobs:
       - run: apt-get install -y libevent-dev libssl-dev
       - run: dub build :runner
       - persist_to_workspace:
-          root: my_build
+          root: .
           paths:
             - trial
 
@@ -19,7 +19,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: my_build
+          at: .
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
       - run: cp tests/relative.dub.selections.json examples/unittest/dub.selections.json
