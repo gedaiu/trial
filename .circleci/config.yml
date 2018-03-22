@@ -22,9 +22,12 @@ jobs:
           at: .
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
+
       - run: cp tests/relative.dub.selections.json examples/unittest/dub.selections.json
       - run: cp tests/relative.dub.selections.json examples/spec/dub.selections.json
       - run: cp tests/relative.dub.selections.json examples/test-class/dub.selections.json
+      - run: cp tests/relative.dub.selections.json examples/optional-fluent-asserts/dub.selections.json
+
       - run: cd examples/unittest && ../../trial --coverage
       - run: cd examples/spec && ../../trial --coverage
       - run: cd examples/test-class && ../../trial --coverage
