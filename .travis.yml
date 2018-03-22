@@ -42,8 +42,3 @@ matrix:
     - d: ldc-beta
 
 script: ./travis-ci.sh
-
-cache:
-  directories:
-  - $HOME/.dub
-  - .dub

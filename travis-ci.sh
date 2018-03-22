@@ -2,10 +2,10 @@
 set -e -x -o pipefail
 
 # test for successful 32-bit build
-if [ "$DC" == "dmd" ]; then
-	dub test --arch=x86
-	dub clean --all-packages
-fi
+# if [ "$DC" == "dmd" ]; then
+#   dub test --arch=x86
+#   dub clean --all-packages
+# fi
 
 # test for successful release build
 dub build :runner -b release --compiler=$DC
