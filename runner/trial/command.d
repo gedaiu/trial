@@ -86,7 +86,7 @@ class TrialProject : Project {
       auto trialPackage = getPackage("trial:lifecycle", Dependency("~>0.7.0-alpha.1"));
       enforce(trialPackage !is null, "Can not get the trial lifecycle package!");
 
-      tcinfo.dependencies["trial:lifecycle-core"] = Dependency(trialPackage.version_);
+      tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
     }
 
     foreach(plugin; m_description.settings.plugins) {
@@ -105,6 +105,10 @@ class TrialProject : Project {
 
   Package getPackage(string name, Dependency dep) {
     auto baseName = name.canFind(":") ? name.split(":")[0] : name;
+    if(baseName == getBasePackageName(project.name)) {
+      return null;
+    }
+
     if(project.selections.hasSelectedVersion(baseName)) {
       dep = project.selections.getSelectedVersion(baseName);
       dep.optional = false;
