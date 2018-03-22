@@ -19,7 +19,15 @@ import std.exception;
 import std.json;
 import std.algorithm;
 
-version(unittest) import fluent.asserts;
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
+version(unittest) {
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+  }
+}
 
 /// Alias to a Test Case function type
 alias TestCaseDelegate = void delegate() @system;

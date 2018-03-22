@@ -33,7 +33,7 @@
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "fluent-asserts:core": "~>0.10.1",
+        "fluent-asserts": "~>0.10.1",
         "libdparse": "*",
         "vibe-d": "*"
       },
@@ -62,7 +62,7 @@
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "fluent-asserts:core": "~>0.10.1",
+        "fluent-asserts": "~>0.10.1",
         "libdparse": "*",
         "vibe-d": "~>0.8.0"
       },
@@ -82,7 +82,7 @@
         "lifecycle"
       ],
       "dependencies": {
-        "fluent-asserts:core": {
+        "fluent-asserts": {
           "version": "~>0.10.1",
           "optional": true
         },
@@ -102,7 +102,10 @@
         "lifecycle"
       ],
       "dependencies": {
-        "fluent-asserts:core": "~>0.10.1",
+        "fluent-asserts:core": {
+          "version": "~>0.10.1",
+          "optional": true
+        },
         "libdparse": "~>0.8.0-alpha.5",
         "ddmp": "~>0.0.1-0.dev.3"
       }

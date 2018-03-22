@@ -18,6 +18,10 @@ import trial.settings;
 import std.datetime;
 import std.conv;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
 /// A structure containing the glyphs used for the spec steps reporter
 struct SpecStepsGlyphs {
   version(Windows) {
@@ -127,7 +131,9 @@ class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleL
 
 version (unittest)
 {
-  import fluent.asserts;
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+  }
 }
 
 @("it should format the steps for a success test")

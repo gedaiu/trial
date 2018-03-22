@@ -21,6 +21,10 @@ import trial.interfaces;
 import trial.settings;
 import trial.reporters.writer;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
 /// A structure containing the glyphs used for the spec reporter
 struct SpecGlyphs {
   version(Windows) {
@@ -204,7 +208,9 @@ class SpecReporter : ITestCaseLifecycleListener
 
 version (unittest)
 {
-  import fluent.asserts;
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+  }
 }
 
 @("it should print a success test")

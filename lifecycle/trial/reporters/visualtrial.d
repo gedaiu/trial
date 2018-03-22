@@ -15,6 +15,10 @@ import std.stdio;
 import std.datetime;
 import std.exception;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
 version(Have_fluent_asserts_core) {
   import fluentasserts.core.base;
   import fluentasserts.core.results;
@@ -105,10 +109,6 @@ class VisualTrialReporter : ILifecycleListener, ITestCaseLifecycleListener
     std.stdio.stdout.flush;
     std.stdio.stderr.flush;
   }
-}
-
-version(unittest) {
-  import fluent.asserts;
 }
 
 /// it should print "The Plan" at the beginning

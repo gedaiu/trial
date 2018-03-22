@@ -18,6 +18,10 @@ import std.datetime;
 import trial.interfaces;
 import trial.reporters.writer;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
 version (Have_fluent_asserts_core)
 {
   import fluentasserts.core.base;
@@ -276,7 +280,9 @@ version (Have_fluent_asserts_core) {
 
 version (unittest)
 {
-  import fluent.asserts;
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+  }
 }
 
 @("The user should be notified with a message when no test is present")

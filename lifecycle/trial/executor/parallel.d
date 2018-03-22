@@ -15,8 +15,15 @@ import std.algorithm;
 import std.array;
 import core.thread;
 
-version(unittest) import fluent.asserts;
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
 
+version(unittest) {
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+  }
+}
 /// The Lifecycle listener used to send data from the tests threads to
 /// the main thread
 class ThreadLifeCycleListener : LifeCycleListeners {

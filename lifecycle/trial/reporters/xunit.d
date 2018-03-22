@@ -21,6 +21,10 @@ import std.range;
 import trial.interfaces;
 import trial.reporters.writer;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
 private string escapeXUnit(string data) {
   string escapedData = data.dup;
 
@@ -101,7 +105,9 @@ struct XUnitSuiteXml {
 }
 
 version(unittest) {
-  import fluent.asserts;
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+  }
 }
 
 /// XUnitTestXml should transform a suite with a success test

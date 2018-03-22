@@ -19,6 +19,9 @@ import std.typecons;
 import trial.interfaces;
 import trial.discovery.code;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
 
 static if(__VERSION__ >= 2077) {
   enum unitTestKey = "__un" ~ "ittest_";
@@ -598,7 +601,9 @@ private void testTempl(X...)() if (X.length == 1)
 /// This adds asserts to the module
 version (unittest)
 {
-  import fluent.asserts;
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+  }
 }
 
 /// It should extract the line from the default test name
@@ -773,7 +778,7 @@ unittest
   auto testDiscovery = new UnitTestDiscovery;
 
   testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain("unnamed test at line 769");
+      .array.should.contain("unnamed test at line 774");
 }
 
 /// discoverTestCases should find the same tests like testCases

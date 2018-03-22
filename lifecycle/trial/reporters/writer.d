@@ -11,6 +11,10 @@ import std.stdio;
 import std.algorithm;
 import std.string;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
 /// The default writer is initialized at the test run initialization with the right
 /// class, depending on the hosts capabilities.
 ReportWriter defaultWriter;
@@ -406,7 +410,9 @@ class BufferedWriter : ReportWriter
 
 version (unittest)
 {
-  import fluent.asserts;
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+  }
 }
 
 @("Buffered writer should return an empty buffer")

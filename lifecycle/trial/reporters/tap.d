@@ -14,6 +14,10 @@ import std.conv;
 import std.string;
 import std.algorithm;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
 version(Have_fluent_asserts_core) {
   import fluentasserts.core.base;
   import fluentasserts.core.results;
@@ -82,7 +86,6 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
     }
   }
 
-
   version(Have_fluent_asserts_core) {
     private void printTestException(ref TestResult test) {
       auto diagnostic = test.throwable.msg.split("\n").map!(a => "# " ~ a).join("\n");
@@ -110,7 +113,9 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
 }
 
 version(unittest) {
-  import fluent.asserts;
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+  }
 }
 
 /// it should print "The Plan" at the beginning

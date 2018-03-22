@@ -20,6 +20,10 @@ import std.path;
 import trial.runner;
 import trial.interfaces;
 
+version (Have_fluent_asserts) {
+  version = Have_fluent_asserts_core;
+}
+
 ///
 struct Stat
 {
@@ -147,9 +151,11 @@ class StatsReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
 version (unittest)
 {
-  import fluent.asserts;
-  import std.datetime;
-  import std.stdio;
+  version(Have_fluent_asserts_core) {
+    import fluent.asserts;
+    import std.datetime;
+    import std.stdio;
+  }
 }
 
 /// It should write the stats to the expected path

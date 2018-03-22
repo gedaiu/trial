@@ -474,6 +474,7 @@ unittest
 }
 
 version(unittest) {
+  version(Have_fluent_asserts_core): 
   class MockPrinter : ResultPrinter {
     string buffer;
 
