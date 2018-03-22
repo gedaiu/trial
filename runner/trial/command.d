@@ -105,6 +105,8 @@ class TrialProject : Project {
 
   Package getPackage(string name, Dependency dep) {
     auto baseName = name.canFind(":") ? name.split(":")[0] : name;
+    bool isSelected;
+
     if(baseName == getBasePackageName(project.name)) {
       return null;
     }
@@ -116,13 +118,23 @@ class TrialProject : Project {
 
     Package pack;
 
+    if(!dep.optional && dep.path.toString != "") {
+      if(!dep.path.absolute) {
+        dep.path = project.rootPackage.path ~ dep.path;
+      }
+
+      project.packageManager.getOrLoadPackage(dep.path, NativePath.init, true);
+    }
+
+    /// if the package is not optional
     if(!dep.optional) {
       pack = project.packageManager.getBestPackage(name, dep, true);
     }
 
+    /// it the package can not be resolved, it means it is not cached
     if(pack is null && !dep.optional) {
-      m_description.dub.fetch(baseName, Dependency.any, PlacementLocation.user, FetchOptions.none);
-      pack = project.packageManager.getBestPackage(baseName, Dependency.any, true);
+      m_description.dub.fetch(baseName, dep, PlacementLocation.user, FetchOptions.usePrerelease);
+      pack = project.packageManager.getBestPackage(baseName, dep, true);
 
       if(pack is null) {
         pack = project.packageManager.getPackage(baseName, dep.version_);
@@ -130,7 +142,9 @@ class TrialProject : Project {
     }
 
     if(pack !is null) {
-      project.selections.selectVersion(pack.basePackage.name, pack.version_);
+      if(!isSelected) {
+        project.selections.selectVersion(pack.basePackage.name, pack.version_);
+      }
 
       foreach(dependency; pack.getAllDependencies) {
         getPackage(dependency.name, dependency.spec);
