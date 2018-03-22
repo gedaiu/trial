@@ -28,15 +28,15 @@ cp tests/relative.dub.selections.json examples/spec/dub.selections.json
 cp tests/relative.dub.selections.json examples/test-class/dub.selections.json
 
 cd examples/unittest
-../../trial --coverage -v
+../../trial --coverage
 
 cd ../spec
-../../trial --coverage -v
+../../trial --coverage
 
 cd ../test-class
-../../trial --coverage -v
+../../trial --coverage
 
 cd ../optional-fluent-asserts
-../../trial -v
+../../trial
 
 cd ../..

@@ -33,9 +33,9 @@
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "fluent-asserts": "~>0.10.1",
+        "fluent-asserts": "~>0.10.2",
         "libdparse": "*",
-        "vibe-d": "*"
+        "vibe-d:data": "*"
       },
       "subConfigurations": {
         "dub": "library-nonet"
@@ -62,9 +62,9 @@
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "fluent-asserts": "~>0.10.1",
+        "fluent-asserts": "~>0.10.2",
         "libdparse": "*",
-        "vibe-d": "~>0.8.0"
+        "vibe-d:data": "~>0.8.0"
       },
       "subConfigurations": {
         "dub": "library-nonet"
@@ -83,7 +83,7 @@
       ],
       "dependencies": {
         "fluent-asserts": {
-          "version": "~>0.10.1",
+          "version": "~>0.10.2",
           "optional": true
         },
         "libdparse": {
@@ -103,7 +103,7 @@
       ],
       "dependencies": {
         "fluent-asserts:core": {
-          "version": "~>0.10.1",
+          "version": "~>0.10.2",
           "optional": true
         },
         "libdparse": "~>0.8.0-alpha.5",
@@ -127,9 +127,10 @@
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "fluent-asserts:core": "~>0.10.1",
+        "fluent-asserts:core": "~>0.10.2",
         "libdparse": "*",
-        "vibe-d": "*"
+        "vibe-d:http": "*",
+        "vibe-d:data": "*"
       },
       "subConfigurations": {
         "dub": "library-nonet"

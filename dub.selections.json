@@ -7,7 +7,7 @@
 		"diet-ng": "1.4.5",
 		"dub": "1.8.0",
 		"eventcore": "0.8.34",
-		"fluent-asserts": "0.10.1",
+		"fluent-asserts": "0.10.2",
 		"libasync": "0.8.3",
 		"libdparse": "0.8.0-alpha.5",
 		"libevent": "2.0.2+2.0.16",
