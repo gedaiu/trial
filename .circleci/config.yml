@@ -5,6 +5,7 @@ jobs:
       - image: dlanguage/dmd:2.079.0
     steps:
       - checkout
+      - run: apt-get install libevent-dev libssl-dev
       - run: dub build :runner
       - persist_to_workspace:
           root: my_build
@@ -18,6 +19,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: my_build
+      - run: apt-get install libevent-dev libssl-dev
       - run: cp tests/relative.dub.selections.json examples/unittest/dub.selections.json
       - run: cp tests/relative.dub.selections.json examples/spec/dub.selections.json
       - run: cp tests/relative.dub.selections.json examples/test-class/dub.selections.json
