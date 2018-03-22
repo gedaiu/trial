@@ -9,7 +9,6 @@ set -e -x -o pipefail
 
 # test for successful release build
 dub build :runner -b release --compiler=$DC
-dub clean --all-packages
 
 # run unit tests
 dub test :runner --compiler=$DC
@@ -22,9 +21,6 @@ cd vibe.d
 dub clean --all-packages
 ../trial :data --coverage -v
 cd ..
-
-
-dub clean --all-packages
 
 # Test the examples
 cp tests/relative.dub.selections.json examples/unittest/dub.selections.json
