@@ -25,14 +25,10 @@ jobs:
       - run: cp tests/relative.dub.selections.json examples/unittest/dub.selections.json
       - run: cp tests/relative.dub.selections.json examples/spec/dub.selections.json
       - run: cp tests/relative.dub.selections.json examples/test-class/dub.selections.json
-      - run: cd examples/unittest
-      - run: ../../trial --coverage
-      - run: cd ../spec
-      - run: ../../trial --coverage
-      - run: cd ../test-class
-      - run: ../../trial --coverage
-      - run: cd ../optional-fluent-asserts
-      - run: ../../trial
+      - run: cd examples/unittest && ../../trial --coverage
+      - run: cd examples/spec && ../../trial --coverage
+      - run: cd examples/test-class && ../../trial --coverage
+      - run: cd examples/optional-fluent-asserts && ../../trial
 
 workflows:
   version: 2
