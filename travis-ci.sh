@@ -18,8 +18,12 @@ dub run :runner --compiler=$DC -- :lifecycle --coverage -v
 # download vibe and run the tests
 git clone https://github.com/vibe-d/vibe.d.git
 cd vibe.d
+dub clean --all-packages
 ../trial :data --coverage -v
 cd ..
+
+
+dub clean --all-packages
 
 # Test the examples
 cd examples/unittest
