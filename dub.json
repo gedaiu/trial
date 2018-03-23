@@ -129,8 +129,8 @@
         "dub": "~>1.8.0",
         "fluent-asserts:core": "~>0.10.2",
         "libdparse": "*",
-        "vibe-d:http": "*",
-        "vibe-d:data": "*"
+        "vibe-d:http": "~>0.8.2",
+        "vibe-d:data": "~>0.8.2"
       },
       "subConfigurations": {
         "dub": "library-nonet"
