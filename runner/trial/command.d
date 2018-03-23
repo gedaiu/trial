@@ -9,6 +9,7 @@ import std.datetime;
 import std.path;
 import std.array;
 import trial.description;
+import trial.version_;
 
 import dub.internal.vibecompat.data.json;
 
@@ -83,7 +84,7 @@ class TrialProject : Project {
     tcinfo.versions[""] ~= "VibeCustomMain";
 
     if(getBasePackageName(project.rootPackage.name) != "trial" && m_description.configuration != "trial") {
-      auto trialPackage = getPackage("trial:lifecycle", Dependency("~>0.7.0-alpha.1"));
+      auto trialPackage = getPackage("trial:lifecycle", Dependency("~>" ~ trialVersion));
       enforce(trialPackage !is null, "Can not get the trial lifecycle package!");
 
       tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
