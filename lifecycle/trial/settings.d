@@ -48,8 +48,6 @@ mixin template SettingsFields()
   /// The test discovery classes that you want to use
   string[] testDiscovery = ["trial.discovery.unit.UnitTestDiscovery"];
 
-  deprecated("use .executor instead") bool runInParallel = false;
-
   /// The number of threads tha you want to use
   /// `0` means the number of cores that your processor has
   uint maxThreads = 0;
@@ -89,49 +87,6 @@ struct Settings
     }
   } else {
     mixin SettingsFields;
-  }
-
-  this(string[] reporters, 
-    string[] testDiscovery, 
-    string executor, 
-    int maxThreads,
-    GlyphSettings glyphs,
-    string artifactsLocation,
-    int warningTestDuration,
-    int dangerTestDuration,
-    string[] plugins = []) {
-
-      this.reporters = reporters;
-      this.testDiscovery = testDiscovery;
-      this.executor = executor;
-      this.maxThreads = maxThreads;
-      this.glyphs = glyphs;
-      this.artifactsLocation = artifactsLocation;
-      this.warningTestDuration = warningTestDuration;
-      this.dangerTestDuration = dangerTestDuration;
-      this.plugins = plugins;
-  }
-
-  this(string[] reporters, 
-    string[] testDiscovery,
-    bool, // deprecated
-    int maxThreads,
-    GlyphSettings glyphs,
-    string artifactsLocation,
-    int warningTestDuration,
-    int dangerTestDuration,
-    string[] plugins = [],
-    string executor = "default") {
-
-      this.reporters = reporters;
-      this.testDiscovery = testDiscovery;
-      this.executor = executor;
-      this.maxThreads = maxThreads;
-      this.glyphs = glyphs;
-      this.artifactsLocation = artifactsLocation;
-      this.warningTestDuration = warningTestDuration;
-      this.dangerTestDuration = dangerTestDuration;
-      this.plugins = plugins;
   }
 }
 
@@ -175,13 +130,13 @@ string toCode(Settings settings)
   return "Settings(" ~
     settings.reporters.to!string ~ ", " ~
     settings.testDiscovery.to!string ~ ", " ~
-    `false,` ~ 
     settings.maxThreads.to!string ~ ", " ~
     settings.glyphs.toCode ~ ", " ~
     `"` ~ settings.artifactsLocation ~ `", ` ~
     settings.warningTestDuration.to!string ~ `, ` ~
-    settings.dangerTestDuration.to!string ~
-    executor ~
+    settings.dangerTestDuration.to!string ~ ", " ~
+    settings.plugins.to!string ~ ", " ~
+    `"` ~ executor ~ `"` ~
     ")";
 }
 
@@ -216,7 +171,7 @@ unittest
 
 	settings.toCode.should.equal(`Settings(` ~
      `["spec", "result"], ` ~
-     `["trial.discovery.unit.UnitTestDiscovery"], false,0, ` ~
+     `["trial.discovery.unit.UnitTestDiscovery"], 0, ` ~
       "GlyphSettings(SpecGlyphs(`✓`), " ~
                     "SpecStepsGlyphs(`┌`, `└`, `│`), "~
                     "TestResultGlyphs(`✖`), " ~
@@ -225,6 +180,6 @@ unittest
                     "ProgressGlyphs(`░`,`▓`)" ~
       "), " ~
       `".trial", ` ~
-      "20, 100"~
+      `20, 100, [], ""`~
       `)`);
 }
