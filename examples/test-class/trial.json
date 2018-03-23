@@ -6,6 +6,5 @@
 	"testDiscovery": [
 		"trial.discovery.unit.TestClassDiscovery"
 	],
-	"runInParallel": false,
 	"maxThreads": 0
 }
