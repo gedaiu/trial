@@ -20,7 +20,6 @@
       ],
       "sourcePaths": [
         "lifecycle",
-        "runner",
         "tests"
       ],
       "stringImportPaths": [
@@ -28,17 +27,11 @@
       ],
       "importPaths": [
         "lifecycle",
-        "runner",
         "tests"
       ],
       "dependencies": {
-        "dub": "~>1.8.0",
         "fluent-asserts": "~>0.10.2",
-        "libdparse": "*",
-        "vibe-d:data": "*"
-      },
-      "subConfigurations": {
-        "dub": "library-nonet"
+        "libdparse": "*"
       }
     },
     {
