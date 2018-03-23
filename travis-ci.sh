@@ -12,5 +12,4 @@ dub build :runner -b release --compiler=$DC
 
 # run unit tests
 dub clean --all-packages
-dub test :runner --compiler=$DC
-dub run :runner --compiler=$DC -- :lifecycle --coverage -v
+dub run :runner --compiler=$DC -- :lifecycle
