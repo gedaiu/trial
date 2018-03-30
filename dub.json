@@ -76,7 +76,7 @@
       ],
       "dependencies": {
         "fluent-asserts": {
-          "version": "~>0.11.0",
+          "version": ">=0.10.2",
           "optional": true
         },
         "libdparse": {
@@ -96,11 +96,11 @@
       ],
       "dependencies": {
         "fluent-asserts:core": {
-          "version": "~>0.11.0",
+          "version": ">=0.10.2",
           "optional": true
         },
-        "libdparse": "~>0.8.0-alpha.5",
-        "ddmp": "~>0.0.1-0.dev.3"
+        "libdparse": ">=0.8.0-alpha.5",
+        "ddmp": ">=0.0.1-0.dev.3"
       }
     },
     {
