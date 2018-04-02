@@ -31,7 +31,7 @@
       ],
       "dependencies": {
         "fluent-asserts": "~>0.11.0",
-        "libdparse": "*"
+        "libdparse": "~>0.8.0"
       }
     },
     {
@@ -56,7 +56,10 @@
       "dependencies": {
         "dub": "~>1.8.0",
         "fluent-asserts": "~>0.11.0",
-        "libdparse": "*",
+        "libdparse": {
+          "version": ">=0.8.0-alpha.5",
+          "optional": true
+        },
         "vibe-d:data": "~>0.8.0"
       },
       "subConfigurations": {
@@ -80,7 +83,7 @@
           "optional": true
         },
         "libdparse": {
-          "version": "*",
+          "version": ">=0.8.0-alpha.5",
           "optional": true
         }
       }
@@ -99,8 +102,10 @@
           "version": ">=0.10.2",
           "optional": true
         },
-        "libdparse": ">=0.8.0-alpha.5",
-        "ddmp": ">=0.0.1-0.dev.3"
+        "libdparse": {
+          "version": ">=0.8.0-alpha.5",
+          "optional": true
+        }
       }
     },
     {
@@ -120,7 +125,7 @@
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "libdparse": "*",
+        "libdparse": "~>0.8.0",
         "vibe-d:http": "~>0.8.2",
         "vibe-d:data": "~>0.8.2"
       },

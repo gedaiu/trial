@@ -497,13 +497,15 @@ class UnitTestDiscovery : ITestDiscovery
       {
         foreach (member; __traits(allMembers, composite))
         {
-          static if (__traits(compiles, __traits(getMember, composite, member))
-              && isSingleField!(__traits(getMember, composite, member)) && isUnitTestContainer!(__traits(getMember,
-                composite, member)) && !isModule!(__traits(getMember, composite, member)))
-          {
-            if (__traits(getMember, composite, member).mangleof !in testCases)
+          static if(!is( typeof(__traits(getMember, composite, member)) == void)) {
+            static if (__traits(compiles, __traits(getMember, composite, member))
+                && isSingleField!(__traits(getMember, composite, member)) && isUnitTestContainer!(__traits(getMember,
+                  composite, member)) && !isModule!(__traits(getMember, composite, member)))
             {
-              discover!(file, moduleName, __traits(getMember, composite, member))();
+              if (__traits(getMember, composite, member).mangleof !in testCases)
+              {
+                discover!(file, moduleName, __traits(getMember, composite, member))();
+              }
             }
           }
         }
