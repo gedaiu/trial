@@ -19,7 +19,7 @@
 			"importPaths": ["source", "tests"],
 
 			"dependencies": {
-				"fluent-asserts": "0.11.2",
+				"fluent-asserts": "0.11.3",
 				"trial:lifecycle": {
 					"path": "../../"
 				}
