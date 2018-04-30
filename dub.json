@@ -125,9 +125,9 @@
       ],
       "dependencies": {
         "dub": "~>1.8.0",
-        "libdparse": ">=0.8.0",
         "vibe-d:http": "~>0.8.2",
         "vibe-d:data": "~>0.8.2"
+				"libdparse": "~master",
       },
       "subConfigurations": {
         "dub": "library-nonet"
