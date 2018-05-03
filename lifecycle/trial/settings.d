@@ -125,7 +125,7 @@ struct GlyphSettings {
 /// Converts the settings object to DLang code. It's used by the generator
 string toCode(Settings settings)
 {
-  auto executor = settings.executor == "default" ? "" : `"` ~ settings.executor ~ `"`;
+  auto executor = settings.executor == "default" ? "" : settings.executor;
 
   return "Settings(" ~
     settings.reporters.to!string ~ ", " ~

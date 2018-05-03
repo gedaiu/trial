@@ -9,12 +9,14 @@
 		"eventcore": "0.8.34",
 		"fluent-asserts": "0.11.3",
 		"libasync": "0.8.3",
-		"libdparse": "0.8.0",
+		"libdparse": "~master",
 		"libevent": "2.0.2+2.0.16",
 		"memutils": "0.4.10",
 		"openssl": "1.1.6+1.0.1g",
+		"razer-d": "0.2.0",
 		"stdx-allocator": "2.77.0",
 		"taggedalgebraic": "0.10.11",
+		"trial-razer": "0.1.1",
 		"vibe-core": "1.4.0",
 		"vibe-d": "0.8.3"
 	}
