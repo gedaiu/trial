@@ -54,7 +54,7 @@
         "tests"
       ],
       "dependencies": {
-        "dub": "~>1.8.0",
+        "dub": "~>1.9.0",
         "fluent-asserts": ">=0.11.4",
         "libdparse": {
           "version": ">=0.8.0",
@@ -124,7 +124,7 @@
         "views"
       ],
       "dependencies": {
-        "dub": "~>1.8.0",
+        "dub": "~>1.9.0",
         "vibe-d:http": "~>0.8.2",
         "vibe-d:data": "~>0.8.2",
 	"libdparse": "~master"

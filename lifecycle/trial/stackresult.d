@@ -359,7 +359,17 @@ struct Frame
   ///
   int line = -1;
 
+  ///
+  bool invalid = true;
+
+  ///
+  string raw;
+
   string toString() const @safe {
+    if(raw != "") {
+      return raw;
+    }
+
     string result;
 
     if(index >= 0) {
@@ -393,6 +403,12 @@ struct Frame
   version(Have_fluent_asserts_core) {
     void print(ResultPrinter printer) @safe
     {
+      if(raw != "") {
+        printer.primary(raw);
+
+        return;
+      }
+
       if(index >= 0) {
         printer.info(leftJustifier(index.to!string, 4).to!string);
       }
@@ -591,6 +607,11 @@ Frame toDarwinFrame(string line)
 
   auto matched = matchFirst(line, darwinPattern);
 
+  if(matched.length < 5) {
+    return frame;
+  }
+
+  frame.invalid = false;
   frame.index = matched["index"].to!int;
   frame.moduleName = matched["module"];
   frame.address = matched["address"];
@@ -608,14 +629,16 @@ Frame toWindows1Frame(string line)
   auto matched = matchFirst(line,
       address ~ `(\s+)in(\s+)` ~ name ~ `(\s+)at(\s+)` ~ file ~ `\(` ~ linePattern ~ `\)`); // ~ );
 
+  if(matched.length < 4) {
+    return frame;
+  }
+ 
   frame.address = matched["address"];
   frame.name = matched["name"];
   frame.file = matched["file"];
   frame.line = matched["line"].to!int;
-
-  enforce(frame.address != "", "address not found");
-  enforce(frame.name != "", "name not found");
-  enforce(frame.file != "", "file not found");
+  
+  frame.invalid = frame.address == "" || frame.name == "" || frame.file == "";
 
   return frame;
 }
@@ -626,11 +649,15 @@ Frame toWindows2Frame(string line)
   Frame frame;
 
   auto matched = matchFirst(line, address ~ `(\s+)in(\s+)` ~ name);
+
+  if(matched.length < 2) {
+    return frame;
+  }
+
   frame.address = matched["address"];
   frame.name = matched["name"];
 
-  enforce(frame.address != "", "address not found");
-  enforce(frame.name != "", "name not found");
+  frame.invalid = frame.address == "" || frame.name == "";
 
   return frame;
 }
@@ -641,6 +668,10 @@ Frame toGLibCFrame(string line)
   Frame frame;
 
   auto matched = matchFirst(line, moduleName ~ `\(` ~ name ~ `\)\s+\[` ~ address ~ `\]`);
+
+  if(matched.length < 3) {
+    return frame;
+  }
 
   frame.address = matched["address"];
   frame.name = matched["name"];
@@ -654,10 +685,8 @@ Frame toGLibCFrame(string line)
     frame.name = frame.name[0 .. plusSign];
   }
 
-  enforce(frame.address != "", "address not found");
-  enforce(frame.name != "", "name not found");
-  enforce(frame.name.indexOf("(") == -1, "name should not contain `(`");
-  enforce(frame.moduleName != "", "module not found");
+  frame.invalid = frame.address == "" || frame.name == "" || frame.moduleName == "" ||
+    frame.name.indexOf("(") >= 0;
 
   return frame;
 }
@@ -669,15 +698,16 @@ Frame toNetBsdFrame(string line)
 
   auto matched = matchFirst(line, address ~ `\s+<` ~ name ~ `\+` ~ offset ~ `>\s+at\s+` ~ moduleName);
 
+  if(matched.length < 4) {
+    return frame;
+  }
+
   frame.address = matched["address"];
   frame.name = matched["name"];
   frame.moduleName = matched["module"];
   frame.offset = matched["offset"];
 
-  enforce(frame.address != "", "address not found");
-  enforce(frame.name != "", "name not found");
-  enforce(frame.moduleName != "", "module not found");
-  enforce(frame.offset != "", "offset not found");
+  frame.invalid = frame.address == "" || frame.name == "" || frame.moduleName == "" || frame.offset == "";
 
   return frame;
 }
@@ -688,15 +718,16 @@ Frame toLinuxFrame(string line) {
 
   auto matched = matchFirst(line, file ~ `:` ~ linePattern ~ `\s+` ~ name ~ `\s+\[` ~ address ~ `\]`);
 
+  if(matched.length < 4) {
+    return frame;
+  }
+
   frame.file = matched["file"];
   frame.name = matched["name"];
   frame.address = matched["address"];
   frame.line = matched["line"].to!int;
 
-  enforce(frame.address != "", "address not found");
-  enforce(frame.name != "", "name not found");
-  enforce(frame.file != "", "file not found");
-  enforce(frame.line > 0, "line not found");
+  frame.invalid = frame.address == "" || frame.name == "" || frame.file == "" || frame.line == 0;
 
   return frame;
 }
@@ -707,11 +738,14 @@ Frame toMissingInfoLinuxFrame(string line) {
 
   auto matched = matchFirst(line, `\?\?:\?\s+` ~ name ~ `\s+\[` ~ address ~ `\]`);
 
+  if(matched.length < 2) {
+    return frame;
+  }
+
   frame.name = matched["name"];
   frame.address = matched["address"];
 
-  enforce(frame.address != "", "address not found");
-  enforce(frame.name != "", "name not found");
+  frame.invalid = frame.address == "" || frame.name == "";
 
   return frame;
 }
@@ -720,64 +754,21 @@ Frame toMissingInfoLinuxFrame(string line) {
 Frame toFrame(string line)
 {
   Frame frame;
+  frame.raw = line;
+  frame.invalid = false;
 
-  try
-  {
-    return line.toDarwinFrame;
-  }
-  catch (Exception e)
-  {
-  }
+  auto frames = [
+    line.toDarwinFrame,
+    line.toWindows1Frame,
+    line.toWindows2Frame,
+    line.toGLibCFrame,
+    line.toNetBsdFrame,
+    line.toLinuxFrame,
+    line.toMissingInfoLinuxFrame,
+    frame
+  ];
 
-  try
-  {
-    return line.toWindows1Frame;
-  }
-  catch (Exception e)
-  {
-  }
-
-  try
-  {
-    return line.toWindows2Frame;
-  }
-  catch (Exception e)
-  {
-  }
-
-  try
-  {
-    return line.toGLibCFrame;
-  }
-  catch (Exception e)
-  {
-  }
-
-  try
-  {
-    return line.toNetBsdFrame;
-  }
-  catch (Exception e)
-  {
-  }
-
-  try
-  {
-    return line.toLinuxFrame;
-  }
-  catch (Exception e)
-  {
-  }
-
-  try
-  {
-    return line.toMissingInfoLinuxFrame;
-  }
-  catch (Exception e)
-  {
-  }
-
-  return frame;
+  return frames.filter!(a => !a.invalid).front;
 }
 
 @("Get frame info from Darwin platform format")
@@ -786,6 +777,7 @@ unittest
   auto line = "1  ???fluent-asserts    0x00abcdef000000 D6module4funcAFZv + 0";
 
   auto frame = line.toFrame;
+  frame.invalid.should.equal(false);
   frame.index.should.equal(1);
   frame.moduleName.should.equal("???fluent-asserts");
   frame.address.should.equal("0x00abcdef000000");
@@ -799,6 +791,7 @@ unittest
   auto line = "0x779CAB5A in RtlInitializeExceptionChain";
 
   auto frame = line.toFrame;
+  frame.invalid.should.equal(false);
   frame.index.should.equal(-1);
   frame.moduleName.should.equal("");
   frame.address.should.equal("0x779CAB5A");
@@ -812,6 +805,7 @@ unittest
   auto line = `0x00402669 in void app.__unitestL82_8() at D:\tidynumbers\source\app.d(84)`;
 
   auto frame = line.toFrame;
+  frame.invalid.should.equal(false);
   frame.index.should.equal(-1);
   frame.moduleName.should.equal("");
   frame.address.should.equal("0x00402669");
@@ -828,6 +822,7 @@ unittest
 
   auto frame = line.toFrame;
 
+  frame.invalid.should.equal(false);
   frame.moduleName.should.equal("module");
   frame.name.should.equal("_D6module4funcAFZv");
   frame.address.should.equal("0x00000000");
@@ -842,6 +837,7 @@ unittest
 
   auto frame = line.toFrame;
 
+  frame.invalid.should.equal(false);
   frame.moduleName.should.equal("module");
   frame.name.should.equal("_D6module4funcAFZv");
   frame.address.should.equal("0x00000000");
@@ -856,6 +852,7 @@ unittest
 
   auto frame = line.toFrame;
 
+  frame.invalid.should.equal(false);
   frame.moduleName.should.equal("module");
   frame.name.should.equal("_D6module4funcAFZv");
   frame.address.should.equal("0x00000000");
@@ -869,6 +866,7 @@ unittest {
 
   auto frame = line.toFrame;
 
+  frame.invalid.should.equal(false);
   frame.moduleName.should.equal("");
   frame.file.should.equal("generated.d");
   frame.line.should.equal(45);
@@ -883,6 +881,7 @@ unittest {
   auto line = `lifecycle/trial/runner.d:106 trial.interfaces.SuiteResult[] trial.runner.runTests(const(trial.interfaces.TestCase)[], immutable(char)[]) [0x8b0ec1]`;
   auto frame = line.toFrame;
 
+  frame.invalid.should.equal(false);
   frame.moduleName.should.equal("");
   frame.file.should.equal("lifecycle/trial/runner.d");
   frame.line.should.equal(106);
@@ -897,6 +896,7 @@ unittest {
   auto line = `../../.dub/packages/fluent-asserts-0.6.6/fluent-asserts/core/fluentasserts/core/base.d:39 void fluentasserts.core.base.Result.perform() [0x8f4b47]`;
   auto frame = line.toFrame;
 
+  frame.invalid.should.equal(false);
   frame.moduleName.should.equal("");
   frame.file.should.equal("../../.dub/packages/fluent-asserts-0.6.6/fluent-asserts/core/fluentasserts/core/base.d");
   frame.line.should.equal(39);
@@ -911,6 +911,7 @@ unittest {
   auto line = `lifecycle/trial/discovery/unit.d:268 _D5trial9discovery4unit17UnitTestDiscovery231__T12addTestCasesVAyaa62_2f686f6d652f626f737a2f776f726b73706163652f64746573742f6c6966656379636c652f747269616c2f6578656375746f722f706172616c6c656c2e64VAyaa23_747269616c2e6578656375746f722e706172616c6c656cS245trial8executor8parallelZ12addTestCasesMFZ9__lambda4FZv [0x872000]`;
   auto frame = line.toFrame;
 
+  frame.invalid.should.equal(false);
   frame.moduleName.should.equal("");
   frame.file.should.equal("lifecycle/trial/discovery/unit.d");
   frame.line.should.equal(268);
@@ -925,6 +926,7 @@ unittest {
   auto line = `??:? __libc_start_main [0x174bbf44]`;
   auto frame = line.toFrame;
 
+  frame.invalid.should.equal(false);
   frame.moduleName.should.equal("");
   frame.file.should.equal("");
   frame.line.should.equal(-1);
