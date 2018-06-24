@@ -37,7 +37,12 @@ class TrialProject : Project {
   private {
     Project project;
     PackageDescriptionCommand m_description;
+    BuildSettingsTemplate tcinfo;
+    bool hasTcinfo;
   }
+
+  string reporters;
+  string plugins;
 
   alias getDependency = Project.getDependency;
   alias getTopologicalPackageList = Project.getTopologicalPackageList;
@@ -56,55 +61,54 @@ class TrialProject : Project {
     return m_description;
   }
 
-  override
-  inout(Package) getDependency(string name, bool is_optional)
-  inout {
-    auto result = super.getDependency(name, is_optional);
+  bool hasTrialDependency() {
+    return testBuildSettings.dependencies.keys.canFind("trial:lifecycle");
+  }
 
-
-    if(result !is null) {
-      auto basename = getBasePackageName(name);
-      auto recipe = result.recipe.clone;
-      auto hasTrialConfigurations = recipe.configurations.canFind!(a => a.name == "trial");
-
-      if(basename != rootPackage.basePackage.name && hasTrialConfigurations) {
-        recipe.configurations = recipe.configurations.filter!(a => a.name != "trial").array;
-
-        return cast(inout Package) new Package(recipe, result.path, cast(Package) result.parentPackage, result.recipe.version_);
-      }
-    }
-
-    return result;
+  string embededLibraryPath() {
+    auto settings = m_description.readSettings();
+    return (NativePath(m_description.mainFile).parentPath ~ settings.artifactsLocation ~ "lifecycle").toNativeString();
   }
 
   BuildSettingsTemplate testBuildSettings() {
-    BuildSettingsTemplate tcinfo = project.rootPackage.recipe.getConfiguration(m_description.configuration).buildSettings;
+    if(hasTcinfo) {
+      return tcinfo;
+    }
 
+    tcinfo = project.rootPackage.recipe.getConfiguration(m_description.configuration).buildSettings;
     tcinfo.targetType = TargetType.executable;
     tcinfo.targetName = m_description.buildFile;
     tcinfo.excludedSourceFiles[""] ~= tcinfo.mainSourceFile;
     tcinfo.importPaths[""] ~= NativePath(m_description.mainFile).parentPath.toNativeString();
+
+    if(getBasePackageName(project.rootPackage.name) != "trial" && !tcinfo.dependencies.keys.canFind("trial:lifecycle")) {
+      tcinfo.sourcePaths[""] ~= embededLibraryPath;
+      tcinfo.stringImportPaths[""] ~= embededLibraryPath;
+    }
+
     tcinfo.mainSourceFile = m_description.mainFile;
     tcinfo.versions[""] ~= "VibeCustomMain";
 
-    if(getBasePackageName(project.rootPackage.name) != "trial" && m_description.configuration != "trial") {
-      auto trialPackage = getPackage("trial:lifecycle", Dependency("~>" ~ trialVersion));
-      enforce(trialPackage !is null, "Can not get the trial lifecycle package!");
+    import std.stdio;
 
-      tcinfo.dependencies["trial:lifecycle"] = Dependency(trialPackage.version_);
-    }
 
-    foreach(plugin; m_description.settings.plugins) {
+    string[] plugins = m_description.readSettings().plugins ~ this.plugins.split(",").map!(a => a.strip).array;
+    writeln("??????????", plugins);
+
+    foreach(plugin; plugins) {
       if(plugin in tcinfo.dependencies) {
         continue;
       }
 
       auto pluginPackage = getPackage(plugin, Dependency.any);
       tcinfo.dependencies[plugin] = Dependency(pluginPackage.version_);
+
+      import std.stdio;
+      writeln("---=====>", tcinfo.dependencies.keys);
     }
 
     project.saveSelections;
-
+    hasTcinfo = true;
     return tcinfo;
   }
 
@@ -157,6 +161,38 @@ class TrialProject : Project {
     }
 
     return pack;
+  }
+
+  void writeTestFile() {
+    auto settings = m_description.readSettings();
+
+    if (reporters != "") {
+      settings.reporters = reporters.split(",").map!(a => a.strip).array;
+    }
+
+    if (plugins != "") {
+      settings.plugins = plugins.split(",").map!(a => a.strip).array;
+    }
+
+    if(!hasTrialDependency) {
+      writeTrialFolder(embededLibraryPath);
+    }
+
+    auto content = generateTestFile(settings, m_description.hasTrial, m_description.modules, m_description.externalModules);
+
+    auto mainFile = m_description.mainFile;
+
+    if (!mainFile.exists) {
+      std.file.write(mainFile, content);
+      return;
+    }
+
+    auto hash1 = getStringHash(content);
+    auto hash2 = getFileHash(mainFile);
+
+    if(hash1 != hash2) {
+      std.file.write(mainFile, content);
+    }
   }
 }
 
@@ -235,7 +271,12 @@ class TrialCommand : PackageBuildCommand {
     }
 
     logInfo("Generate main file: " ~ project.description.mainFile);
-    project.description.writeTestFile(m_reporters, m_plugins);
+
+    import std.stdio;
+    writeln("m_plugins: ", m_plugins);
+    project.plugins = m_plugins;
+    project.reporters = m_reporters;
+    project.writeTestFile();
 
     setupPackage(dub, package_name, m_buildType);
 

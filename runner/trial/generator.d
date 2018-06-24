@@ -7,6 +7,7 @@ import std.stdio;
 import std.conv;
 import std.file;
 import std.path;
+import std.digest.sha;
 import std.exception;
 
 import dub.internal.vibecompat.core.log;
@@ -134,4 +135,81 @@ string generateTestFile(Settings settings, bool hasTrialDependency, string[2][] 
   }`;
 
   return code;
+}
+
+void writeTrialFolder(string destination) {
+  enum paths = [
+    "assets/trial.css",
+    "assets/trial.js",
+
+    "templates/coverage.css",
+    "templates/coverage.svg",
+    "templates/coverageBody.html",
+    "templates/coverageColumn.html",
+    "templates/coverageHeader.html",
+    "templates/htmlReporter.html",
+    "templates/ignoredTable.html",
+    "templates/indexTable.html",
+    "templates/page.html",
+    "templates/progress.html",
+
+    "trial/attributes.d",
+    "trial/coverage.d",
+    "trial/interfaces.d",
+    "trial/runner.d",
+    "trial/settings.d",
+    "trial/stackresult.d",
+    "trial/step.d",
+    "trial/terminal.d",
+
+    "trial/discovery/code.d",
+    "trial/discovery/spec.d",
+    "trial/discovery/testclass.d",
+    "trial/discovery/unit.d",
+
+    "trial/executor/parallel.d",
+    "trial/executor/process.d",
+    "trial/executor/single.d",
+
+    "trial/reporters/allure.d",
+    "trial/reporters/dotmatrix.d",
+    "trial/reporters/html.d",
+    "trial/reporters/landing.d",
+    "trial/reporters/list.d",
+    "trial/reporters/progress.d",
+    "trial/reporters/result.d",
+    "trial/reporters/spec.d",
+    "trial/reporters/specprogress.d",
+    "trial/reporters/specsteps.d",
+    "trial/reporters/stats.d",
+    "trial/reporters/tap.d",
+    "trial/reporters/visualtrial.d",
+    "trial/reporters/writer.d",
+    "trial/reporters/xunit.d"
+  ];
+
+  static foreach(path; paths) {{
+    string content = import(path);
+
+    auto fileDestination = buildPath(destination, path);
+    auto parent = fileDestination.dirName;
+
+    if(!parent.exists) {
+      mkdirRecurse(parent);
+    }
+
+    if(!fileDestination.exists || getFileHash(fileDestination) != getStringHash(content)) {
+      std.file.write(fileDestination, content);
+    }
+  }}
+}
+
+string getStringHash(const string content) pure {
+  ubyte[28] hash = sha224Of(content);
+
+  return toHexString(hash).idup;
+}
+
+string getFileHash(string fileName) {
+  return getStringHash(std.file.readText(fileName));
 }

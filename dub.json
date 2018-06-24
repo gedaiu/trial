@@ -101,7 +101,8 @@
         "lifecycle"
       ],
       "stringImportPaths": [
-        "views"
+        "views",
+        "lifecycle"
       ],
       "dependencies": {
         "dub": "~>1.10.0-beta.1",

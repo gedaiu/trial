@@ -77,6 +77,7 @@ class PackageDescriptionCommand : PackageBuildCommand {
     string rootPackage;
     TargetDescription[] neededTarget;
     CommonOptions options;
+    bool hasSettings;
   }
 
   Settings settings;
@@ -203,6 +204,10 @@ class PackageDescriptionCommand : PackageBuildCommand {
   }
 
   Settings readSettings() {
+    if(hasSettings) {
+      return settings;
+    }
+
     string path = buildPath(options.root_path, "trial.json").to!string;
 
     if (!path.exists) {
@@ -221,34 +226,9 @@ class PackageDescriptionCommand : PackageBuildCommand {
     validateJson!Settings(jsonSettings,"", " in `" ~ path ~ "`");
 
     Settings settings = readText(path).deserializeJson!Settings;
+    hasSettings = true;
 
     return settings;
-  }
-
-  void writeTestFile(string reporters = "", string plugins = "") {
-    settings = readSettings();
-
-    if (reporters != "") {
-      settings.reporters = reporters.split(",").map!(a => a.strip).array;
-    }
-
-    if (plugins != "") {
-      settings.plugins = plugins.split(",").map!(a => a.strip).array;
-    }
-
-    auto content = generateTestFile(settings, hasTrial, modules, externalModules);
-
-    if (!mainFile.exists) {
-      std.file.write(mainFile, content);
-      return;
-    }
-
-    ubyte[28] hash1 = sha224Of(content);
-    ubyte[28] hash2 = sha224Of(std.file.readText(mainFile));
-
-    if (toHexString(hash1) != toHexString(hash2)) {
-      std.file.write(mainFile, content);
-    }
   }
 
   string mainFile() {
