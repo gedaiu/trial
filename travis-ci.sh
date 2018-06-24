@@ -12,4 +12,6 @@ dub build :runner -b release --compiler=$DC
 
 # run unit tests
 dub clean --all-packages
-dub run :runner --compiler=$DC -- :lifecycle --compiler=$DC
+cat dub.selections.json || true
+dub upgrade
+dub run :runner --compiler=$DC -- -v --compiler=$DC

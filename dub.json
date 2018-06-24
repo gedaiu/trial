@@ -108,7 +108,7 @@
         "dub": "~>1.10.0-beta.1",
         "vibe-d:http": "~>0.8.4",
         "vibe-d:data": "~>0.8.4",
-	"libdparse": "~master"
+        "libdparse": "~>0.8.7"
       },
       "subConfigurations": {
         "dub": "library-nonet"
