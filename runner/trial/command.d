@@ -36,20 +36,24 @@ class TrialProject : Project {
 
   private {
     Project project;
-    Project trialProject;
     PackageDescriptionCommand m_description;
   }
+
   alias getDependency = Project.getDependency;
   alias getTopologicalPackageList = Project.getTopologicalPackageList;
 
-  this(Project project, PackageDescriptionCommand description) {
-    this.project = project;
+  this(PackageDescriptionCommand description) {
+    this.project = description.project;
     this.m_description = description;
 
     project.rootPackage.recipe.configurations = [ConfigurationInfo(m_description.buildFile, testBuildSettings)];
 
     super(project.packageManager, project.rootPackage);
     this.reinit;
+  }
+
+  PackageDescriptionCommand description() {
+    return m_description;
   }
 
   override
@@ -166,7 +170,7 @@ class TrialCommand : PackageBuildCommand {
     string m_reporters;
     string m_executor;
     string m_plugins;
-    PackageDescriptionCommand m_description;
+    TrialProject project;
   }
 
   this() {
@@ -182,8 +186,8 @@ class TrialCommand : PackageBuildCommand {
     this.acceptsAppArgs = false;
   }
 
-  void setDescription(PackageDescriptionCommand description) {
-    m_description = description;
+  void setProject(TrialProject project) {
+    this.project = project;
   }
 
   override void prepare(scope CommandArgs args) {
@@ -230,8 +234,8 @@ class TrialCommand : PackageBuildCommand {
       package_name = free_args[0];
     }
 
-    logInfo("Generate main file: " ~ m_description.mainFile);
-    m_description.writeTestFile(m_reporters, m_plugins);
+    logInfo("Generate main file: " ~ project.description.mainFile);
+    project.description.writeTestFile(m_reporters, m_plugins);
 
     setupPackage(dub, package_name, m_buildType);
 
@@ -259,19 +263,16 @@ class TrialCommand : PackageBuildCommand {
 
   void run(string[] runArgs = []) {
     auto settings = getSettings;
-
     settings.runArgs = runArgs;
 
-    auto project = m_description.project;
-    auto config = settings.config;
-
-    auto trialProject = new TrialProject(project, m_description);
-    auto generator = createProjectGenerator("build", trialProject);
+    auto generator = createProjectGenerator("build", project);
  
     generator.generate(settings);
   }
 
   protected GeneratorSettings getSettings() {
+    auto m_description = project.description;
+
     GeneratorSettings settings;
     settings.config = m_description.configuration;
     settings.platform = m_buildPlatform;
@@ -308,10 +309,6 @@ class TrialDescribeCommand : TrialCommand {
   }
 
   override {
-    void setDescription(PackageDescriptionCommand description) {
-      m_description = description;
-    }
-
     void prepare(scope CommandArgs args) {
       m_buildType = "unittest";
       super.prepare(args);
@@ -337,6 +334,8 @@ class TrialDescribeCommand : TrialCommand {
         testCases ~= testClassDiscovery.discoverTestCases(free_args[0]);
         testCases ~= specDiscovery.discoverTestCases(free_args[0]);
       } else {
+        auto m_description = project.description;
+
         testCases = m_description.files.map!(a => unitTestDiscovery.discoverTestCases(a))
           .join.array;
         testCases ~= m_description.files.map!(a => testClassDiscovery.discoverTestCases(a))
@@ -362,7 +361,7 @@ class TrialSubpackagesCommand : TrialCommand {
   }
 
   override int execute(Dub dub, string[] free_args, string[] app_args = []) {
-    auto list = [m_description.getRootPackage] ~ m_description.subPackages;
+    auto list = [project.description.getRootPackage] ~ project.description.subPackages;
     list.join("\n").writeln;
 
     return 0;

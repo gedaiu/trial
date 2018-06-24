@@ -133,13 +133,12 @@ version(unitttest) {} else {
 			return 0;
 		}
 
-
 		auto description = new PackageDescriptionCommand(options, subPackageName);
-
 		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
+		auto project = new TrialProject(description);
 
 		/// run the trial command
-		cmd.setDescription(description);
+		cmd.setProject(project);
 		auto remainingArgs = commandArgs.extractRemainingArgs().filter!`a != "-v"`.array;
 
 		if (remainingArgs.any!(a => a.startsWith("-"))) {
