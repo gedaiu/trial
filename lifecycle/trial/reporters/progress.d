@@ -20,10 +20,6 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 ///
 struct ProgressGlyphs {
   version(Windows) {
@@ -108,7 +104,7 @@ class ProgressReporter : ITestCaseLifecycleListener, ILifecycleListener
 
 version (unittest)
 {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

@@ -20,10 +20,6 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 ///
 struct LandingGlyphs {
   string plane = "✈";
@@ -114,7 +110,7 @@ class LandingReporter : ITestCaseLifecycleListener, ILifecycleListener
 
 version (unittest)
 {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

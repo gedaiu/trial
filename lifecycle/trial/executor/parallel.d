@@ -15,12 +15,8 @@ import std.algorithm;
 import std.array;
 import core.thread;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 version(unittest) {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

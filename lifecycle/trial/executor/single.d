@@ -13,10 +13,6 @@ import std.datetime;
 import trial.step;
 import trial.stackresult;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 /**
 The default test executor runs test in sequential order in a single thread
 */
@@ -153,7 +149,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
 }
 
 version(unittest) {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

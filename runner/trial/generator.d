@@ -189,7 +189,13 @@ void writeTrialFolder(string destination) {
   ];
 
   static foreach(path; paths) {{
-    string content = import(path);
+    string content = import(path)
+      .removeUnittests
+      .split("\n")
+      .filter!(a => !a.strip.startsWith("@(\""))
+      .filter!(a => !a.strip.startsWith("@Flaky"))
+      .filter!(a => !a.strip.startsWith("@Issue"))
+      .join("\n");
 
     auto fileDestination = buildPath(destination, path);
     auto parent = fileDestination.dirName;
@@ -212,4 +218,101 @@ string getStringHash(const string content) pure {
 
 string getFileHash(string fileName) {
   return getStringHash(std.file.readText(fileName));
+}
+
+string removeTest(string data) {
+  auto cnt = 0;
+
+  if(data[0] == ')') {
+    return "unittest" ~ data;
+  }
+
+  if(data[0] != '{') {
+    return data;
+  }
+
+  char ignore;
+
+  foreach(size_t i, ch; data) {
+    if(ignore != char.init) {
+
+      if(ignore == ch) {
+        ignore = char.init;
+      }
+
+      continue;
+    }
+
+    if(ch == '`') {
+      ignore = '`';
+    }
+
+    if(ch == '"') {
+      ignore = '"';
+    }
+
+    if(ch == '{') {
+      cnt++;
+    }
+
+    if(ch == '}') {
+      cnt--;
+    }
+
+    if(cnt == 0) {
+      return data[i+1..$];
+    }
+  }
+
+  return data;
+}
+
+string removeUnittests(string data) {
+  import trial.discovery.code;
+
+  auto pieces = data.split("unittest");
+
+  auto tokens = stringToDTokens(data);
+  auto iterator = TokenIterator(tokens);
+
+  string cleanContent;
+
+  foreach(token; iterator) {
+    string type = str(token.type);
+
+    if(type == "comment") {
+      continue;
+    }
+
+    if(type == "unittest") {
+      iterator.skipNextBlock;
+      continue;
+    }
+
+    if(type == "version") {
+      iterator.skipUntilType("(");
+      string value = iterator.currentToken.text == "" ? str(iterator.currentToken.type) : iterator.currentToken.text;
+
+      if(value == "whitespace") {
+        iterator.skipWsAndComments;
+      } else {
+        iterator.skipOne;
+      }
+
+      value = iterator.currentToken.text == "" ? str(iterator.currentToken.type) : iterator.currentToken.text;
+
+      if(value == "unittest") {
+        iterator.skipNextBlock;
+      } else {
+        cleanContent ~= `version(` ~ value ~ `)`;
+        iterator.skipUntilType(")");
+      }
+
+      continue;
+    }
+
+    cleanContent ~= token.text == "" && type != "stringLiteral" ? type : token.text;
+  }
+
+  return cleanContent;
 }

@@ -21,10 +21,6 @@ import std.range;
 import trial.interfaces;
 import trial.reporters.writer;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 private string escapeXUnit(string data) {
   string escapedData = data.dup;
 
@@ -105,7 +101,7 @@ struct XUnitSuiteXml {
 }
 
 version(unittest) {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

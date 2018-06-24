@@ -19,10 +19,6 @@ import std.typecons;
 import trial.interfaces;
 import trial.discovery.code;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 static if(__VERSION__ >= 2077) {
   enum unitTestKey = "__un" ~ "ittest_";
 } else {
@@ -298,7 +294,7 @@ class UnitTestDiscovery : ITestDiscovery
   {
     TestCase[] testCases = [];
 
-    version (Have_fluent_asserts_core)
+    version (Have_fluent_asserts)
       version (Have_libdparse)
       {
         import fluentasserts.core.results;
@@ -603,7 +599,7 @@ private void testTempl(X...)() if (X.length == 1)
 /// This adds asserts to the module
 version (unittest)
 {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

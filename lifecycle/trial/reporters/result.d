@@ -18,11 +18,7 @@ import std.datetime;
 import trial.interfaces;
 import trial.reporters.writer;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
-version (Have_fluent_asserts_core)
+version (Have_fluent_asserts)
 {
   import fluentasserts.core.base;
   import fluentasserts.core.results;
@@ -213,7 +209,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
         writer.writeln("");
         writer.writeln(i.to!string ~ ") " ~ failedTestNames[i] ~ ":", ReportWriter.Context.danger);
 
-        version (Have_fluent_asserts_core)
+        version (Have_fluent_asserts)
         {
           TestException e = cast(TestException) t;
 
@@ -237,7 +233,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
   }
 }
 
-version (Have_fluent_asserts_core) {
+version (Have_fluent_asserts) {
   class TrialResultPrinter : ResultPrinter {
     @trusted:
     ReportWriter writer;
@@ -280,7 +276,7 @@ version (Have_fluent_asserts_core) {
 
 version (unittest)
 {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

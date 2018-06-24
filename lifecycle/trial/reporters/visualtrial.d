@@ -15,11 +15,7 @@ import std.stdio;
 import std.datetime;
 import std.exception;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
-version(Have_fluent_asserts_core) {
+version(Have_fluent_asserts) {
   import fluentasserts.core.base;
   import fluentasserts.core.results;
 }

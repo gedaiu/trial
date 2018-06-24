@@ -20,10 +20,6 @@ import trial.interfaces;
 public import trial.attributes;
 import trial.discovery.code;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 /// A structure that stores data about the setup events(methods)
 struct SetupEvent
 {
@@ -101,7 +97,7 @@ class TestClassDiscovery : ITestDiscovery
   {
     TestCase[] testCases = [];
 
-    version (Have_fluent_asserts_core)
+    version (Have_fluent_asserts)
       version (Have_libdparse)
       {
         import fluentasserts.core.results;
@@ -458,7 +454,7 @@ template classMembers(string moduleName)
 
 version (unittest)
 {
-  version(Have_fluent_asserts_core): 
+  version(Have_fluent_asserts): 
   import trial.attributes;
   import fluent.asserts;
 

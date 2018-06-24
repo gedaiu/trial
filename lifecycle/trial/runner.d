@@ -26,10 +26,6 @@ import trial.executor.single;
 import trial.executor.parallel;
 import trial.executor.process;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 static this() {
   if(LifeCycleListeners.instance is null) {
     LifeCycleListeners.instance = new LifeCycleListeners;
@@ -344,7 +340,7 @@ bool isSuccess(SuiteResult[] results) {
 }
 
 version(unittest) {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

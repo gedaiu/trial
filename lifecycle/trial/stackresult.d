@@ -16,18 +16,14 @@ import std.algorithm;
 
 import core.demangle;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
-version (Have_fluent_asserts_core) { } else {
+version (Have_fluent_asserts) { } else {
   auto toTestException(Throwable t)
   {
     return t;
   }
 }
 
-version (Have_fluent_asserts_core) {
+version (Have_fluent_asserts) {
 
   import fluentasserts.core.base;
   import fluentasserts.core.results;
@@ -400,7 +396,7 @@ struct Frame
     return result;
   }
 
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     void print(ResultPrinter printer) @safe
     {
       if(raw != "") {
@@ -490,7 +486,7 @@ unittest
 }
 
 version(unittest) {
-  version(Have_fluent_asserts_core): 
+  version(Have_fluent_asserts): 
   class MockPrinter : ResultPrinter {
     string buffer;
 

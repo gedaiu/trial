@@ -15,10 +15,6 @@ import trial.reporters.dotmatrix;
 import trial.reporters.landing;
 import trial.reporters.progress;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 version(Have_dub) {
   import dub.internal.vibecompat.data.serialization;
 }
@@ -154,7 +150,7 @@ string toCode(GlyphSettings settings) {
 
 version (unittest)
 {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

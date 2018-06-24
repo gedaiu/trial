@@ -14,11 +14,7 @@ import std.conv;
 import std.string;
 import std.algorithm;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
-version(Have_fluent_asserts_core) {
+version(Have_fluent_asserts) {
   import fluentasserts.core.base;
   import fluentasserts.core.results;
 }
@@ -70,7 +66,7 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
     } else {
       writer.writeln("not ok - " ~ suite ~ "." ~ test.name, ReportWriter.Context._default);
 
-      version(Have_fluent_asserts_core) {
+      version(Have_fluent_asserts) {
         if(test.throwable !is null) {
           if(cast(TestException) test.throwable !is null) {
             printTestException(test);
@@ -86,7 +82,7 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
     }
   }
 
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     private void printTestException(ref TestResult test) {
       auto diagnostic = test.throwable.msg.split("\n").map!(a => "# " ~ a).join("\n");
 
@@ -113,7 +109,7 @@ class TapReporter : ILifecycleListener, ITestCaseLifecycleListener
 }
 
 version(unittest) {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

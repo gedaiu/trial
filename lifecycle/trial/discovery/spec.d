@@ -16,10 +16,6 @@ import std.string;
 import trial.interfaces;
 import trial.discovery.code;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 alias SetupFunction = void delegate() @system;
 
 private string[] suitePath;
@@ -223,7 +219,7 @@ class SpecTestDiscovery : ITestDiscovery
   {
     TestCase[] testCases = [];
 
-    version (Have_fluent_asserts_core)
+    version (Have_fluent_asserts)
       version (Have_libdparse)
       {
         import fluentasserts.core.results;
@@ -283,7 +279,7 @@ unittest
 
 version (unittest)
 {
-  version(Have_fluent_asserts_core): 
+  version(Have_fluent_asserts): 
 
   import fluent.asserts;
 

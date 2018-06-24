@@ -20,10 +20,6 @@ import std.algorithm;
 import trial.interfaces;
 import trial.reporters.writer;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 ///
 struct DotMatrixGlyphs {
   string success = ".";
@@ -86,7 +82,7 @@ class DotMatrixReporter : ITestCaseLifecycleListener
 
 version (unittest)
 {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

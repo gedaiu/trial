@@ -19,12 +19,8 @@ import std.exception;
 import std.json;
 import std.algorithm;
 
-version (Have_fluent_asserts) {
-  version = Have_fluent_asserts_core;
-}
-
 version(unittest) {
-  version(Have_fluent_asserts_core) {
+  version(Have_fluent_asserts) {
     import fluent.asserts;
   }
 }

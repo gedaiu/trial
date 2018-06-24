@@ -123,7 +123,9 @@ string getFileName(string fileContent) {
 }
 
 version(unittest) {
-  import fluent.asserts;
+  version(Have_fluent_asserts) {
+    import fluent.asserts;
+  }
 }
 
 /// It should get the filename from the .lst file with no coverage
