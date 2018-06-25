@@ -4,7 +4,6 @@
 		"result"
 	],
 	"testDiscovery": [
-		"trial.discovery.unit.SpecTestDiscovery"
-	],
-	"maxThreads": 0
+		"trial.discovery.testclass.SpecTestDiscovery"
+	]
 }

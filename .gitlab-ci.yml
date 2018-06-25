@@ -1,0 +1,132 @@
+stages:
+  - build
+  - test
+  - docker
+
+.build_template: &build_definition
+  stage: build
+  tags:
+    - docker-trial
+  before_script:
+    - mkdir -p vendor/apt
+    - mv vendor/dub /root/.dub || true
+    - apt-get update || true
+    - apt-get -o dir::cache::archives="vendor/apt" install -y libevent-dev libssl-dev
+  after_script:
+    - mv /root/.dub vendor/dub || true
+  artifacts:
+    paths:
+      - trial
+  cache:
+    key: "$CI_JOB_NAME"
+    paths:
+      - vendor/apt
+      - vendor/dub
+
+.test_template: &test_definition
+  stage: test
+  tags:
+    - docker-trial
+  before_script:
+    - mkdir -p vendor/apt
+    - mv vendor/dub /root/.dub || true
+    - apt-get update || true
+    - apt-get -o dir::cache::archives="vendor/apt" install -y libevent-dev libssl-dev
+    - mv trial /usr/local/bin
+  after_script:
+    - mv /root/.dub vendor/dub || true
+  script:
+    - trial
+  cache:
+    key: "$CI_JOB_NAME"
+    paths:
+      - vendor/apt
+      - vendor/dub
+  dependencies:
+      - build-dmd
+
+build-dmd:
+  <<: *build_definition
+  image: dlanguage/dmd:2.080.0
+  script:
+    - dmd --version
+    - dub --version
+    - dub build :runner --build release
+
+build-ldc:
+  <<: *build_definition
+  image: dlanguage/ldc:1.9.0
+  script:
+    - ldc2 --version
+    - dub --version
+    - dub build :runner --build release
+
+trial-dmd-2.080.0:
+  <<: *test_definition
+  image:
+    name: dlanguage/dmd:2.080.0
+    entrypoint: [""]
+  script:
+    - trial --coverage
+  artifacts:
+    paths:
+      - .trial
+
+trial-ldc-1.9.0:
+  <<: *test_definition
+  image:
+    name: dlanguage/ldc:1.9.0
+    entrypoint: [""]
+  artifacts:
+    paths:
+      - .trial
+
+trial-dmd-2.079.1:
+  <<: *test_definition
+  image:
+    name: dlanguage/dmd:2.079.1
+    entrypoint: [""]
+
+trial-ldc-1.8.0:
+  <<: *test_definition
+  image:
+    name: dlanguage/ldc:1.8.0
+    entrypoint: [""]
+
+trial-dmd-2.078.3:
+  <<: *test_definition
+  image:
+    name: dlanguage/dmd:2.078.3
+    entrypoint: [""]
+
+trial-ldc-1.7.0:
+  <<: *test_definition
+  image:
+    name: dlanguage/ldc:1.7.0
+    entrypoint: [""]
+
+trial-dmd-2.077.1:
+  <<: *test_definition
+  image:
+    name: dlanguage/dmd:2.077.1
+    entrypoint: [""]
+
+trial-ldc-1.6.0:
+  <<: *test_definition
+  image:
+    name: dlanguage/ldc:1.6.0
+    entrypoint: [""]
+
+examples:
+  <<: *test_definition
+  image:
+    name: dlanguage/dmd:2.080.0
+    entrypoint: [""]
+  script:
+    - cd examples/spec
+    - trial
+    - cd ../unittest
+    - trial
+    - cd ../test-class
+    - trial
+    - cd ../..
