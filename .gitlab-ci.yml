@@ -1,7 +1,8 @@
 stages:
   - build
   - test
-  - docker
+  - pack
+  - test-package
 
 .build_template: &build_definition
   stage: build
@@ -43,9 +44,9 @@ stages:
       - vendor/apt
       - vendor/dub
   dependencies:
-      - build-dmd
+      - dmd-ubuntu
 
-build-dmd:
+dmd-ubuntu:
   <<: *build_definition
   image: dlanguage/dmd:2.080.0
   script:
@@ -60,6 +61,31 @@ build-ldc:
     - ldc2 --version
     - dub --version
     - dub build :runner --build release
+
+dmd-fedora:
+  stage: build
+  image: fedora:28
+  tags:
+    - docker-trial
+  before_script:
+    - dnf install -y openssl-devel libcurl-devel wget
+    - mkdir -p vendor/rpm
+    - cd vendor/rpm
+    - ls dmd-2.080.1-0.fedora.x86_64.rpm || wget http://downloads.dlang.org/releases/2.x/2.080.1/dmd-2.080.1-0.fedora.x86_64.rpm
+    - dnf install -y dmd-2.080.1-0.fedora.x86_64.rpm
+    - cd ../..
+  script:
+    - dmd --version
+    - dub --version
+    - dub build :runner --build release --override-config vibe-d:tls/openssl-1.1
+    - mv trial trial-fedora
+  artifacts:
+    paths:
+      - trial-fedora
+  cache:
+    key: "$CI_JOB_NAME"
+    paths:
+      - vendor/rpm
 
 trial-dmd-2.080.0:
   <<: *test_definition
@@ -80,53 +106,144 @@ trial-ldc-1.9.0:
   artifacts:
     paths:
       - .trial
-
-trial-dmd-2.079.1:
-  <<: *test_definition
-  image:
-    name: dlanguage/dmd:2.079.1
-    entrypoint: [""]
-
-trial-ldc-1.8.0:
-  <<: *test_definition
-  image:
-    name: dlanguage/ldc:1.8.0
-    entrypoint: [""]
-
-trial-dmd-2.078.3:
-  <<: *test_definition
-  image:
-    name: dlanguage/dmd:2.078.3
-    entrypoint: [""]
-
-trial-ldc-1.7.0:
-  <<: *test_definition
-  image:
-    name: dlanguage/ldc:1.7.0
-    entrypoint: [""]
-
-trial-dmd-2.077.1:
-  <<: *test_definition
-  image:
-    name: dlanguage/dmd:2.077.1
-    entrypoint: [""]
-
-trial-ldc-1.6.0:
-  <<: *test_definition
-  image:
-    name: dlanguage/ldc:1.6.0
-    entrypoint: [""]
-
-examples:
-  <<: *test_definition
+# 
+# trial-dmd-2.079.1:
+#   <<: *test_definition
+#   image:
+#     name: dlanguage/dmd:2.079.1
+#     entrypoint: [""]
+# 
+# trial-ldc-1.8.0:
+#   <<: *test_definition
+#   image:
+#     name: dlanguage/ldc:1.8.0
+#     entrypoint: [""]
+# 
+# trial-dmd-2.078.3:
+#   <<: *test_definition
+#   image:
+#     name: dlanguage/dmd:2.078.3
+#     entrypoint: [""]
+# 
+# trial-ldc-1.7.0:
+#   <<: *test_definition
+#   image:
+#     name: dlanguage/ldc:1.7.0
+#     entrypoint: [""]
+# 
+# trial-dmd-2.077.1:
+#   <<: *test_definition
+#   image:
+#     name: dlanguage/dmd:2.077.1
+#     entrypoint: [""]
+# 
+# trial-ldc-1.6.0:
+#   <<: *test_definition
+#   image:
+#     name: dlanguage/ldc:1.6.0
+#     entrypoint: [""]
+# 
+# examples:
+#   <<: *test_definition
+#   image:
+#     name: dlanguage/dmd:2.080.0
+#     entrypoint: [""]
+#   script:
+#     - cd examples/spec
+#     - trial
+#     - cd ../unittest
+#     - trial
+#     - cd ../test-class
+#     - trial
+#     - cd ../..
+# 
+linux-packages:
+  tags:
+    - docker-trial
+  stage: pack
   image:
     name: dlanguage/dmd:2.080.0
     entrypoint: [""]
+  dependencies:
+      - dmd-ubuntu
+      - dmd-fedora
   script:
-    - cd examples/spec
-    - trial
-    - cd ../unittest
-    - trial
-    - cd ../test-class
-    - trial
-    - cd ../..
+    - apt-get update -y
+    - apt-get install -y ruby ruby-dev rubygems build-essential libevent-dev rpm
+    - gem install --no-ri --no-rdoc fpm
+    - fpm --version
+    - ls -lsah
+    - pwd
+    - ./trial --version
+    - mkdir -p tmp/ubuntu/usr/local/bin
+    - mkdir -p tmp/fedora/usr/local/bin
+    - cp trial tmp/ubuntu/usr/local/bin
+    - cp trial-fedora tmp/fedora/usr/local/bin/trial
+    - cd tmp
+    - fpm -s dir -t deb -n trial -v 0.7.0 --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" -d "libssl1.0.0 > 0" ./ubuntu/usr/local/bin/=/usr/local/bin
+    - fpm -s dir -t rpm -n trial -v 0.7.0 --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" --depends "compat-openssl10" ./fedora/usr/local/bin/=/usr/local/bin
+    - cd ..
+  artifacts:
+    paths:
+      - tmp/*.rpm
+      - tmp/*.deb
+
+ubuntu-16.04:
+  stage: test-package
+  image:
+    name: ubuntu:16.04
+  dependencies:
+    - linux-packages
+  script:
+    - ls -lsa
+    - pwd
+    - ls -lsa tmp
+    - apt-get update -y
+    - apt-get install -y libssl1.0.0
+    - dpkg -i tmp/*.deb
+    - trial --version
+
+ubuntu-18.04:
+  stage: test-package
+  image:
+    name: ubuntu:18.04
+  dependencies:
+    - linux-packages
+  script:
+    - ls -lsa
+    - pwd
+    - ls -lsa tmp
+    - apt-get update -y
+    - apt-get install -y libssl1.0.0
+    - dpkg -i tmp/*.deb
+    - trial --version
+
+ubuntu-18.10:
+  stage: test-package
+  image:
+    name: ubuntu:18.10
+  dependencies:
+    - linux-packages
+  script:
+    - ls -lsa
+    - pwd
+    - ls -lsa tmp
+    - apt-get update -y
+    - apt-get install -y libssl1.0.0
+    - dpkg -i tmp/*.deb
+    - trial --version
+
+fedora-28:
+  stage: test-package
+  image:
+    name: fedora:28
+  dependencies:
+    - linux-packages
+  script:
+    - ls -lsa
+    - pwd
+    - ls -lsa tmp
+    - dnf update -y
+    - dnf install -y compat-openssl10-1:1.0.2o-1.fc28.x86_64 
+    - dnf install -y tmp/*.rpm
+    - trial --version
