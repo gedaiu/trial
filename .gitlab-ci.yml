@@ -188,6 +188,23 @@ linux-packages:
       - tmp/*.rpm
       - tmp/*.deb
 
+docker:
+  stage: pack
+  image: docker:latest
+  variables:
+    DOCKER_DRIVER: overlay2
+  dependencies:
+    - dmd-ubuntu
+  services:
+    - docker:dind
+  before_script:
+    - docker info
+  script:
+    - cp trial docker/trial
+    - cd docker
+    - docker build --no-cache=true -t trial/dmd:2.080.0 .
+
+
 ubuntu-16.04:
   stage: test-package
   image:
