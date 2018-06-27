@@ -192,7 +192,7 @@ docker:
   stage: pack
   image: docker:latest
   variables:
-    DOCKER_DRIVER: overlay2variables:
+    DOCKER_DRIVER: overlay2
     IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   dependencies:
     - dmd-ubuntu
