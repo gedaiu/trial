@@ -192,17 +192,20 @@ docker:
   stage: pack
   image: docker:latest
   variables:
-    DOCKER_DRIVER: overlay2
+    DOCKER_DRIVER: overlay2variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   dependencies:
     - dmd-ubuntu
   services:
     - docker:dind
   before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker info
   script:
     - cp trial docker/trial
     - cd docker
     - docker build --no-cache=true -t trial/dmd:2.080.0 .
+    - docker push $IMAGE_TAG
 
 
 ubuntu-16.04:
