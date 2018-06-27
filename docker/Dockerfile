@@ -11,8 +11,3 @@ RUN apt-get update \
 
 # Trial version
 RUN trial --version
-
-
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["${COMPILER}"]

@@ -129,7 +129,6 @@ version(unitttest) {} else {
 		auto runnerSettings = new RunnerSettings;
 		runnerSettings.applyArguments(commandArgs);
 
-		writeln("runnerSettings ", runnerSettings.settings.testDiscovery);
 		cmd.runnerSettings = runnerSettings;
 		cmd.prepare(commandArgs);
 

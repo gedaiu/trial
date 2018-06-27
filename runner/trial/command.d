@@ -92,11 +92,7 @@ class TrialProject : Project {
     tcinfo.mainSourceFile = m_description.mainFile;
     tcinfo.versions[""] ~= "VibeCustomMain";
 
-    import std.stdio;
-
-
     string[] plugins = runnerSettings.settings.plugins;
-    writeln("??????????", plugins);
 
     foreach(plugin; plugins) {
       if(plugin in tcinfo.dependencies) {
@@ -105,9 +101,7 @@ class TrialProject : Project {
 
       auto pluginPackage = getPackage(plugin, Dependency.any);
       tcinfo.dependencies[plugin] = Dependency(pluginPackage.version_);
-
-      import std.stdio;
-      writeln("---=====>", tcinfo.dependencies.keys);
+      tcinfo.dependencies[plugin].optional = true;
     }
 
     project.saveSelections;
