@@ -13,7 +13,6 @@ import trial.version_;
 
 import dub.internal.vibecompat.data.json;
 
-import dub.commandline;
 import dub.compilers.compiler;
 import dub.dependency;
 import dub.dub;
@@ -29,7 +28,9 @@ import dub.platform;
 import dub.project;
 import dub.description;
 import dub.internal.utils;
+import dub.commandline;
 
+import trial.runnersettings;
 import trial.generator;
 
 class TrialProject : Project {
@@ -41,14 +42,17 @@ class TrialProject : Project {
     bool hasTcinfo;
   }
 
+  RunnerSettings runnerSettings;
+
   string reporters;
   string plugins;
 
   alias getDependency = Project.getDependency;
   alias getTopologicalPackageList = Project.getTopologicalPackageList;
 
-  this(PackageDescriptionCommand description) {
+  this(PackageDescriptionCommand description, RunnerSettings runnerSettings) {
     this.project = description.project;
+    this.runnerSettings = runnerSettings;
     this.m_description = description;
 
     project.rootPackage.recipe.configurations = [ConfigurationInfo(m_description.buildFile, testBuildSettings)];
@@ -66,8 +70,7 @@ class TrialProject : Project {
   }
 
   string embededLibraryPath() {
-    auto settings = m_description.readSettings();
-    return (NativePath(m_description.mainFile).parentPath ~ settings.artifactsLocation ~ "lifecycle").toNativeString();
+    return (NativePath(m_description.mainFile).parentPath ~ runnerSettings.settings.artifactsLocation ~ "lifecycle").toNativeString();
   }
 
   BuildSettingsTemplate testBuildSettings() {
@@ -89,11 +92,7 @@ class TrialProject : Project {
     tcinfo.mainSourceFile = m_description.mainFile;
     tcinfo.versions[""] ~= "VibeCustomMain";
 
-    import std.stdio;
-
-
-    string[] plugins = m_description.readSettings().plugins ~ this.plugins.split(",").map!(a => a.strip).array;
-    writeln("??????????", plugins);
+    string[] plugins = runnerSettings.settings.plugins;
 
     foreach(plugin; plugins) {
       if(plugin in tcinfo.dependencies) {
@@ -102,9 +101,7 @@ class TrialProject : Project {
 
       auto pluginPackage = getPackage(plugin, Dependency.any);
       tcinfo.dependencies[plugin] = Dependency(pluginPackage.version_);
-
-      import std.stdio;
-      writeln("---=====>", tcinfo.dependencies.keys);
+      tcinfo.dependencies[plugin].optional = true;
     }
 
     project.saveSelections;
@@ -164,21 +161,19 @@ class TrialProject : Project {
   }
 
   void writeTestFile() {
-    auto settings = m_description.readSettings();
-
     if (reporters != "") {
-      settings.reporters = reporters.split(",").map!(a => a.strip).array;
+      runnerSettings.settings.reporters = reporters.split(",").map!(a => a.strip).array;
     }
 
     if (plugins != "") {
-      settings.plugins = plugins.split(",").map!(a => a.strip).array;
+      runnerSettings.settings.plugins = plugins.split(",").map!(a => a.strip).array;
     }
 
     if(!hasTrialDependency) {
       writeTrialFolder(embededLibraryPath);
     }
 
-    auto content = generateTestFile(settings, m_description.hasTrial, m_description.modules, m_description.externalModules);
+    auto content = generateTestFile(runnerSettings.settings, m_description.hasTrial, m_description.modules, m_description.externalModules);
 
     auto mainFile = m_description.mainFile;
 
@@ -198,16 +193,10 @@ class TrialProject : Project {
 
 class TrialCommand : PackageBuildCommand {
   protected {
-    bool m_combined;
-    bool m_parallel;
-    bool m_force;
-    string m_testName;
-    string m_suiteName;
-    string m_reporters;
-    string m_executor;
-    string m_plugins;
     TrialProject project;
   }
+
+  RunnerSettings runnerSettings;
 
   this() {
     this.name = "trial";
@@ -226,41 +215,6 @@ class TrialCommand : PackageBuildCommand {
     this.project = project;
   }
 
-  override void prepare(scope CommandArgs args) {
-    m_buildType = "unittest";
-
-    args.getopt("combined", &m_combined,
-        ["Tries to build the whole project in a single compiler run."]);
-
-    args.getopt("parallel", &m_parallel,
-        ["Runs multiple compiler instances in parallel, if possible."]);
-
-    args.getopt("f|force", &m_force,
-        ["Forces a recompilation even if the target is up to date."]);
-
-    args.getopt("t|test", &m_testName,
-        ["It will run all the tests that contain this text in the name."]);
-
-    args.getopt("s|suite", &m_suiteName,
-        ["It will run all the suites that contain this text in the name."]);
-
-    args.getopt("r|reporters", &m_reporters,
-        ["Override the reporters from the `trial.json` file. eg. -r spec,result,stats"]);
-    
-    args.getopt("e|executor", &m_executor,
-        ["Override the test executor"]);
-
-    args.getopt("p|plugins", &m_plugins,
-        ["Add a trial plugin as dependency from code.dlang.org. eg. -p trial-plugin1,trial-plugin2"]);
-
-    bool coverage = false;
-    args.getopt("coverage", &coverage, ["Enables code coverage statistics to be generated."]);
-    if (coverage)
-      m_buildType = "unittest-cov";
-
-    super.prepare(args);
-  }
-
   override int execute(Dub dub, string[] free_args, string[] app_args = []) {
     string package_name;
 
@@ -272,29 +226,25 @@ class TrialCommand : PackageBuildCommand {
 
     logInfo("Generate main file: " ~ project.description.mainFile);
 
-    import std.stdio;
-    writeln("m_plugins: ", m_plugins);
-    project.plugins = m_plugins;
-    project.reporters = m_reporters;
     project.writeTestFile();
 
-    setupPackage(dub, package_name, m_buildType);
+    setupPackage(dub, package_name, runnerSettings.buildType);
 
     m_buildSettings.addOptions([BuildOption.unittests, BuildOption.debugMode,
         BuildOption.debugInfo]);
 
     string[] arguments;
 
-    if (m_testName != "") {
-      arguments ~= ["-t", m_testName];
+    if (runnerSettings.testName != "") {
+      arguments ~= ["-t", runnerSettings.testName];
     }
 
-    if (m_suiteName != "") {
-      arguments ~= ["-s", m_suiteName];
+    if (runnerSettings.suiteName != "") {
+      arguments ~= ["-s", runnerSettings.suiteName];
     }
 
-    if (m_executor != "") {
-      arguments ~= ["-e", m_executor];
+    if (runnerSettings.executor != "") {
+      arguments ~= ["-e", runnerSettings.executor];
     }
 
     run(arguments);
@@ -321,9 +271,9 @@ class TrialCommand : PackageBuildCommand {
     settings.buildType = m_buildType;
     settings.buildMode = m_buildMode;
     settings.buildSettings = m_buildSettings;
-    settings.combined = m_combined;
-    settings.parallelBuild = m_parallel;
-    settings.force = m_force;
+    settings.combined = runnerSettings.combined;
+    settings.parallelBuild = runnerSettings.parallel;
+    settings.force = runnerSettings.force;
     settings.tempBuild = m_single;
     settings.run = true;
     settings.runArgs = [];
@@ -341,7 +291,7 @@ class TrialDescribeCommand : TrialCommand {
     this.argumentsPattern = "[<package>]";
     this.description = "lists the tests of the selected package";
     this.helpText = [`Builds the package and lists all contained tests.`, ``,
-      `If no explicit configuration is given, an existing "trial" `
+        `If no explicit configuration is given, an existing "trial" `
       ~ `configuration will be preferred for testing. If none exists, the `
       ~ `first library type configuration will be used, and if that doesn't `
       ~ `exist either, the first executable configuration is chosen.`];

@@ -32,6 +32,8 @@ import trial.discovery.code;
 import trial.settings;
 import trial.generator;
 import trial.jsonvalidation;
+import trial.runnersettings;
+
 
 Dub createDub(CommonOptions options) {
   Dub dub;
@@ -77,10 +79,9 @@ class PackageDescriptionCommand : PackageBuildCommand {
     string rootPackage;
     TargetDescription[] neededTarget;
     CommonOptions options;
-    bool hasSettings;
   }
 
-  Settings settings;
+  RunnerSettings runnerSettings;
 
   this(CommonOptions options, string subPackageName) {
     this.options = options;
@@ -201,34 +202,6 @@ class PackageDescriptionCommand : PackageBuildCommand {
 
   override int execute(Dub dub, string[] free_args, string[] app_args) {
     assert(false);
-  }
-
-  Settings readSettings() {
-    if(hasSettings) {
-      return settings;
-    }
-
-    string path = buildPath(options.root_path, "trial.json").to!string;
-
-    if (!path.exists) {
-      Settings def;
-      std.file.write(path, def.serializeToJson.toPrettyString);
-    }
-
-    Json jsonSettings;
-
-    try {
-      jsonSettings = readText(path).parseJsonString;
-    } catch (JSONException) {
-      throw new Exception("The Json from `" ~ path ~ "` is invalid.");
-    }
-
-    validateJson!Settings(jsonSettings,"", " in `" ~ path ~ "`");
-
-    Settings settings = readText(path).deserializeJson!Settings;
-    hasSettings = true;
-
-    return settings;
   }
 
   string mainFile() {

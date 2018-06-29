@@ -34,6 +34,7 @@ import trial.settings;
 import trial.coverage;
 import trial.command;
 import trial.description;
+import trial.runnersettings;
 
 auto parseGeneralOptions(string[] args, bool isSilent) {
 	CommonOptions options;
@@ -125,7 +126,10 @@ version(unitttest) {} else {
 
 		auto options = parseGeneralOptions(arguments, silent);
 		auto commandArgs = new CommandArgs(arguments);
+		auto runnerSettings = new RunnerSettings;
+		runnerSettings.applyArguments(commandArgs);
 
+		cmd.runnerSettings = runnerSettings;
 		cmd.prepare(commandArgs);
 
 		if (options.help) {
@@ -135,7 +139,8 @@ version(unitttest) {} else {
 
 		auto description = new PackageDescriptionCommand(options, subPackageName);
 		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
-		auto project = new TrialProject(description);
+		auto project = new TrialProject(description, runnerSettings);
+		description.runnerSettings = runnerSettings;
 
 		/// run the trial command
 		cmd.setProject(project);
