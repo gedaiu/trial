@@ -14,7 +14,7 @@ stages:
     - apt-get update || true
     - apt-get -o dir::cache::archives="vendor/apt" install -y libevent-dev libssl-dev
   after_script:
-    - mv /root/.dub vendor/dub || trueFonly
+    - mv /root/.dub vendor/dub || true
   artifacts:
     paths:
       - trial
