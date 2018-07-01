@@ -135,6 +135,9 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
     auto diff = Clock.currTime - beginTime;
 
     writer.writeln("");
+
+    reportExceptions;
+
     writer.writeln("");
 
     if (tests == 0)
@@ -159,8 +162,6 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
     }
 
     writer.writeln("");
-
-    reportExceptions;
   }
 
   private
@@ -191,15 +192,29 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
         return;
       }
 
-      writer.write("The test succeeded in " ~ timeDiff.to!string ~ "!\n", ReportWriter.Context.info);
+      writer.write("The test succeeded in ", ReportWriter.Context.active);
+      writer.write(timeDiff.to!string, ReportWriter.Context.info);
+      writer.write("!\n", ReportWriter.Context.active);
     }
 
     void reportTestsResult()
     {
       string suiteText = suites == 1 ? "1 suite" : suites.to!string ~ " suites";
       auto timeDiff = Clock.currTime - beginTime;
-      writer.write("Executed " ~ tests.to!string ~ " tests in " ~ suiteText ~ " in " ~ timeDiff.to!string ~ ".\n",
-          ReportWriter.Context.info);
+      writer.write("Executed ", ReportWriter.Context.active);
+      writer.write(tests.to!string, ReportWriter.Context.info);
+
+      if(failedTests > 0) {
+        writer.write(" (", ReportWriter.Context.active);
+        writer.write(failedTests.to!string ~ " failed", ReportWriter.Context.danger);
+        writer.write(")", ReportWriter.Context.active);
+      }
+
+      writer.write(" tests in ", ReportWriter.Context.active);
+      writer.write(suiteText, ReportWriter.Context.info);
+      writer.write(" in ", ReportWriter.Context.active);
+      writer.write(timeDiff.to!string, ReportWriter.Context.info);
+      writer.write(".\n", ReportWriter.Context.info);
     }
 
     void reportExceptions()
