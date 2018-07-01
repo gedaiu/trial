@@ -212,9 +212,9 @@ linux-packages:
 
 docker:
   stage: pack
-#  only:
-#    - tags
-#    - master
+  only:
+    - tags
+    - master
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay2
@@ -234,9 +234,9 @@ docker:
 
 ubuntu-16.04:
   stage: test-package
-#  only:
-#    - tags
-#    - master
+  only:
+    - tags
+    - master
   image:
     name: ubuntu:16.04
   dependencies:
@@ -288,9 +288,9 @@ ubuntu-18.10:
 
 fedora-28:
   stage: test-package
-#  only:
-#    - tags
-#    - master
+  only:
+    - tags
+    - master
   image:
     name: fedora:28
   dependencies:
