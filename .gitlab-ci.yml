@@ -274,6 +274,7 @@ ubuntu-16.04:
     name: ubuntu:16.04
   dependencies:
     - linux-packages
+    - master-linux-packages
   script:
     - ls -lsa
     - pwd
@@ -292,6 +293,7 @@ ubuntu-18.04:
     name: ubuntu:18.04
   dependencies:
     - linux-packages
+    - master-linux-packages
   script:
     - ls -lsa
     - pwd
@@ -310,6 +312,7 @@ ubuntu-18.10:
     name: ubuntu:18.10
   dependencies:
     - linux-packages
+    - master-linux-packages
   script:
     - ls -lsa
     - pwd
@@ -328,6 +331,7 @@ fedora-28:
     name: fedora:28
   dependencies:
     - linux-packages
+    - master-linux-packages
   script:
     - ls -lsa
     - pwd
