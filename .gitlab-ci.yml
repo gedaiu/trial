@@ -229,7 +229,7 @@ master-linux-packages:
     - ls -lsah
     - pwd
     - ./trial --version
-    - VE=`cat runner/trial/version_.d | grep trialVersion | cut -d \" -f 2 | cut -d "-" -f 1`-master
+    - VER=`cat runner/trial/version_.d | grep trialVersion | cut -d \" -f 2 | cut -d "-" -f 1`-master
     - mkdir -p tmp/ubuntu/usr/local/bin
     - mkdir -p tmp/fedora/usr/local/bin
     - cp trial tmp/ubuntu/usr/local/bin
