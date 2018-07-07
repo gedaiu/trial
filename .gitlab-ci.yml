@@ -3,6 +3,7 @@ stages:
   - test
   - pack
   - test-package
+  - web
 
 .build_template: &build_definition
   stage: build
@@ -196,13 +197,14 @@ linux-packages:
     - ls -lsah
     - pwd
     - ./trial --version
+    - VER=`cat runner/trial/version_.d | grep trialVersion | cut -d \" -f 2 | cut -d "-" -f 1`-master
     - mkdir -p tmp/ubuntu/usr/local/bin
     - mkdir -p tmp/fedora/usr/local/bin
     - cp trial tmp/ubuntu/usr/local/bin
     - cp trial-fedora tmp/fedora/usr/local/bin/trial
     - cd tmp
-    - fpm -s dir -t deb -n trial -v $CI_COMMIT_REF_NAME --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" -d "libssl1.0.0 > 0" ./ubuntu/usr/local/bin/=/usr/local/bin
-    - fpm -s dir -t rpm -n trial -v $CI_COMMIT_REF_NAME --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" --depends "compat-openssl10" ./fedora/usr/local/bin/=/usr/local/bin
+    - fpm -s dir -t deb -n trial -v $VER --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" -d "libssl1.0.0 > 0" ./ubuntu/usr/local/bin/=/usr/local/bin
+    - fpm -s dir -t rpm -n trial -v $VER --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" --depends "compat-openssl10" ./fedora/usr/local/bin/=/usr/local/bin
     - cd ..
   artifacts:
     paths:
@@ -211,8 +213,8 @@ linux-packages:
 
 master-linux-packages:
   stage: pack
-  only:
-    - master
+#  only:
+#    - master
   tags:
     - docker-trial
   image:
@@ -229,7 +231,7 @@ master-linux-packages:
     - ls -lsah
     - pwd
     - ./trial --version
-    - VE=`cat runner/trial/version_.d | grep trialVersion | cut -d \" -f 2 | cut -d "-" -f 1`-master
+    - VER=`cat runner/trial/version_.d | grep trialVersion | cut -d \" -f 2 | cut -d "-" -f 1`-master
     - mkdir -p tmp/ubuntu/usr/local/bin
     - mkdir -p tmp/fedora/usr/local/bin
     - cp trial tmp/ubuntu/usr/local/bin
@@ -274,6 +276,7 @@ ubuntu-16.04:
     name: ubuntu:16.04
   dependencies:
     - linux-packages
+    - master-linux-packages
   script:
     - ls -lsa
     - pwd
@@ -292,6 +295,7 @@ ubuntu-18.04:
     name: ubuntu:18.04
   dependencies:
     - linux-packages
+    - master-linux-packages
   script:
     - ls -lsa
     - pwd
@@ -310,6 +314,7 @@ ubuntu-18.10:
     name: ubuntu:18.10
   dependencies:
     - linux-packages
+    - master-linux-packages
   script:
     - ls -lsa
     - pwd
@@ -328,6 +333,7 @@ fedora-28:
     name: fedora:28
   dependencies:
     - linux-packages
+    - master-linux-packages
   script:
     - ls -lsa
     - pwd
@@ -336,3 +342,40 @@ fedora-28:
     - dnf install -y compat-openssl10-1:1.0.2o-1.fc28.x86_64 
     - dnf install -y tmp/*.rpm
     - trial --version
+
+pages:
+  stage: web
+  image:
+    name: fedora:28
+  tags:
+    - docker-trial
+  dependencies:
+    - linux-packages
+    - master-linux-packages
+    - trial-dmd-2.080.0
+  before_script:
+    - dnf update -y
+    - dnf install -y npm wget gcc glibc-devel libcurl libgcc
+    - npm install -g allure-commandline@1.4.23
+    - wget http://downloads.dlang.org/releases/2.x/2.080.1/dmd-2.080.1-0.fedora.x86_64.rpm
+    - dnf install -y rsync openssl-devel compat-openssl10-1:1.0.2o-1.fc28.x86_64 dmd-2.080.1-0.fedora.x86_64.rpm java-1.8.0-openjdk.x86_64
+  script:
+    - dub build :lifecycle -b ddox
+    - cd website
+    - npm install
+    - node app.js
+    - node docs.js
+    - mv web ../public
+    - cd ..
+    - mkdir public/files
+    - cp tmp/*.deb public/files
+    - cp tmp/*.rpm public/files
+    - mv docs public/api
+    - rm public/api/styles/ddox.css
+    - mv website/ddox.css public/api/styles/ddox.css
+    - mv .trial public/artifacts
+    - mv public/artifacts/allure public/artifacts/allure-raw
+    - allure -v generate --output public/artifacts/allure public/artifacts/allure-raw
+  artifacts:
+    paths:
+      - public

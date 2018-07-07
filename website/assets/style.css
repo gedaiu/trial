@@ -1,0 +1,28 @@
+.presentation {
+  padding: 100px 0;
+}
+
+.main {
+  background-color: #efefef;
+  border-top: 1px solid #aaa;
+  color: #333;
+  padding-bottom: 50px;
+}
+
+.secondary {
+  background-color: #fff;
+  color: #333;
+  padding-bottom: 50px;
+}
+
+#mainNav.navbar-fixed-top {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 9999;
+}
+
+.main.doc a > img[alt=asciicast] {
+  max-width: 100%;
+}

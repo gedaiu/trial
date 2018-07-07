@@ -1,0 +1,15 @@
+{
+  "name": "trial-website",
+  "version": "1.0.0",
+  "description": "The trial website static generator",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fs-extra": "^6.0.1",
+    "markdown-it": "^8.4.1"
+  }
+}
