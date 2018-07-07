@@ -64,7 +64,10 @@ void addExecutor(string name, Settings settings) {
         break;
       
       default:
-        writeln("There is no `" ~ name ~ "` executor. Using the default.");
+        if(name != "") {
+          writeln("There is no `" ~ name ~ "` executor. Using the default.");
+        }
+
         LifeCycleListeners.instance.add(new DefaultExecutor);
   }
 }
