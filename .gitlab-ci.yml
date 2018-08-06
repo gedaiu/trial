@@ -213,8 +213,8 @@ linux-packages:
 
 master-linux-packages:
   stage: pack
-#  only:
-#    - master
+  only:
+    - master
   tags:
     - docker-trial
   image:
@@ -245,7 +245,7 @@ master-linux-packages:
       - tmp/*.rpm
       - tmp/*.deb
 
-docker:
+docker-dmd:
   stage: pack
   only:
     - tags
@@ -256,6 +256,28 @@ docker:
     IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.080.0:$CI_COMMIT_REF_NAME
   dependencies:
     - dmd-ubuntu
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker info
+  script:
+    - cp trial docker/trial
+    - cd docker
+    - docker build --no-cache=true -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+
+docker-ldc:
+  stage: pack
+  only:
+    - tags
+    - master
+  image: docker:latest
+  variables:
+    DOCKER_DRIVER: overlay2
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/ldc-1.9.0:$CI_COMMIT_REF_NAME
+  dependencies:
+    - ldc-ubuntu
   services:
     - docker:dind
   before_script:
@@ -345,6 +367,9 @@ fedora-28:
 
 pages:
   stage: web
+  only:
+    - tags
+    - master
   image:
     name: fedora:28
   tags:
