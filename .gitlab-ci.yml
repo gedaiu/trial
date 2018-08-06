@@ -55,7 +55,7 @@ dmd-ubuntu:
     - dub --version
     - dub build :runner --build release
 
-build-ldc:
+ldc-ubuntu:
   <<: *build_definition
   image: dlanguage/ldc:1.9.0
   script:
