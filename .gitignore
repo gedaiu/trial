@@ -10,6 +10,7 @@ generated.d
 /trial
 /trial-lifecycle-test-library
 /trial-runner-test-application
+/tmp
 trial-stats.csv
 trial-result.html
 docs/
@@ -41,3 +42,6 @@ examples/spec/dub.selections.json
 examples/test-class/dub.selections.json
 examples/unittest/dub.selections.json
 examples/optional-fluent-asserts/dub.selections.json
+node_modules
+website/web
+dub.selections.json

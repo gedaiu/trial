@@ -364,6 +364,10 @@ unittest {
 
 /// Check if a file is in the current path
 bool isPackagePath(string fullPath, string packagePath) {
+  if(fullPath.indexOf("/.trial/") != -1) {
+    return false;
+  }
+
   if(fullPath.indexOf("trial_") != -1) {
     return false;
   }
@@ -384,6 +388,7 @@ unittest {
   "../../something.d".isPackagePath("/Users/trial/").should.equal(false);
   "/Users/trial/trial_.d".isPackagePath("/Users/trial/").should.equal(false);
   "/Users/trial/runner.d".isPackagePath("/Users/trial/").should.equal(true);
+  "/Users/trial/.trial/runner.d".isPackagePath("/Users/trial/").should.equal(false);
   "C:\\Users\\trial\\runner.d".isPackagePath("C:/Users/trial/").should.equal(true);
 }
 

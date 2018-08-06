@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+    crossorigin="anonymous">
+  <link rel="stylesheet" href="assets/style.css">
+
+  <title>Trial - Download v{{version}}</title>
+</head>
+
+<body>
+  <div class="main doc">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="mainNav">
+      <div class="container">
+        <ul class="navbar-nav mr-auto">
+          <a class="navbar-brand" href="index.html">
+            <img src="assets/logo-small.svg" width="30" height="30" alt="trial">
+          </a>
+          <li class="nav-item">
+            <a class="nav-link" href="about.html">About</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="api/index.html">Api</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="https://gitlab.com/szabobogdan3/trial">Gitlab</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="row mt-5">
+        <div class="col">
+          <h1>Download <small>v{{version}}</small></h1>
+
+          <div class="row">
+            <div class="col-sm-2">
+              <div class="card">
+                <div class="card-header">
+                  Ubuntu
+                </div>
+                <img class="card-img-top" src="assets/ubuntu.svg">
+                <div class="card-body">
+                  <a href="files/{{ubuntu-package}}" class="btn btn-primary">Download</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-2">
+              <div class="card">
+                <div class="card-header">
+                  Fedora
+                </div>
+                <img class="card-img-top" src="assets/fedora.svg">
+                <div class="card-body">
+                  <a href="files/{{fedora-package}}" class="btn btn-primary">Download</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-5">
+            <div class="card-header">
+                Run using dub
+            </div>
+            <div class="card-body">
+              <p class="card-text">You can run on any platform:</p>
+              <pre><code> > dub run trial:runner</code></pre>
+            </div>
+          </div>
+
+          <div class="card mt-5">
+            <div class="card-header">
+              Docker images
+            </div>
+            <div class="card-body">
+              <p class="card-text">You can find prebuilt docker images on gitlab:</p>
+              <a href="https://gitlab.com/szabobogdan3/trial/container_registry" class="btn btn-link">https://gitlab.com/szabobogdan3/trial/container_registry</a>
+            </div>
+          </div>
+
+          {{content}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+  <script src="assets/script.js"></script>
+</body>
+
+</html>
