@@ -55,6 +55,7 @@ class TrialProject : Project {
     this.runnerSettings = runnerSettings;
     this.m_description = description;
 
+    logDiagnostic("create the trial configuration");
     project.rootPackage.recipe.configurations = [ConfigurationInfo(m_description.buildFile, testBuildSettings)];
 
     super(project.packageManager, project.rootPackage);
@@ -110,6 +111,8 @@ class TrialProject : Project {
   }
 
   Package getPackage(string name, Dependency dep) {
+    logDiagnostic("get package '%s'", name);
+
     auto baseName = name.canFind(":") ? name.split(":")[0] : name;
     bool isSelected;
 
@@ -161,6 +164,9 @@ class TrialProject : Project {
   }
 
   void writeTestFile() {
+    auto mainFile = m_description.mainFile;
+    logDiagnostic("write the test file to '%s'", mainFile);
+
     if (reporters != "") {
       runnerSettings.settings.reporters = reporters.split(",").map!(a => a.strip).array;
     }
@@ -175,7 +181,6 @@ class TrialProject : Project {
 
     auto content = generateTestFile(runnerSettings.settings, m_description.hasTrial, m_description.modules, m_description.externalModules);
 
-    auto mainFile = m_description.mainFile;
 
     if (!mainFile.exists) {
       std.file.write(mainFile, content);
@@ -247,6 +252,7 @@ class TrialCommand : PackageBuildCommand {
       arguments ~= ["-e", runnerSettings.executor];
     }
 
+    logDiagnostic("running the tests");
     run(arguments);
 
     return 0;
@@ -257,7 +263,7 @@ class TrialCommand : PackageBuildCommand {
     settings.runArgs = runArgs;
 
     auto generator = createProjectGenerator("build", project);
- 
+
     generator.generate(settings);
   }
 
