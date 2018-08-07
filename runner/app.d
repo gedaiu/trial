@@ -37,38 +37,38 @@ import trial.description;
 import trial.runnersettings;
 
 auto parseGeneralOptions(string[] args, bool isSilent) {
-	CommonOptions options;
+  CommonOptions options;
 
-	LogLevel loglevel = LogLevel.info;
-	options.root_path = getcwd();
+  LogLevel loglevel = LogLevel.info;
+  options.root_path = getcwd();
 
-	auto common_args = new CommandArgs(args);
-	options.prepare(common_args);
+  auto common_args = new CommandArgs(args);
+  options.prepare(common_args);
 
-	if (options.vverbose) loglevel = LogLevel.debug_;
-	else if (options.verbose) loglevel = LogLevel.diagnostic;
-	else if (options.vquiet) loglevel = LogLevel.none;
-	else if (options.quiet) loglevel = LogLevel.warn;
+  if (options.vverbose) loglevel = LogLevel.debug_;
+  else if (options.verbose) loglevel = LogLevel.diagnostic;
+  else if (options.vquiet) loglevel = LogLevel.none;
+  else if (options.quiet) loglevel = LogLevel.warn;
 
-	setLogLevel(isSilent ? LogLevel.none : loglevel);
+  setLogLevel(isSilent ? LogLevel.none : loglevel);
 
-	return options;
+  return options;
 }
 
 private void writeOptions(CommandArgs args)
 {
-	foreach (arg; args.recognizedArgs) {
-		auto names = arg.names.split("|").map!(a => a.length == 1 ? "-" ~ a : "--" ~ a).array;
+  foreach (arg; args.recognizedArgs) {
+    auto names = arg.names.split("|").map!(a => a.length == 1 ? "-" ~ a : "--" ~ a).array;
 
-		writeln("  ", names.join(" "));
-		writeln(arg.helpText.map!(a => "     " ~ a).join("\n"));
-		writeln;
-	}
+    writeln("  ", names.join(" "));
+    writeln(arg.helpText.map!(a => "     " ~ a).join("\n"));
+    writeln;
+  }
 }
 
 private void showHelp(in TrialCommand command, CommandArgs common_args)
 {
-	writeln(`USAGE: trial [--version] [subPackage] [<options...>]
+  writeln(`USAGE: trial [--version] [subPackage] [<options...>]
 
 Run the tests using the trial runner. It will parse your source files and it will
 generate the "trial_package.d" file. This file contains a custom main function that will
@@ -76,94 +76,104 @@ discover and execute your tests.
 
 Available options
 ==================`);
-	writeln();
-	writeOptions(common_args);
-	writeln();
+  writeln();
+  writeOptions(common_args);
+  writeln();
 
-	showVersion();
+  showVersion();
 }
 
 void showVersion() {
-	import trial.version_;
-	writefln("Trial %s, based on DUB version %s, built on %s", trialVersion, getDUBVersion(), __DATE__);
+  import trial.version_;
+  writefln("Trial %s, based on DUB version %s, built on %s", trialVersion, getDUBVersion(), __DATE__);
 }
 
 version(unitttest) {} else {
-	int main(string[] arguments) {
-		import trial.runner;
-		setupSegmentationHandler!false;
+  int main(string[] arguments) {
+    import trial.runner;
+    setupSegmentationHandler!false;
 
-		arguments = arguments.map!(a => a.strip).filter!(a => a != "").array;
+    arguments = arguments.map!(a => a.strip).filter!(a => a != "").array;
 
-		version(Windows) {
-			environment["TEMP"] = environment["TEMP"].replace("/", "\\");
-		}
+    version(Windows) {
+      environment["TEMP"] = environment["TEMP"].replace("/", "\\");
+    }
 
-		arguments = arguments[1..$];
+    arguments = arguments[1..$];
 
-		if(arguments.length > 0 && arguments[0] == "--version") {
-			showVersion();
-			return 0;
-		}
+    if(arguments.length > 0 && arguments[0] == "--version") {
+      showVersion();
+      return 0;
+    }
 
-		TrialCommand cmd;
-		bool silent;
+    TrialCommand cmd;
+    bool silent;
 
-		if(arguments.length > 0 && arguments[0] == "subpackages") {
-			silent = true;
-			cmd = new TrialSubpackagesCommand;
-			arguments = [];
-		} else if(arguments.length > 0 && arguments[0] == "describe") {
-			silent = true;
-			cmd = new TrialDescribeCommand;
-			arguments = arguments[1..$];
-		} else {
-			cmd = new TrialCommand;
-		}
+    if(arguments.length > 0 && arguments[0] == "subpackages") {
+      silent = true;
+      cmd = new TrialSubpackagesCommand;
+      arguments = [];
+    } else if(arguments.length > 0 && arguments[0] == "describe") {
+      silent = true;
+      cmd = new TrialDescribeCommand;
+      arguments = arguments[1..$];
+    } else {
+      cmd = new TrialCommand;
+    }
 
-		auto subPackage = arguments.find!(a => a[0] == ':');
-		auto subPackageName = subPackage.empty ? "" : subPackage.front;
+    auto subPackage = arguments.find!(a => a[0] == ':');
+    auto subPackageName = subPackage.empty ? "" : subPackage.front;
 
-		auto options = parseGeneralOptions(arguments, silent);
-		auto commandArgs = new CommandArgs(arguments);
-		auto runnerSettings = new RunnerSettings;
-		runnerSettings.applyArguments(commandArgs);
+    auto options = parseGeneralOptions(arguments, silent);
+    auto commandArgs = new CommandArgs(arguments);
+    auto runnerSettings = new RunnerSettings;
+    runnerSettings.applyArguments(commandArgs);
 
-		cmd.runnerSettings = runnerSettings;
-		cmd.prepare(commandArgs);
+    cmd.runnerSettings = runnerSettings;
+    cmd.prepare(commandArgs);
 
-		if (options.help) {
-			showHelp(cmd, commandArgs);
-			return 0;
-		}
+    if (options.help) {
+      showHelp(cmd, commandArgs);
+      return 0;
+    }
 
-		auto description = new PackageDescriptionCommand(options, subPackageName);
-		auto packageName = subPackage.empty ? [] : [ subPackage.front ];
-		auto project = new TrialProject(description, runnerSettings);
-		description.runnerSettings = runnerSettings;
+    auto description = new PackageDescriptionCommand(options, subPackageName);
+    auto packageName = subPackage.empty ? [] : [ subPackage.front ];
+    auto project = new TrialProject(description, runnerSettings);
+    description.runnerSettings = runnerSettings;
 
-		/// run the trial command
-		cmd.setProject(project);
-		auto remainingArgs = commandArgs.extractRemainingArgs().filter!`a != "-v"`.array;
+    /// run the trial command
+    cmd.setProject(project);
+    auto remainingArgs = commandArgs
+      .extractRemainingArgs()
+      .filter!`a != "-v"`
+      .filter!`a != "--verbose"`
+      .filter!`a != "--vverbose"`
+      .array;
 
-		if (remainingArgs.any!(a => a.startsWith("-"))) {
-			logError("Unknown command line flags: %s", remainingArgs.filter!(a => a.startsWith("-")).array.join(" "));
-			return 1;
-		}
+    if (remainingArgs.any!(a => a.startsWith("-"))) {
+      logError("Unknown command line flags: %s", remainingArgs.filter!(a => a.startsWith("-")).array.join(" "));
+      return 1;
+    }
 
-		auto dub = createDub(options);
+    logDiagnostic("Creating the dub object");
+    auto dub = createDub(options);
 
-		try {
-			cmd.execute(dub, remainingArgs);
-		} catch(Exception e) {
-			stderr.writeln(e.msg);
-			return 1;
-		} finally {
-			if(arguments.canFind("--coverage")) {
-				writeln("Line coverage: ", convertLstFiles(dub.rootPath.toString, dub.projectName), "%");
-			}
-		}
+    try {
+      logDiagnostic("execute command");
+      cmd.execute(dub, remainingArgs);
+    } catch(Exception e) {
+      stderr.writeln(e.msg);
+      logDiagnostic("failed to execute");
+      return 1;
+    } finally {
+      if(arguments.canFind("--coverage")) {
+        logDiagnostic("calculate the code coverage");
+        writeln("Line coverage: ", convertLstFiles(dub.rootPath.toString, dub.projectName), "%");
+      }
+    }
 
-		return 0;
-	}
+    logDiagnostic("done");
+    return 0;
+  }
 }
