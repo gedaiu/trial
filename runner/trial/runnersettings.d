@@ -31,7 +31,10 @@ class RunnerSettings {
 
     if (!path.exists) {
       Settings def;
-      std.file.write(path, def.serializeToJson.toPrettyString);
+      Json serializedSettings = def.serializeToJson;
+      serializedSettings.remove("glyphs");
+
+      std.file.write(path, serializedSettings.toPrettyString);
     }
 
     Json jsonSettings;
@@ -65,7 +68,7 @@ class RunnerSettings {
 
     args.getopt("r|reporters", &this.settings.reporters,
       ["Override the reporters from the `trial.json` file. eg. -r spec,result,stats"]);
-    
+
     args.getopt("e|executor", &this.settings.executor,
       ["Override the test executor"]);
 
