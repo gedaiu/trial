@@ -168,8 +168,12 @@ version(unitttest) {} else {
       return 1;
     } finally {
       if(arguments.canFind("--coverage")) {
+        string source = buildPath("coverage", "raw");
+        string destination = buildPath(runnerSettings.settings.artifactsLocation, "coverage");
         logDiagnostic("calculate the code coverage");
-        writeln("Line coverage: ", convertLstFiles(dub.rootPath.toString, dub.projectName), "%");
+
+        writeln("Line coverage: ", 
+          convertLstFiles(source, destination, dub.rootPath.toString, dub.projectName), "%");
       }
     }
 

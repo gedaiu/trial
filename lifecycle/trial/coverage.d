@@ -38,16 +38,17 @@ version(D_Coverage) {
 }
 
 /// Converts coverage lst files to html
-double convertLstFiles(string packagePath, string packageName) {
-  if(!exists(buildPath("coverage", "raw"))) {
+double convertLstFiles(string source, string destination, string packagePath, string packageName) {
+  auto htmlPath = buildPath(destination, "html");
+  if(!source.exists) {
     return 0;
   }
 
-  if(!exists(buildPath("coverage", "html"))) {
-    mkdirRecurse(buildPath("coverage", "html"));
+  if(!htmlPath.exists) {
+    htmlPath.mkdirRecurse;
   }
 
-  std.file.write(buildPath("coverage", "html", "coverage.css"), import("templates/coverage.css"));
+  std.file.write(buildPath(htmlPath, "coverage.css"), import("templates/coverage.css"));
 
   auto coverageData =
     dirEntries(buildPath("coverage", "raw"), SpanMode.shallow)
@@ -56,13 +57,13 @@ double convertLstFiles(string packagePath, string packageName) {
     .map!(a => readText(a.name))
     .map!(a => a.toCoverageFile(packagePath)).array;
 
-  std.file.write(buildPath("coverage", "html", "coverage-shield.svg"), coverageShield(coverageData.filter!"a.isInCurrentProject".array.coveragePercent.to!int.to!string));
-  std.file.write(buildPath("coverage", "html", "index.html"), coverageData.toHtmlIndex(packageName));
+  std.file.write(buildPath(htmlPath, "coverage-shield.svg"), coverageShield(coverageData.filter!"a.isInCurrentProject".array.coveragePercent.to!int.to!string));
+  std.file.write(buildPath(htmlPath, "index.html"), coverageData.toHtmlIndex(packageName));
 
   foreach (data; coverageData) {
     auto htmlFile = data.path.toCoverageHtmlFileName;
 
-    std.file.write(buildPath("coverage", "html", htmlFile), data.toHtml);
+    std.file.write(buildPath(htmlPath, htmlFile), data.toHtml);
   }
 
   return coverageData.coveragePercent;
