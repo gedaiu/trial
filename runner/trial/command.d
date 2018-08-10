@@ -90,7 +90,7 @@ class TrialProject : Project {
       tcinfo.stringImportPaths[""] ~= embededLibraryPath;
     }
 
-    tcinfo.mainSourceFile = m_description.mainFile;
+    tcinfo.sourceFiles[""] ~= m_description.mainFile;
     tcinfo.versions[""] ~= "VibeCustomMain";
 
     string[] plugins = runnerSettings.settings.plugins;
