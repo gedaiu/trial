@@ -369,7 +369,6 @@ pages:
   stage: web
   only:
     - tags
-    - master
   image:
     name: fedora:28
   tags:
