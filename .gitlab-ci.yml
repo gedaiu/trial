@@ -13,7 +13,7 @@ stages:
     - mkdir -p vendor/apt
     - mv vendor/dub /root/.dub || true
     - apt-get update || true
-    - apt-get -o dir::cache::archives="vendor/apt" install -y libevent-dev libssl-dev
+    - apt-get -o dir::cache::archives="vendor/apt" install -y libssl1.0-dev libevent-dev libcurl4 gcc wget libc6-dev xz-utils libz-dev
   after_script:
     - mv /root/.dub vendor/dub || true
   artifacts:
@@ -26,6 +26,7 @@ stages:
       - vendor/dub
 
 .test_template: &test_definition
+  image: ubuntu:18.04
   stage: test
   tags:
     - docker-trial
@@ -33,7 +34,7 @@ stages:
     - mkdir -p vendor/apt
     - mv vendor/dub /root/.dub || true
     - apt-get update || true
-    - apt-get -o dir::cache::archives="vendor/apt" install -y libevent-dev libssl-dev
+    - apt-get -o dir::cache::archives="vendor/apt" install -y libssl1.0-dev libevent-dev gcc wget libc6-dev xz-utils libz-dev rsync libcurl3
     - mv trial /usr/local/bin
   after_script:
     - mv /root/.dub vendor/dub || true
@@ -49,16 +50,21 @@ stages:
 
 dmd-ubuntu:
   <<: *build_definition
-  image: dlanguage/dmd:2.080.0
+  image: ubuntu:18.04
   script:
+    - wget http://downloads.dlang.org/releases/2.x/2.083.0/dmd_2.083.0-0_amd64.deb
+    - dpkg -i dmd_2.083.0-0_amd64.deb
     - dmd --version
     - dub --version
     - dub build :runner --build release
 
 ldc-ubuntu:
   <<: *build_definition
-  image: dlanguage/ldc:1.9.0
+  image: ubuntu:18.04
   script:
+    - ls ldc2-1.13.0-beta1-linux-x86_64.tar.xz || wget https://github.com/ldc-developers/ldc/releases/download/v1.13.0-beta1/ldc2-1.13.0-beta1-linux-x86_64.tar.xz
+    - tar -xf ldc2-1.13.0-beta1-linux-x86_64.tar.xz
+    - mv ldc2-1.13.0-beta1-linux-x86_64/* /usr/local
     - ldc2 --version
     - dub --version
     - dub build :runner --build release
@@ -74,8 +80,8 @@ dmd-fedora:
     - dnf install -y openssl-devel libcurl-devel wget
     - mkdir -p vendor/rpm
     - cd vendor/rpm
-    - ls dmd-2.080.1-0.fedora.x86_64.rpm || wget http://downloads.dlang.org/releases/2.x/2.080.1/dmd-2.080.1-0.fedora.x86_64.rpm
-    - dnf install -y dmd-2.080.1-0.fedora.x86_64.rpm
+    - ls dmd-2.083.0-0.fedora.x86_64.rpm || wget http://downloads.dlang.org/releases/2.x/2.083.0/dmd-2.083.0-0.fedora.x86_64.rpm
+    - dnf install -y dmd-2.083.0-0.fedora.x86_64.rpm
     - cd ../..
   script:
     - dmd --version
@@ -97,85 +103,98 @@ dmd-fedora:
 
 trial-dmd-2.080.0:
   <<: *test_definition
-  image:
-    name: dlanguage/dmd:2.080.0
-    entrypoint: [""]
   script:
+    - wget http://downloads.dlang.org/releases/2.x/2.080.1/dmd_2.080.1-0_amd64.deb
+    - dpkg -i dmd_2.080.1-0_amd64.deb
+    - trial --coverage
+  artifacts:
+    paths:
+      - .trial
+    reports:
+      junit: .trial/xunit/*.xml
+
+trial-ldc-1.9.0:
+  <<: *test_definition
+  script:
+    - mkdir -p vendor/ldc
+    - cd vendor/ldc
+    - wget https://github.com/ldc-developers/ldc/releases/download/v1.9.0/ldc2-1.9.0-linux-x86_64.tar.xz
+    - tar -xf ldc2-1.9.0-linux-x86_64.tar.xz
+    - rsync -vau ldc2-1.9.0-linux-x86_64/ /usr/local/
+    - cd ../../
     - trial --coverage
   artifacts:
     paths:
       - .trial
 
-trial-ldc-1.9.0:
-  <<: *test_definition
-  image:
-    name: dlanguage/ldc:1.9.0
-    entrypoint: [""]
-  artifacts:
-    paths:
-      - .trial
- 
 trial-dmd-2.079.1:
   <<: *test_definition
   only:
     - tags
     - master
-  image:
-    name: dlanguage/dmd:2.079.1
-    entrypoint: [""]
+  script:
+    - wget http://downloads.dlang.org/releases/2.x/2.079.1/dmd_2.079.1-0_amd64.deb
+    - dpkg -i dmd_2.079.1-0_amd64.deb
+    - trial --coverage
 
 trial-ldc-1.8.0:
   <<: *test_definition
   only:
     - tags
     - master
-  image:
-    name: dlanguage/ldc:1.8.0
-    entrypoint: [""]
+  script:
+    - mkdir -p vendor/ldc
+    - cd vendor/ldc
+    - wget https://github.com/ldc-developers/ldc/releases/download/v1.8.0/ldc2-1.8.0-linux-x86_64.tar.xz
+    - tar -xf ldc2-1.8.0-linux-x86_64.tar.xz
+    - rsync -vau ldc2-1.8.0-linux-x86_64/ /usr/local/
+    - cd ../../
+    - trial --coverage
 
-trial-dmd-2.078.3:
+trial-dmd-2.082.1:
   <<: *test_definition
   only:
     - tags
     - master
-  image:
-    name: dlanguage/dmd:2.078.3
-    entrypoint: [""]
+  script:
+    - wget http://downloads.dlang.org/releases/2.x/2.082.1/dmd_2.082.1-0_amd64.deb
+    - dpkg -i dmd_2.082.1-0_amd64.deb
+    - trial --coverage
 
 trial-ldc-1.7.0:
   <<: *test_definition
   only:
     - tags
     - master
-  image:
-    name: dlanguage/ldc:1.7.0
-    entrypoint: [""]
+  script:
+    - mkdir -p vendor/ldc
+    - cd vendor/ldc
+    - wget https://github.com/ldc-developers/ldc/releases/download/v1.7.0/ldc2-1.7.0-linux-x86_64.tar.xz
+    - tar -xf ldc2-1.7.0-linux-x86_64.tar.xz
+    - rsync -vau ldc2-1.7.0-linux-x86_64/ /usr/local/
+    - cd ../../
+    - trial --coverage
 
-trial-dmd-2.077.1:
-   <<: *test_definition
-   image:
-     name: dlanguage/dmd:2.077.1
-     entrypoint: [""]
-
-trial-ldc-1.6.0:
-   <<: *test_definition
-   image:
-     name: dlanguage/ldc:1.6.0
-     entrypoint: [""]
+trial-dmd-2.083.0:
+  <<: *test_definition
+  script:
+    - wget http://downloads.dlang.org/releases/2.x/2.083.0/dmd_2.083.0-0_amd64.deb
+    - dpkg -i dmd_2.083.0-0_amd64.deb
+    - trial --coverage
 
 examples:
-   <<: *test_definition
-   image:
-     name: dlanguage/dmd:2.080.0
-     entrypoint: [""]
-   script:
-     - cd examples/spec
-     - trial
-     - cd ../unittest
-     - trial
-     - cd ../test-class
-     - trial
-     - cd ../..
+  <<: *test_definition
+  script:
+    - wget http://downloads.dlang.org/releases/2.x/2.080.1/dmd_2.080.1-0_amd64.deb
+    - dpkg -i dmd_2.080.1-0_amd64.deb
+    - trial --coverage
+    - cd examples/spec
+    - trial
+    - cd ../unittest
+    - trial
+    - cd ../test-class
+    - trial
+    - cd ../..
 
 linux-packages:
   stage: pack
@@ -253,7 +272,7 @@ docker-dmd:
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay2
-    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.080.0:$CI_COMMIT_REF_NAME
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.083.0:$CI_COMMIT_REF_NAME
   dependencies:
     - dmd-ubuntu
   services:
@@ -275,7 +294,7 @@ docker-ldc:
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay2
-    IMAGE_TAG: $CI_REGISTRY_IMAGE/ldc-1.9.0:$CI_COMMIT_REF_NAME
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/ldc-1.13.0:$CI_COMMIT_REF_NAME
   dependencies:
     - ldc-ubuntu
   services:
@@ -361,7 +380,7 @@ fedora-28:
     - pwd
     - ls -lsa tmp
     - dnf update -y
-    - dnf install -y compat-openssl10-1:1.0.2o-1.fc28.x86_64 
+    - dnf install -y compat-openssl10-1:1.0.2o-1.fc28.x86_64
     - dnf install -y tmp/*.rpm
     - trial --version
 
