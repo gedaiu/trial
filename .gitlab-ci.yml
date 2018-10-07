@@ -105,6 +105,8 @@ trial-dmd-2.080.0:
   artifacts:
     paths:
       - .trial
+    reports:
+      junit: .trial/xunit/*.xml
 
 trial-ldc-1.9.0:
   <<: *test_definition
