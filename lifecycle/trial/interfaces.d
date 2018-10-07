@@ -210,6 +210,22 @@ struct Attachment {
     return a;
   }
 
+  /// Create an attachment from a string
+  static Attachment fromString(const string content) {
+    ulong index;
+    string fileDestination = buildPath(destination, randomUUID.toString ~ ".txt");
+    fileDestination.write(content);
+
+    auto a = const Attachment("unknown", fileDestination, "text/plain");
+
+    if(LifeCycleListeners.instance !is null) {
+      LifeCycleListeners.instance.attach(a);
+    }
+
+    return a;
+  }
+
+  ///
   string toString() inout {
     string fields;
     fields ~= `"name":"` ~ name ~ `",`;
@@ -220,9 +236,17 @@ struct Attachment {
   }
 }
 
+/// Create an attachement from string
+unittest {
+  auto a = Attachment.fromString("content");
+  a.name.should.equal("unknown");
+  a.mime.should.equal("text/plain");
+
+  readText(a.file).should.equal("content");
+}
+
 /// Convert an attachement to Json string
 unittest {
-
   Attachment("dub", "dub.json", "text/json").toString.should.equal(
     `{"name":"dub","file":"dub.json","mime":"text/json"}`
   );

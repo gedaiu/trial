@@ -250,14 +250,19 @@ unittest {
   mocks["a.b"] = [ Mock("val1"), Mock("val2") ];
   mocks["a.c"] = [ Mock("val3") ];
 
-  mocks.toJSONHierarchy.should.equal(`{
-  "a": {
+  auto result = mocks.toJSONHierarchy;
+  
+  result.should.contain(`
     "b": [
       "val1",
       "val2"
-    ],
-    "c": [
+    ]`);
+  result.should.contain(`"c": [
       "val3"
+    ]`);
+  result.should.startWith(`{
+  "a": {`);
+  result.should.endWith(`
     ]
   }
 }`);

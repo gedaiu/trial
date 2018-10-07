@@ -16,7 +16,7 @@ import trial.interfaces;
 import std.datetime;
 import std.stdio;
 
-/** A stepstructure. Creating a Step will automatically be added to the current step as a child
+/** A step structure. Creating a Step will automatically be added to the current step as a child
   * The steps can be nested to allow you to group steps as with meanigful names.
   *
   * The steps ends when the Struct is destroyed. In order to have a step that represents a method
