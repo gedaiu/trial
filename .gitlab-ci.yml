@@ -116,7 +116,7 @@ trial-ldc-1.9.0:
   artifacts:
     paths:
       - .trial
- 
+
 trial-dmd-2.079.1:
   <<: *test_definition
   only:
@@ -255,7 +255,7 @@ docker-dmd:
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay2
-    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.080.0:$CI_COMMIT_REF_NAME
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.083.0:$CI_COMMIT_REF_NAME
   dependencies:
     - dmd-ubuntu
   services:
@@ -363,7 +363,7 @@ fedora-28:
     - pwd
     - ls -lsa tmp
     - dnf update -y
-    - dnf install -y compat-openssl10-1:1.0.2o-1.fc28.x86_64 
+    - dnf install -y compat-openssl10-1:1.0.2o-1.fc28.x86_64
     - dnf install -y tmp/*.rpm
     - trial --version
 
