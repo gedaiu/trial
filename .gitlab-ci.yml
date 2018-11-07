@@ -126,6 +126,8 @@ trial-ldc-1.9.0:
   artifacts:
     paths:
       - .trial
+    reports:
+      junit: .trial/xunit/*.xml
 
 trial-dmd-2.079.1:
   <<: *test_definition
@@ -388,7 +390,6 @@ pages:
   stage: web
   only:
     - tags
-    - master
   image:
     name: fedora:28
   tags:
