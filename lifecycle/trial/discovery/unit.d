@@ -285,7 +285,7 @@ class UnitTestDiscovery : ITestDiscovery
   TestCase[string][string] testCases;
   static Comment[][string] comments;
 
-  TestCase[] getTestCases()  
+  TestCase[] getTestCases()
   {
     return testCases.values.map!(a => a.values).joiner.array;
   }
@@ -465,22 +465,26 @@ class UnitTestDiscovery : ITestDiscovery
       return labels;
     }
 
-    auto addTestCases(string file, alias moduleName, composite...)()
+    void addTestCases(string file, alias moduleName, composite...)()
         if (composite.length == 1 && isUnitTestContainer!(composite))
     {
-      if(file !in comments) {
-        comments[file] = file.readText.compressComments;
-      }
+      static if( !composite[0].stringof.startsWith("package") && std.traits.moduleName!composite != moduleName ) {
+        return;
+      } else {
+        if(file !in comments) {
+          comments[file] = file.readText.compressComments;
+        }
 
-      foreach (test; __traits(getUnitTests, composite))
-      {
-        auto testCase = TestCase(moduleName, testName!(test)(comments[file]), {
-          test();
-        }, testLabels!(test));
+        foreach (test; __traits(getUnitTests, composite))
+        {
+          auto testCase = TestCase(moduleName, testName!(test)(comments[file]), {
+            test();
+          }, testLabels!(test));
 
-        testCase.location = testSourceLocation!test(file);
+          testCase.location = testSourceLocation!test(file);
 
-        testCases[moduleName][test.mangleof] = testCase;
+          testCases[moduleName][test.mangleof] = testCase;
+        }
       }
     }
 
