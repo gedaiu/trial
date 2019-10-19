@@ -385,7 +385,7 @@ class UnitTestDiscovery : ITestDiscovery
   void addModule(string file, string moduleName)()
   {
     mixin("import " ~ moduleName ~ ";");
-    mixin("discover!(`" ~ file ~ "`, `" ~ moduleName ~ "`, " ~ moduleName ~ ")();");
+    mixin("discover!(`" ~ file ~ "`, `" ~ moduleName ~ "`, " ~ moduleName ~ ")(0);");
   }
 
   private
@@ -488,9 +488,13 @@ class UnitTestDiscovery : ITestDiscovery
       }
     }
 
-    void discover(string file, alias moduleName, composite...)()
+    void discover(string file, alias moduleName, composite...)(int index)
         if (composite.length == 1 && isUnitTestContainer!(composite))
     {
+      if(index > 10) {
+        return;
+      }
+
       addTestCases!(file, moduleName, composite);
 
       static if (isUnitTestContainer!composite)
@@ -504,7 +508,7 @@ class UnitTestDiscovery : ITestDiscovery
             {
               if (__traits(getMember, composite, member).mangleof !in testCases)
               {
-                discover!(file, moduleName, __traits(getMember, composite, member))();
+                discover!(file, moduleName, __traits(getMember, composite, member))(index + 1);
               }
             }
           }
