@@ -373,6 +373,10 @@ bool isPackagePath(string fullPath, string packagePath) {
     return false;
   }
 
+  if(fullPath.indexOf("submodules") != -1) {
+    return false;
+  }
+
   if(fullPath.indexOf(packagePath) == 0) {
     return true;
   }
