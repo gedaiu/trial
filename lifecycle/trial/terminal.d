@@ -1,7 +1,4 @@
-// for optional dependency
-// for VT on Windows P s = 1 8 → Report the size of the text area in characters as CSI 8 ; height ; width t
-// could be used to have the TE volunteer the size
-/++
+/++ Ignore coverage
 	Module for interacting with the user's terminal, including color output, cursor manipulation, and full-featured real-time mouse and keyboard input. Also includes high-level convenience methods, like [Terminal.getline], which gives the user a line editor with history, completion, etc. See the [#examples].
 
 
@@ -19,8 +16,8 @@
 
 	As a user, if you have to forcibly kill your program and the event doesn't work, there's still ctrl+\
 
-	On old Mac Terminal btw, a lot of hacks are needed and mouse support doesn't work. Most functions basically
-	work now with newer Mac OS versions though.
+	On Mac Terminal btw, a lot of hacks are needed and mouse support doesn't work. Most functions basically
+	work now though.
 
 	Future_Roadmap:
 	$(LIST
@@ -36,6 +33,8 @@
 		* I might add an expandable event loop and base level widget classes. This may be Linux-specific in places and may overlap with similar functionality in simpledisplay.d. If I can pull it off without a third module, I want them to be compatible with each other too so the two modules can be combined easily. (Currently, they are both compatible with my eventloop.d and can be easily combined through it, but that is a third module.)
 
 		* More advanced terminal features as functions, where available, like cursor changing and full-color functions.
+
+		* The module will eventually be renamed to `arsd.terminal`.
 
 		* More documentation.
 	)
@@ -64,68 +63,6 @@
 +/
 module trial.terminal;
 
-// FIXME: needs to support VT output on Windows too in certain situations
-// detect VT on windows by trying to set the flag. if this succeeds, ask it for caps. if this replies with my code we good to do extended output.
-
-/++
-	$(H3 Get Line)
-
-	This example will demonstrate the high-level getline interface.
-
-	The user will be able to type a line and navigate around it with cursor keys and even the mouse on some systems, as well as perform editing as they expect (e.g. the backspace and delete keys work normally) until they press enter.  Then, the final line will be returned to your program, which the example will simply print back to the user.
-+/
-version(demos) unittest {
-	import arsd.terminal;
-
-	void main() {
-		auto terminal = Terminal(ConsoleOutputType.linear);
-		string line = terminal.getline();
-		terminal.writeln("You wrote: ", line);
-	}
-
-	main; // exclude from docs
-}
-
-/++
-	$(H3 Color)
-
-	This example demonstrates color output, using [Terminal.color]
-	and the output functions like [Terminal.writeln].
-+/
-version(demos) unittest {
-	import arsd.terminal;
-
-	void main() {
-		auto terminal = Terminal(ConsoleOutputType.linear);
-		terminal.color(Color.green, Color.black);
-		terminal.writeln("Hello world, in green on black!");
-		terminal.color(Color.DEFAULT, Color.DEFAULT);
-		terminal.writeln("And back to normal.");
-	}
-
-	main; // exclude from docs
-}
-
-/++
-	$(H3 Single Key)
-
-	This shows how to get one single character press using
-	the [RealTimeConsoleInput] structure.
-+/
-version(demos) unittest {
-	import arsd.terminal;
-
-	void main() {
-		auto terminal = Terminal(ConsoleOutputType.linear);
-		auto input = RealTimeConsoleInput(&terminal, ConsoleInputFlags.raw);
-
-		terminal.writeln("Press any key to continue...");
-		auto ch = input.getch();
-		terminal.writeln("You pressed ", ch);
-	}
-
-	main; // exclude from docs
-}
 
 /*
 	Widgets:
@@ -138,17 +75,11 @@ version(demos) unittest {
 
 // FIXME: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686016%28v=vs.85%29.aspx
 
-version(TerminalDirectToEmulator) {
-	__gshared bool windowSizeChanged = false;
-	__gshared bool interrupted = false; /// you might periodically check this in a long operation and abort if it is set. Remember it is volatile. It is also sent through the input event loop via RealTimeConsoleInput
-	__gshared bool hangedUp = false; /// similar to interrupted.
-	version=WithSignals;
-} else version(Posix) {
+version(Posix) {
 	enum SIGWINCH = 28;
 	__gshared bool windowSizeChanged = false;
 	__gshared bool interrupted = false; /// you might periodically check this in a long operation and abort if it is set. Remember it is volatile. It is also sent through the input event loop via RealTimeConsoleInput
 	__gshared bool hangedUp = false; /// similar to interrupted.
-	version=WithSignals;
 
 	version(with_eventloop)
 		struct SignalFired {}
@@ -193,17 +124,9 @@ version(TerminalDirectToEmulator) {
 // capabilities.
 //version = Demo
 
-version(TerminalDirectToEmulator) {
-	version=VtEscapeCodes;
-} else version(Windows) {
-	version(VtEscapeCodes) {} // cool
-	version=Win32Console;
-}
-
-version(Windows)
+version(Windows) {
 	import core.sys.windows.windows;
-
-version(Win32Console) {
+	import std.string : toStringz;
 	private {
 		enum RED_BIT = 4;
 		enum GREEN_BIT = 2;
@@ -212,35 +135,26 @@ version(Win32Console) {
 }
 
 version(Posix) {
-
-	version=VtEscapeCodes;
-
 	import core.sys.posix.termios;
 	import core.sys.posix.unistd;
 	import unix = core.sys.posix.unistd;
 	import core.sys.posix.sys.types;
 	import core.sys.posix.sys.time;
 	import core.stdc.stdio;
-
-	import core.sys.posix.sys.ioctl;
-}
-
-version(VtEscapeCodes) {
-
-	enum UseVtSequences = true;
-
-	version(TerminalDirectToEmulator) {
-		private {
-			enum RED_BIT = 1;
-			enum GREEN_BIT = 2;
-			enum BLUE_BIT = 4;
-		}
-	} else version(Windows) {} else
 	private {
 		enum RED_BIT = 1;
 		enum GREEN_BIT = 2;
 		enum BLUE_BIT = 4;
 	}
+
+	version(linux) {
+		extern(C) int ioctl(int, int, ...);
+		enum int TIOCGWINSZ = 0x5413;
+	} else version(OSX) {
+		import core.stdc.config;
+		extern(C) int ioctl(int, c_ulong, ...);
+		enum TIOCGWINSZ = 1074295912;
+	} else static assert(0, "confirm the value of tiocgwinsz");
 
 	struct winsize {
 		ushort ws_row;
@@ -316,7 +230,7 @@ vt|vt100|DEC vt100 compatible:\
 
 
 # Entry for an xterm. Insert mode has been disabled.
-vs|xterm|tmux|tmux-256color|xterm-kitty|screen|screen.xterm|screen.xterm-256color|xterm-color|xterm-256color|vs100|xterm terminal emulator (X Window System):\
+vs|xterm|xterm-color|xterm-256color|vs100|xterm terminal emulator (X Window System):\
 	:am:bs:mi@:km:co#80:li#55:\
 	:im@:ei@:\
 	:cl=\E[H\E[J:\
@@ -336,7 +250,7 @@ vs|xterm|tmux|tmux-256color|xterm-kitty|screen|screen.xterm|screen.xterm-256colo
 
 
 #rxvt, added by me
-rxvt|rxvt-unicode|rxvt-unicode-256color:\
+rxvt|rxvt-unicode:\
 	:am:bs:mi@:km:co#80:li#55:\
 	:im@:ei@:\
 	:ct=\E[3k:ue=\E[m:\
@@ -396,15 +310,11 @@ an|ansi|ansi-bbs|ANSI terminals (emulators):\
 	:tc=vt-generic:
 
 	`;
-} else {
-	enum UseVtSequences = false;
 }
 
-/// A modifier for [Color]
 enum Bright = 0x08;
 
 /// Defines the list of standard colors understood by Terminal.
-/// See also: [Bright]
 enum Color : ushort {
 	black = 0, /// .
 	red = RED_BIT, /// .
@@ -434,8 +344,6 @@ enum ConsoleInputFlags {
 
 	allInputEvents = 8|4|2, /// subscribe to all input events. Note: in previous versions, this also returned release events. It no longer does, use allInputEventsWithRelease if you want them.
 	allInputEventsWithRelease = allInputEvents|releasedKeys, /// subscribe to all input events, including (unreliable on Posix) key release events.
-
-	noEolWrap = 128,
 }
 
 /// Defines how terminal output should be handled.
@@ -447,20 +355,11 @@ enum ConsoleOutputType {
 	minimalProcessing = 255, /// do the least possible work, skips most construction and desturction tasks. Only use if you know what you're doing here
 }
 
-alias ConsoleOutputMode = ConsoleOutputType;
-
 /// Some methods will try not to send unnecessary commands to the screen. You can override their judgement using a ForceOption parameter, if present
 enum ForceOption {
 	automatic = 0, /// automatically decide what to do (best, unless you know for sure it isn't right)
 	neverSend = -1, /// never send the data. This will only update Terminal's internal state. Use with caution.
 	alwaysSend = 1, /// always send the data, even if it doesn't seem necessary
-}
-
-///
-enum TerminalCursor {
-	DEFAULT = 0, ///
-	insert = 1, ///
-	block = 2 ///
 }
 
 // we could do it with termcap too, getenv("TERMCAP") then split on : and replace \E with \033 and get the pieces
@@ -475,117 +374,6 @@ struct Terminal {
 	@disable this(this);
 	private ConsoleOutputType type;
 
-	private TerminalCursor currentCursor_;
-	version(Windows) private CONSOLE_CURSOR_INFO originalCursorInfo;
-
-	/++
-		Changes the current cursor.
-	+/
-	void cursor(TerminalCursor what, ForceOption force = ForceOption.automatic) {
-		if(force == ForceOption.neverSend) {
-			currentCursor_ = what;
-			return;
-		} else {
-			if(what != currentCursor_ || force == ForceOption.alwaysSend) {
-				currentCursor_ = what;
-				version(Win32Console) {
-					final switch(what) {
-						case TerminalCursor.DEFAULT:
-							SetConsoleCursorInfo(hConsole, &originalCursorInfo);
-						break;
-						case TerminalCursor.insert:
-						case TerminalCursor.block:
-							CONSOLE_CURSOR_INFO info;
-							GetConsoleCursorInfo(hConsole, &info);
-							info.dwSize = what == TerminalCursor.insert ? 1 : 100;
-							SetConsoleCursorInfo(hConsole, &info);
-						break;
-					}
-				} else {
-					final switch(what) {
-						case TerminalCursor.DEFAULT:
-							if(terminalInFamily("linux"))
-								writeStringRaw("\033[?0c");
-							else
-								writeStringRaw("\033[0 q");
-						break;
-						case TerminalCursor.insert:
-							if(terminalInFamily("linux"))
-								writeStringRaw("\033[?2c");
-							else if(terminalInFamily("xterm"))
-								writeStringRaw("\033[6 q");
-							else
-								writeStringRaw("\033[4 q");
-						break;
-						case TerminalCursor.block:
-							if(terminalInFamily("linux"))
-								writeStringRaw("\033[?6c");
-							else
-								writeStringRaw("\033[2 q");
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	/++
-		Terminal is only valid to use on an actual console device or terminal
-		handle. You should not attempt to construct a Terminal instance if this
-		returns false. Real time input is similarly impossible if `!stdinIsTerminal`.
-	+/
-	static bool stdoutIsTerminal() {
-		version(TerminalDirectToEmulator) {
-			version(Windows) {
-				// if it is null, it was a gui subsystem exe. But otherwise, it
-				// might be explicitly redirected and we should respect that for
-				// compatibility with normal console expectations (even though like
-				// we COULD pop up a gui and do both, really that isn't the normal
-				// use of this library so don't wanna go too nuts)
-				auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-				return hConsole is null || GetFileType(hConsole) == FILE_TYPE_CHAR;
-			} else version(Posix) {
-				// same as normal here since thee is no gui subsystem really
-				import core.sys.posix.unistd;
-				return cast(bool) isatty(1);
-			} else static assert(0);
-		} else version(Posix) {
-			import core.sys.posix.unistd;
-			return cast(bool) isatty(1);
-		} else version(Win32Console) {
-			auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-			return GetFileType(hConsole) == FILE_TYPE_CHAR;
-			/+
-			auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-			CONSOLE_SCREEN_BUFFER_INFO originalSbi;
-			if(GetConsoleScreenBufferInfo(hConsole, &originalSbi) == 0)
-				return false;
-			else
-				return true;
-			+/
-		} else static assert(0);
-	}
-
-	///
-	static bool stdinIsTerminal() {
-		version(TerminalDirectToEmulator) {
-			version(Windows) {
-				auto hConsole = GetStdHandle(STD_INPUT_HANDLE);
-				return hConsole is null || GetFileType(hConsole) == FILE_TYPE_CHAR;
-			} else version(Posix) {
-				// same as normal here since thee is no gui subsystem really
-				import core.sys.posix.unistd;
-				return cast(bool) isatty(0);
-			} else static assert(0);
-		} else version(Posix) {
-			import core.sys.posix.unistd;
-			return cast(bool) isatty(0);
-		} else version(Win32Console) {
-			auto hConsole = GetStdHandle(STD_INPUT_HANDLE);
-			return GetFileType(hConsole) == FILE_TYPE_CHAR;
-		} else static assert(0);
-	}
-
 	version(Posix) {
 		private int fdOut;
 		private int fdIn;
@@ -593,475 +381,291 @@ struct Terminal {
 		void delegate(in void[]) _writeDelegate; // used to override the unix write() system call, set it magically
 	}
 
-	bool terminalInFamily(string[] terms...) {
-		import std.process;
-		import std.string;
-		version(TerminalDirectToEmulator)
-			auto term = "xterm";
-		else
-			auto term = environment.get("TERM");
-		foreach(t; terms)
-			if(indexOf(term, t) != -1)
-				return true;
-
-		return false;
-	}
-
 	version(Posix) {
+		bool terminalInFamily(string[] terms...) {
+			import std.process;
+			import std.string;
+			auto term = environment.get("TERM");
+			foreach(t; terms)
+				if(indexOf(term, t) != -1)
+					return true;
+
+			return false;
+		}
+
 		// This is a filthy hack because Terminal.app and OS X are garbage who don't
 		// work the way they're advertised. I just have to best-guess hack and hope it
 		// doesn't break anything else. (If you know a better way, let me know!)
 		bool isMacTerminal() {
-			// it gives 1,2 in getTerminalCapabilities...
-			// FIXME
 			import std.process;
 			import std.string;
 			auto term = environment.get("TERM");
 			return term == "xterm-256color";
 		}
-	} else
-		bool isMacTerminal() { return false; }
 
-	static string[string] termcapDatabase;
-	static void readTermcapFile(bool useBuiltinTermcap = false) {
-		import std.file;
-		import std.stdio;
-		import std.string;
-
-		//if(!exists("/etc/termcap"))
-			useBuiltinTermcap = true;
-
-		string current;
-
-		void commitCurrentEntry() {
-			if(current is null)
-				return;
-
-			string names = current;
-			auto idx = indexOf(names, ":");
-			if(idx != -1)
-				names = names[0 .. idx];
-
-			foreach(name; split(names, "|"))
-				termcapDatabase[name] = current;
-
-			current = null;
-		}
-
-		void handleTermcapLine(in char[] line) {
-			if(line.length == 0) { // blank
-				commitCurrentEntry();
-				return; // continue
-			}
-			if(line[0] == '#') // comment
-				return; // continue
-			size_t termination = line.length;
-			if(line[$-1] == '\\')
-				termination--; // cut off the \\
-			current ~= strip(line[0 .. termination]);
-			// termcap entries must be on one logical line, so if it isn't continued, we know we're done
-			if(line[$-1] != '\\')
-				commitCurrentEntry();
-		}
-
-		if(useBuiltinTermcap) {
-			version(VtEscapeCodes)
-			foreach(line; splitLines(builtinTermcap)) {
-				handleTermcapLine(line);
-			}
-		} else {
-			foreach(line; File("/etc/termcap").byLine()) {
-				handleTermcapLine(line);
-			}
-		}
-	}
-
-	static string getTermcapDatabase(string terminal) {
-		import std.string;
-
-		if(termcapDatabase is null)
-			readTermcapFile();
-
-		auto data = terminal in termcapDatabase;
-		if(data is null)
-			return null;
-
-		auto tc = *data;
-		auto more = indexOf(tc, ":tc=");
-		if(more != -1) {
-			auto tcKey = tc[more + ":tc=".length .. $];
-			auto end = indexOf(tcKey, ":");
-			if(end != -1)
-				tcKey = tcKey[0 .. end];
-			tc = getTermcapDatabase(tcKey) ~ tc;
-		}
-
-		return tc;
-	}
-
-	string[string] termcap;
-	void readTermcap(string t = null) {
-		version(TerminalDirectToEmulator)
-			t = "xterm";
-		import std.process;
-		import std.string;
-		import std.array;
-
-		string termcapData = environment.get("TERMCAP");
-		if(termcapData.length == 0) {
-			if(t is null) {
-				t = environment.get("TERM");
-			}
-
-			// loosen the check so any xterm variety gets
-			// the same termcap. odds are this is right
-			// almost always
-			if(t.indexOf("xterm") != -1)
-				t = "xterm";
-
-			termcapData = getTermcapDatabase(t);
-		}
-
-		auto e = replace(termcapData, "\\\n", "\n");
-		termcap = null;
-
-		foreach(part; split(e, ":")) {
-			// FIXME: handle numeric things too
-
-			auto things = split(part, "=");
-			if(things.length)
-				termcap[things[0]] =
-					things.length > 1 ? things[1] : null;
-		}
-	}
-
-	string findSequenceInTermcap(in char[] sequenceIn) {
-		char[10] sequenceBuffer;
-		char[] sequence;
-		if(sequenceIn.length > 0 && sequenceIn[0] == '\033') {
-			if(!(sequenceIn.length < sequenceBuffer.length - 1))
-				return null;
-			sequenceBuffer[1 .. sequenceIn.length + 1] = sequenceIn[];
-			sequenceBuffer[0] = '\\';
-			sequenceBuffer[1] = 'E';
-			sequence = sequenceBuffer[0 .. sequenceIn.length + 1];
-		} else {
-			sequence = sequenceBuffer[1 .. sequenceIn.length + 1];
-		}
-
-		import std.array;
-		foreach(k, v; termcap)
-			if(v == sequence)
-				return k;
-		return null;
-	}
-
-	string getTermcap(string key) {
-		auto k = key in termcap;
-		if(k !is null) return *k;
-		return null;
-	}
-
-	// Looks up a termcap item and tries to execute it. Returns false on failure
-	bool doTermcap(T...)(string key, T t) {
-		import std.conv;
-		auto fs = getTermcap(key);
-		if(fs is null)
-			return false;
-
-		int swapNextTwo = 0;
-
-		R getArg(R)(int idx) {
-			if(swapNextTwo == 2) {
-				idx ++;
-				swapNextTwo--;
-			} else if(swapNextTwo == 1) {
-				idx --;
-				swapNextTwo--;
-			}
-
-			foreach(i, arg; t) {
-				if(i == idx)
-					return to!R(arg);
-			}
-			assert(0, to!string(idx) ~ " is out of bounds working " ~ fs);
-		}
-
-		char[256] buffer;
-		int bufferPos = 0;
-
-		void addChar(char c) {
-			import std.exception;
-			enforce(bufferPos < buffer.length);
-			buffer[bufferPos++] = c;
-		}
-
-		void addString(in char[] c) {
-			import std.exception;
-			enforce(bufferPos + c.length < buffer.length);
-			buffer[bufferPos .. bufferPos + c.length] = c[];
-			bufferPos += c.length;
-		}
-
-		void addInt(int c, int minSize) {
+		static string[string] termcapDatabase;
+		static void readTermcapFile(bool useBuiltinTermcap = false) {
+			import std.file;
+			import std.stdio;
 			import std.string;
-			auto str = format("%0"~(minSize ? to!string(minSize) : "")~"d", c);
-			addString(str);
-		}
 
-		bool inPercent;
-		int argPosition = 0;
-		int incrementParams = 0;
-		bool skipNext;
-		bool nextIsChar;
-		bool inBackslash;
+			if(!exists("/etc/termcap"))
+				useBuiltinTermcap = true;
 
-		foreach(char c; fs) {
-			if(inBackslash) {
-				if(c == 'E')
-					addChar('\033');
-				else
-					addChar(c);
-				inBackslash = false;
-			} else if(nextIsChar) {
-				if(skipNext)
-					skipNext = false;
-				else
-					addChar(cast(char) (c + getArg!int(argPosition) + (incrementParams ? 1 : 0)));
-				if(incrementParams) incrementParams--;
-				argPosition++;
-				inPercent = false;
-			} else if(inPercent) {
-				switch(c) {
-					case '%':
-						addChar('%');
-						inPercent = false;
-					break;
-					case '2':
-					case '3':
-					case 'd':
-						if(skipNext)
-							skipNext = false;
-						else
-							addInt(getArg!int(argPosition) + (incrementParams ? 1 : 0),
-								c == 'd' ? 0 : (c - '0')
-							);
-						if(incrementParams) incrementParams--;
-						argPosition++;
-						inPercent = false;
-					break;
-					case '.':
-						if(skipNext)
-							skipNext = false;
-						else
-							addChar(cast(char) (getArg!int(argPosition) + (incrementParams ? 1 : 0)));
-						if(incrementParams) incrementParams--;
-						argPosition++;
-					break;
-					case '+':
-						nextIsChar = true;
-						inPercent = false;
-					break;
-					case 'i':
-						incrementParams = 2;
-						inPercent = false;
-					break;
-					case 's':
-						skipNext = true;
-						inPercent = false;
-					break;
-					case 'b':
-						argPosition--;
-						inPercent = false;
-					break;
-					case 'r':
-						swapNextTwo = 2;
-						inPercent = false;
-					break;
-					// FIXME: there's more
-					// http://www.gnu.org/software/termutils/manual/termcap-1.3/html_mono/termcap.html
+			string current;
 
-					default:
-						assert(0, "not supported " ~ c);
+			void commitCurrentEntry() {
+				if(current is null)
+					return;
+
+				string names = current;
+				auto idx = indexOf(names, ":");
+				if(idx != -1)
+					names = names[0 .. idx];
+
+				foreach(name; split(names, "|"))
+					termcapDatabase[name] = current;
+
+				current = null;
+			}
+
+			void handleTermcapLine(in char[] line) {
+				if(line.length == 0) { // blank
+					commitCurrentEntry();
+					return; // continue
+				}
+				if(line[0] == '#') // comment
+					return; // continue
+				size_t termination = line.length;
+				if(line[$-1] == '\\')
+					termination--; // cut off the \\
+				current ~= strip(line[0 .. termination]);
+				// termcap entries must be on one logical line, so if it isn't continued, we know we're done
+				if(line[$-1] != '\\')
+					commitCurrentEntry();
+			}
+
+			if(useBuiltinTermcap) {
+				foreach(line; splitLines(builtinTermcap)) {
+					handleTermcapLine(line);
 				}
 			} else {
-				if(c == '%')
-					inPercent = true;
-				else if(c == '\\')
-					inBackslash = true;
-				else
-					addChar(c);
+				foreach(line; File("/etc/termcap").byLine()) {
+					handleTermcapLine(line);
+				}
 			}
 		}
 
-		writeStringRaw(buffer[0 .. bufferPos]);
-		return true;
-	}
+		static string getTermcapDatabase(string terminal) {
+			import std.string;
 
-	uint tcaps;
+			if(termcapDatabase is null)
+				readTermcapFile();
 
-	bool inlineImagesSupported() {
-		return (tcaps & TerminalCapabilities.arsdImage) ? true : false;
-	}
-	bool clipboardSupported() {
-		version(Win32Console) return true;
-		else return (tcaps & TerminalCapabilities.arsdImage) ? true : false;
-	}
+			auto data = terminal in termcapDatabase;
+			if(data is null)
+				return null;
 
-	// only supported on my custom terminal emulator. guarded behind if(inlineImagesSupported)
-	// though that isn't even 100% accurate but meh
-	void changeWindowIcon()(string filename) {
-		if(inlineImagesSupported()) {
-		        import arsd.png;
-			auto image = readPng(filename);
-			auto ii = cast(IndexedImage) image;
-			assert(ii !is null);
-
-			// copy/pasted from my terminalemulator.d
-			string encodeSmallTextImage(IndexedImage ii) {
-				char encodeNumeric(int c) {
-					if(c < 10)
-						return cast(char)(c + '0');
-					if(c < 10 + 26)
-						return cast(char)(c - 10 + 'a');
-					assert(0);
-				}
-
-				string s;
-				s ~= encodeNumeric(ii.width);
-				s ~= encodeNumeric(ii.height);
-
-				foreach(entry; ii.palette)
-					s ~= entry.toRgbaHexString();
-				s ~= "Z";
-
-				ubyte rleByte;
-				int rleCount;
-
-				void rleCommit() {
-					if(rleByte >= 26)
-						assert(0); // too many colors for us to handle
-					if(rleCount == 0)
-						goto finish;
-					if(rleCount == 1) {
-						s ~= rleByte + 'a';
-						goto finish;
-					}
-
-					import std.conv;
-					s ~= to!string(rleCount);
-					s ~= rleByte + 'a';
-
-					finish:
-						rleByte = 0;
-						rleCount = 0;
-				}
-
-				foreach(b; ii.data) {
-					if(b == rleByte)
-						rleCount++;
-					else {
-						rleCommit();
-						rleByte = b;
-						rleCount = 1;
-					}
-				}
-
-				rleCommit();
-
-				return s;
+			auto tc = *data;
+			auto more = indexOf(tc, ":tc=");
+			if(more != -1) {
+				auto tcKey = tc[more + ":tc=".length .. $];
+				auto end = indexOf(tcKey, ":");
+				if(end != -1)
+					tcKey = tcKey[0 .. end];
+				tc = getTermcapDatabase(tcKey) ~ tc;
 			}
 
-			this.writeStringRaw("\033]5000;"~encodeSmallTextImage(ii)~"\007");
+			return tc;
 		}
-	}
 
-	// dependent on tcaps...
-	void displayInlineImage()(ubyte[] imageData) {
-		if(inlineImagesSupported) {
-			import std.base64;
+		string[string] termcap;
+		void readTermcap() {
+			import std.process;
+			import std.string;
+			import std.array;
 
-			// I might change this protocol later!
-			enum extensionMagicIdentifier = "ARSD Terminal Emulator binary extension data follows:";
+			string termcapData = environment.get("TERMCAP");
+			if(termcapData.length == 0) {
+				termcapData = getTermcapDatabase(environment.get("TERM"));
+			}
 
-			this.writeStringRaw("\000");
-			this.writeStringRaw(extensionMagicIdentifier);
-			this.writeStringRaw(Base64.encode(imageData));
-			this.writeStringRaw("\000");
+			auto e = replace(termcapData, "\\\n", "\n");
+			termcap = null;
+
+			foreach(part; split(e, ":")) {
+				// FIXME: handle numeric things too
+
+				auto things = split(part, "=");
+				if(things.length)
+					termcap[things[0]] =
+						things.length > 1 ? things[1] : null;
+			}
 		}
-	}
 
-	void demandUserAttention() {
-		if(UseVtSequences) {
-			if(!terminalInFamily("linux"))
-				writeStringRaw("\033]5001;1\007");
+		string findSequenceInTermcap(in char[] sequenceIn) {
+			char[10] sequenceBuffer;
+			char[] sequence;
+			if(sequenceIn.length > 0 && sequenceIn[0] == '\033') {
+				if(!(sequenceIn.length < sequenceBuffer.length - 1))
+					return null;
+				sequenceBuffer[1 .. sequenceIn.length + 1] = sequenceIn[];
+				sequenceBuffer[0] = '\\';
+				sequenceBuffer[1] = 'E';
+				sequence = sequenceBuffer[0 .. sequenceIn.length + 1];
+			} else {
+				sequence = sequenceBuffer[1 .. sequenceIn.length + 1];
+			}
+
+			import std.array;
+			foreach(k, v; termcap)
+				if(v == sequence)
+					return k;
+			return null;
 		}
-	}
 
-	void requestCopyToClipboard(string text) {
-		if(clipboardSupported) {
-			import std.base64;
-			writeStringRaw("\033]52;c;"~Base64.encode(cast(ubyte[])text)~"\007");
+		string getTermcap(string key) {
+			auto k = key in termcap;
+			if(k !is null) return *k;
+			return null;
 		}
-	}
 
-	void requestCopyToPrimary(string text) {
-		if(clipboardSupported) {
-			import std.base64;
-			writeStringRaw("\033]52;p;"~Base64.encode(cast(ubyte[])text)~"\007");
-		}
-	}
-
-	bool hasDefaultDarkBackground() {
-		version(Win32Console) {
-			return !(defaultBackgroundColor & 0xf);
-		} else {
-			// FIXME: there is probably a better way to do this
-			// but like idk how reliable it is.
-			if(terminalInFamily("linux"))
-				return true;
-			else
+		// Looks up a termcap item and tries to execute it. Returns false on failure
+		bool doTermcap(T...)(string key, T t) {
+			import std.conv;
+			auto fs = getTermcap(key);
+			if(fs is null)
 				return false;
+
+			int swapNextTwo = 0;
+
+			R getArg(R)(int idx) {
+				if(swapNextTwo == 2) {
+					idx ++;
+					swapNextTwo--;
+				} else if(swapNextTwo == 1) {
+					idx --;
+					swapNextTwo--;
+				}
+
+				foreach(i, arg; t) {
+					if(i == idx)
+						return to!R(arg);
+				}
+				assert(0, to!string(idx) ~ " is out of bounds working " ~ fs);
+			}
+
+			char[256] buffer;
+			int bufferPos = 0;
+
+			void addChar(char c) {
+				import std.exception;
+				enforce(bufferPos < buffer.length);
+				buffer[bufferPos++] = c;
+			}
+
+			void addString(in char[] c) {
+				import std.exception;
+				enforce(bufferPos + c.length < buffer.length);
+				buffer[bufferPos .. bufferPos + c.length] = c[];
+				bufferPos += c.length;
+			}
+
+			void addInt(int c, int minSize) {
+				import std.string;
+				auto str = format("%0"~(minSize ? to!string(minSize) : "")~"d", c);
+				addString(str);
+			}
+
+			bool inPercent;
+			int argPosition = 0;
+			int incrementParams = 0;
+			bool skipNext;
+			bool nextIsChar;
+			bool inBackslash;
+
+			foreach(char c; fs) {
+				if(inBackslash) {
+					if(c == 'E')
+						addChar('\033');
+					else
+						addChar(c);
+					inBackslash = false;
+				} else if(nextIsChar) {
+					if(skipNext)
+						skipNext = false;
+					else
+						addChar(cast(char) (c + getArg!int(argPosition) + (incrementParams ? 1 : 0)));
+					if(incrementParams) incrementParams--;
+					argPosition++;
+					inPercent = false;
+				} else if(inPercent) {
+					switch(c) {
+						case '%':
+							addChar('%');
+							inPercent = false;
+						break;
+						case '2':
+						case '3':
+						case 'd':
+							if(skipNext)
+								skipNext = false;
+							else
+								addInt(getArg!int(argPosition) + (incrementParams ? 1 : 0),
+									c == 'd' ? 0 : (c - '0')
+								);
+							if(incrementParams) incrementParams--;
+							argPosition++;
+							inPercent = false;
+						break;
+						case '.':
+							if(skipNext)
+								skipNext = false;
+							else
+								addChar(cast(char) (getArg!int(argPosition) + (incrementParams ? 1 : 0)));
+							if(incrementParams) incrementParams--;
+							argPosition++;
+						break;
+						case '+':
+							nextIsChar = true;
+							inPercent = false;
+						break;
+						case 'i':
+							incrementParams = 2;
+							inPercent = false;
+						break;
+						case 's':
+							skipNext = true;
+							inPercent = false;
+						break;
+						case 'b':
+							argPosition--;
+							inPercent = false;
+						break;
+						case 'r':
+							swapNextTwo = 2;
+							inPercent = false;
+						break;
+						// FIXME: there's more
+						// http://www.gnu.org/software/termutils/manual/termcap-1.3/html_mono/termcap.html
+
+						default:
+							assert(0, "not supported " ~ c);
+					}
+				} else {
+					if(c == '%')
+						inPercent = true;
+					else if(c == '\\')
+						inBackslash = true;
+					else
+						addChar(c);
+				}
+			}
+
+			writeStringRaw(buffer[0 .. bufferPos]);
+			return true;
 		}
 	}
-
-	version(TerminalDirectToEmulator) {
-		TerminalEmulatorWidget tew;
-	}
-
-	version(TerminalDirectToEmulator)
-	/++
-	+/
-	this(ConsoleOutputType type) {
-		this.type = type;
-
-		if(type == ConsoleOutputType.minimalProcessing) {
-			readTermcap("xterm");
-			_suppressDestruction = true;
-			return;
-		}
-
-
-		tcaps = uint.max; // all capabilities
-		import core.thread;
-
-		auto thread = new Thread( {
-			auto window = new TerminalEmulatorWindow(&this);
-			tew = window.tew;
-			window.loop();
-		});
-
-		thread.start();
-		// need to wait until it is properly initialized
-		while(cast(shared) tew is null) {
-			import core.thread;
-			Thread.sleep(5.msecs);
-		}
-
-		initializeVt();
-
-	}
-	else
 
 	version(Posix)
 	/**
@@ -1079,20 +683,12 @@ struct Terminal {
 		this.getSizeOverride = getSizeOverride;
 		this.type = type;
 
+		readTermcap();
+
 		if(type == ConsoleOutputType.minimalProcessing) {
-			readTermcap();
 			_suppressDestruction = true;
 			return;
 		}
-
-		tcaps = getTerminalCapabilities(fdIn, fdOut);
-		//writeln(tcaps);
-
-		initializeVt();
-	}
-
-	void initializeVt() {
-		readTermcap();
 
 		if(type == ConsoleOutputType.cellular) {
 			doTermcap("ti");
@@ -1100,135 +696,88 @@ struct Terminal {
 			moveTo(0, 0, ForceOption.alwaysSend); // we need to know where the cursor is for some features to work, and moving it is easier than querying it
 		}
 
-		if(terminalInFamily("xterm", "rxvt", "screen", "tmux")) {
+		if(terminalInFamily("xterm", "rxvt", "screen")) {
 			writeStringRaw("\033[22;0t"); // save window title on a stack (support seems spotty, but it doesn't hurt to have it)
 		}
-
 	}
 
-	// EXPERIMENTAL do not use yet
-	Terminal alternateScreen() {
-		assert(this.type != ConsoleOutputType.cellular);
-
-		this.flush();
-		return Terminal(ConsoleOutputType.cellular);
-	}
-
-	version(Win32Console) {
+	version(Windows) {
 		HANDLE hConsole;
 		CONSOLE_SCREEN_BUFFER_INFO originalSbi;
 	}
 
-	version(Win32Console)
+	version(Windows)
 	/// ditto
 	this(ConsoleOutputType type) {
-		if(UseVtSequences) {
-			hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-			initializeVt();
-		} else {
-			if(type == ConsoleOutputType.cellular) {
-				hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, null, CONSOLE_TEXTMODE_BUFFER, null);
-				if(hConsole == INVALID_HANDLE_VALUE) {
-					import std.conv;
-					throw new Exception(to!string(GetLastError()));
-				}
-
-				SetConsoleActiveScreenBuffer(hConsole);
-				/*
-	http://msdn.microsoft.com/en-us/library/windows/desktop/ms686125%28v=vs.85%29.aspx
-	http://msdn.microsoft.com/en-us/library/windows/desktop/ms683193%28v=vs.85%29.aspx
-				*/
-				COORD size;
-				/*
-				CONSOLE_SCREEN_BUFFER_INFO sbi;
-				GetConsoleScreenBufferInfo(hConsole, &sbi);
-				size.X = cast(short) GetSystemMetrics(SM_CXMIN);
-				size.Y = cast(short) GetSystemMetrics(SM_CYMIN);
-				*/
-
-				// FIXME: this sucks, maybe i should just revert it. but there shouldn't be scrollbars in cellular mode
-				//size.X = 80;
-				//size.Y = 24;
-				//SetConsoleScreenBufferSize(hConsole, size);
-
-				GetConsoleCursorInfo(hConsole, &originalCursorInfo);
-
-				clear();
-			} else {
-				hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+		if(type == ConsoleOutputType.cellular) {
+			hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, null, CONSOLE_TEXTMODE_BUFFER, null);
+			if(hConsole == INVALID_HANDLE_VALUE) {
+				import std.conv;
+				throw new Exception(to!string(GetLastError()));
 			}
 
-			if(GetConsoleScreenBufferInfo(hConsole, &originalSbi) == 0)
-				throw new Exception("not a user-interactive terminal");
-
-			defaultForegroundColor = cast(Color) (originalSbi.wAttributes & 0x0f);
-			defaultBackgroundColor = cast(Color) ((originalSbi.wAttributes >> 4) & 0x0f);
-
-			// this is unnecessary since I use the W versions of other functions
-			// and can cause weird font bugs, so I'm commenting unless some other
-			// need comes up.
+			SetConsoleActiveScreenBuffer(hConsole);
 			/*
-			oldCp = GetConsoleOutputCP();
-			SetConsoleOutputCP(65001); // UTF-8
-
-			oldCpIn = GetConsoleCP();
-			SetConsoleCP(65001); // UTF-8
+http://msdn.microsoft.com/en-us/library/windows/desktop/ms686125%28v=vs.85%29.aspx
+http://msdn.microsoft.com/en-us/library/windows/desktop/ms683193%28v=vs.85%29.aspx
 			*/
-		}
-	}
+			COORD size;
+			/*
+			CONSOLE_SCREEN_BUFFER_INFO sbi;
+			GetConsoleScreenBufferInfo(hConsole, &sbi);
+			size.X = cast(short) GetSystemMetrics(SM_CXMIN);
+			size.Y = cast(short) GetSystemMetrics(SM_CYMIN);
+			*/
 
-	version(Win32Console) {
-		private Color defaultBackgroundColor = Color.black;
-		private Color defaultForegroundColor = Color.white;
-		UINT oldCp;
-		UINT oldCpIn;
+			// FIXME: this sucks, maybe i should just revert it. but there shouldn't be scrollbars in cellular mode
+			//size.X = 80;
+			//size.Y = 24;
+			//SetConsoleScreenBufferSize(hConsole, size);
+
+			clear();
+		} else {
+			hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+		}
+
+		GetConsoleScreenBufferInfo(hConsole, &originalSbi);
 	}
 
 	// only use this if you are sure you know what you want, since the terminal is a shared resource you generally really want to reset it to normal when you leave...
 	bool _suppressDestruction;
 
+	version(Posix)
 	~this() {
 		if(_suppressDestruction) {
 			flush();
 			return;
 		}
-
-		if(UseVtSequences) {
-			if(type == ConsoleOutputType.cellular) {
-				doTermcap("te");
-			}
-			version(TerminalDirectToEmulator) {
-				writeln("\n\n<exited>");
-				setTitle(tew.terminalEmulator.currentTitle ~ " <exited>");
-			} else
-			if(terminalInFamily("xterm", "rxvt", "screen", "tmux")) {
-				writeStringRaw("\033[23;0t"); // restore window title from the stack
-			}
-			cursor = TerminalCursor.DEFAULT;
-			showCursor();
-			reset();
-			flush();
-
-			if(lineGetter !is null)
-				lineGetter.dispose();
-		} else version(Win32Console) {
-			flush(); // make sure user data is all flushed before resetting
-			reset();
-			showCursor();
-
-			if(lineGetter !is null)
-				lineGetter.dispose();
-
-
-			SetConsoleOutputCP(oldCp);
-			SetConsoleCP(oldCpIn);
-
-			auto stdo = GetStdHandle(STD_OUTPUT_HANDLE);
-			SetConsoleActiveScreenBuffer(stdo);
-			if(hConsole !is stdo)
-				CloseHandle(hConsole);
-
+		if(type == ConsoleOutputType.cellular) {
+			doTermcap("te");
 		}
+		if(terminalInFamily("xterm", "rxvt", "screen")) {
+			writeStringRaw("\033[23;0t"); // restore window title from the stack
+		}
+		showCursor();
+		reset();
+		flush();
+
+		if(lineGetter !is null)
+			lineGetter.dispose();
+	}
+
+	version(Windows)
+	~this() {
+		flush(); // make sure user data is all flushed before resetting
+		reset();
+		showCursor();
+
+		if(lineGetter !is null)
+			lineGetter.dispose();
+
+		auto stdo = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleActiveScreenBuffer(stdo);
+		if(hConsole !is stdo)
+			CloseHandle(hConsole);
 	}
 
 	// lazily initialized and preserved between calls to getline for a bit of efficiency (only a bit)
@@ -1268,7 +817,7 @@ struct Terminal {
 		_currentForegroundRGB = foreground;
 		_currentBackgroundRGB = background;
 
-		version(Win32Console) {
+		version(Windows) {
 			flush();
 			ushort setTob = cast(ushort) approximate16Color(background);
 			ushort setTof = cast(ushort) approximate16Color(foreground);
@@ -1283,7 +832,6 @@ struct Terminal {
 			// fallback to 16 color for term that i know don't take it well
 			import std.process;
 			import std.string;
-			version(TerminalDirectToEmulator) {} else
 			if(environment.get("TERM") == "rxvt" || environment.get("TERM") == "linux") {
 				// not likely supported, use 16 color fallback
 				auto setTof = approximate16Color(foreground);
@@ -1304,11 +852,6 @@ struct Terminal {
 				colorToXTermPaletteIndex(background)
 			));
 
-			/+ // this is the full 24 bit color sequence
-			writeStringRaw(format("\033[38;2;%d;%d;%dm", foreground.r, foreground.g, foreground.b));
-			writeStringRaw(format("\033[48;2;%d;%d;%dm", background.r, background.g, background.b));
-			+/
-
 			return true;
 		}
 	}
@@ -1316,7 +859,7 @@ struct Terminal {
 	/// Changes the current color. See enum Color for the values.
 	void color(int foreground, int background, ForceOption force = ForceOption.automatic, bool reverseVideo = false) {
 		if(force != ForceOption.neverSend) {
-			version(Win32Console) {
+			version(Windows) {
 				// assuming a dark background on windows, so LowContrast == dark which means the bit is NOT set on hardware
 				/*
 				foreground ^= LowContrast;
@@ -1328,20 +871,20 @@ struct Terminal {
 
 				// this isn't necessarily right but meh
 				if(background == Color.DEFAULT)
-					setTob = defaultBackgroundColor;
+					setTob = Color.black;
 				if(foreground == Color.DEFAULT)
-					setTof = defaultForegroundColor;
+					setTof = Color.white;
 
 				if(force == ForceOption.alwaysSend || reverseVideo != this.reverseVideo || foreground != _currentForeground || background != _currentBackground) {
 					flush(); // if we don't do this now, the buffering can screw up the colors...
 					if(reverseVideo) {
 						if(background == Color.DEFAULT)
-							setTof = defaultBackgroundColor;
+							setTof = Color.black;
 						else
 							setTof = cast(ushort) background | (foreground & Bright);
 
 						if(background == Color.DEFAULT)
-							setTob = defaultForegroundColor;
+							setTob = Color.white;
 						else
 							setTob = cast(ushort) (foreground & ~Bright);
 					}
@@ -1390,74 +933,11 @@ struct Terminal {
 
 	private bool _underlined = false;
 
-	/++
-		Outputs a hyperlink to my custom terminal (v0.0.7 or later) or to version
-		`TerminalDirectToEmulator`.  The way it works is a bit strange...
-
-
-		If using a terminal that supports it, it outputs the given text with the
-		given identifier attached (one bit of identifier per grapheme of text!). When
-		the user clicks on it, it will send a [LinkEvent] with the text and the identifier
-		for you to respond, if in real-time input mode, or a simple paste event with the
-		text if not (you will not be able to distinguish this from a user pasting the
-		same text).
-
-		If the user's terminal does not support my feature, it writes plain text instead.
-
-		It is important that you make sure your program still works even if the hyperlinks
-		never work - ideally, make them out of text the user can type manually or copy/paste
-		into your command line somehow too.
-
-		Hyperlinks may not work correctly after your program exits or if you are capturing
-		mouse input (the user will have to hold shift in that case). It is really designed
-		for linear mode with direct to emulator mode. If you are using cellular mode with
-		full input capturing, you should manage the clicks yourself.
-
-		Similarly, if it horizontally scrolls off the screen, it can be corrupted since it
-		packs your text and identifier into free bits in the screen buffer itself. I may be
-		able to fix that later.
-
-		Params:
-			text = text displayed in the terminal
-			identifier = an additional number attached to the text and returned to you in a [LinkEvent]
-			autoStyle = set to `false` to suppress the automatic color and underlining of the text.
-
-		Bugs:
-			there's no keyboard interaction with it at all right now. i might make the terminal
-			emulator offer the ids or something through a hold ctrl or something interface. idk.
-			or tap ctrl twice to turn that on.
-
-		History:
-			Added March 18, 2020
-	+/
-	void hyperlink(string text, ushort identifier = 0, bool autoStyle = true) {
-		if((tcaps & TerminalCapabilities.arsdHyperlinks)) {
-			bool previouslyUnderlined = _underlined;
-			int fg = _currentForeground, bg = _currentBackground;
-			if(autoStyle) {
-				color(Color.blue, Color.white);
-				underline = true;
-			}
-
-			import std.conv;
-			writeStringRaw("\033[?" ~ to!string(65536 + identifier) ~ "h");
-			write(text);
-			writeStringRaw("\033[?65536l");
-
-			if(autoStyle) {
-				underline = previouslyUnderlined;
-				color(fg, bg);
-			}
-		} else {
-			write(text); // graceful degrade
-		}
-	}
-
 	/// Note: the Windows console does not support underlining
 	void underline(bool set, ForceOption force = ForceOption.automatic) {
 		if(set == _underlined && force != ForceOption.alwaysSend)
 			return;
-		if(UseVtSequences) {
+		version(Posix) {
 			if(set)
 				writeStringRaw("\033[4m");
 			else
@@ -1469,7 +949,7 @@ struct Terminal {
 
 	/// Returns the terminal to normal output colors
 	void reset() {
-		version(Win32Console)
+		version(Windows)
 			SetConsoleTextAttribute(
 				hConsole,
 				originalSbi.wAttributes);
@@ -1501,14 +981,14 @@ struct Terminal {
 	void moveTo(int x, int y, ForceOption force = ForceOption.automatic) {
 		if(force != ForceOption.neverSend && (force == ForceOption.alwaysSend || x != _cursorX || y != _cursorY)) {
 			executeAutoHideCursor();
-			if(UseVtSequences) {
+			version(Posix) {
 				doTermcap("cm", y, x);
-			} else version(Win32Console) {
+			} else version(Windows) {
 
 				flush(); // if we don't do this now, the buffering can screw up the position
 				COORD coord = {cast(short) x, cast(short) y};
 				SetConsoleCursorPosition(hConsole, coord);
-			}
+			} else static assert(0);
 		}
 
 		_cursorX = x;
@@ -1517,9 +997,9 @@ struct Terminal {
 
 	/// shows the cursor
 	void showCursor() {
-		if(UseVtSequences)
+		version(Posix)
 			doTermcap("ve");
-		else version(Win32Console) {
+		else {
 			CONSOLE_CURSOR_INFO info;
 			GetConsoleCursorInfo(hConsole, &info);
 			info.bVisible = true;
@@ -1529,9 +1009,9 @@ struct Terminal {
 
 	/// hides the cursor
 	void hideCursor() {
-		if(UseVtSequences) {
+		version(Posix) {
 			doTermcap("vi");
-		} else version(Win32Console) {
+		} else {
 			CONSOLE_CURSOR_INFO info;
 			GetConsoleCursorInfo(hConsole, &info);
 			info.bVisible = false;
@@ -1551,9 +1031,9 @@ struct Terminal {
 
 	private void executeAutoHideCursor() {
 		if(autoHidingCursor) {
-			version(Win32Console)
+			version(Windows)
 				hideCursor();
-			else if(UseVtSequences) {
+			else version(Posix) {
 				// prepend the hide cursor command so it is the first thing flushed
 				writeBuffer = "\033[?25l" ~ writeBuffer;
 			}
@@ -1585,20 +1065,11 @@ struct Terminal {
 
 	/// Changes the terminal's title
 	void setTitle(string t) {
-		version(Win32Console) {
-			wchar[256] buffer;
-			size_t bufferLength;
-			foreach(wchar ch; t)
-				if(bufferLength < buffer.length)
-					buffer[bufferLength++] = ch;
-			if(bufferLength < buffer.length)
-				buffer[bufferLength++] = 0;
-			else
-				buffer[$-1] = 0;
-			SetConsoleTitleW(buffer.ptr);
+		version(Windows) {
+			SetConsoleTitleA(toStringz(t));
 		} else {
 			import std.string;
-			if(terminalInFamily("xterm", "rxvt", "screen", "tmux"))
+			if(terminalInFamily("xterm", "rxvt", "screen"))
 				writeStringRaw(format("\033]0;%s\007", t));
 		}
 	}
@@ -1609,10 +1080,7 @@ struct Terminal {
 		if(writeBuffer.length == 0)
 			return;
 
-		version(TerminalDirectToEmulator) {
-			tew.sendRawInput(cast(ubyte[]) writeBuffer);
-			writeBuffer = null;
-		} else version(Posix) {
+		version(Posix) {
 			if(_writeDelegate !is null) {
 				_writeDelegate(writeBuffer);
 			} else {
@@ -1625,7 +1093,7 @@ struct Terminal {
 					writeBuffer = writeBuffer[written .. $];
 				}
 			}
-		} else version(Win32Console) {
+		} else version(Windows) {
 			import std.conv;
 			// FIXME: I'm not sure I'm actually happy with this allocation but
 			// it probably isn't a big deal. At least it has unicode support now.
@@ -1641,9 +1109,7 @@ struct Terminal {
 	}
 
 	int[] getSize() {
-		version(TerminalDirectToEmulator) {
-			return [tew.terminalEmulator.width, tew.terminalEmulator.height];
-		} else version(Windows) {
+		version(Windows) {
 			CONSOLE_SCREEN_BUFFER_INFO info;
 			GetConsoleScreenBufferInfo( hConsole, &info );
 
@@ -1747,8 +1213,7 @@ struct Terminal {
 		// assert(s.indexOf("\033") == -1);
 
 		// tracking cursor position
-		// FIXME: by grapheme?
-		foreach(dchar ch; s) {
+		foreach(ch; s) {
 			switch(ch) {
 				case '\n':
 					_cursorX = 0;
@@ -1762,7 +1227,8 @@ struct Terminal {
 					_cursorX += _cursorX % 8; // FIXME: get the actual tabstop, if possible
 				break;
 				default:
-					_cursorX++;
+					if(ch <= 127) // way of only advancing once per dchar instead of per code unit
+						_cursorX++;
 			}
 
 			if(_wrapAround && _cursorX > width) {
@@ -1792,14 +1258,19 @@ struct Terminal {
 
 	// you really, really shouldn't use this unless you know what you are doing
 	/*private*/ void writeStringRaw(in char[] s) {
-		writeBuffer ~= s; // buffer it to do everything at once in flush() calls
+		// FIXME: make sure all the data is sent, check for errors
+		version(Posix) {
+			writeBuffer ~= s; // buffer it to do everything at once in flush() calls
+		} else version(Windows) {
+			writeBuffer ~= s;
+		} else static assert(0);
 	}
 
 	/// Clears the screen.
 	void clear() {
-		if(UseVtSequences) {
+		version(Posix) {
 			doTermcap("cl");
-		} else version(Win32Console) {
+		} else version(Windows) {
 			// http://support.microsoft.com/kb/99261
 			flush();
 
@@ -1846,44 +1317,6 @@ struct Terminal {
 
 }
 
-/++
-	Removes terminal color, bold, etc. sequences from a string,
-	making it plain text suitable for output to a normal .txt
-	file.
-+/
-inout(char)[] removeTerminalGraphicsSequences(inout(char)[] s) {
-	import std.string;
-
-	auto at = s.indexOf("\033[");
-	if(at == -1)
-		return s;
-
-	inout(char)[] ret;
-
-	do {
-		ret ~= s[0 .. at];
-		s = s[at + 2 .. $];
-		while(s.length && !((s[0] >= 'a' && s[0] <= 'z') || s[0] >= 'A' && s[0] <= 'Z')) {
-			s = s[1 .. $];
-		}
-		if(s.length)
-			s = s[1 .. $]; // skip the terminator
-		at = s.indexOf("\033[");
-	} while(at != -1);
-
-	ret ~= s;
-
-	return ret;
-}
-
-unittest {
-	assert("foo".removeTerminalGraphicsSequences == "foo");
-	assert("\033[34mfoo".removeTerminalGraphicsSequences == "foo");
-	assert("\033[34mfoo\033[39m".removeTerminalGraphicsSequences == "foo");
-	assert("\033[34m\033[45mfoo\033[39mbar\033[49m".removeTerminalGraphicsSequences == "foobar");
-}
-
-
 /+
 struct ConsoleBuffer {
 	int cursorX;
@@ -1915,66 +1348,6 @@ struct RealTimeConsoleInput {
 	@disable this();
 	@disable this(this);
 
-	/++
-		Requests the system to send paste data as a [PasteEvent] to this stream, if possible.
-
-		See_Also:
-			[Terminal.requestCopyToPrimary]
-			[Terminal.requestCopyToClipboard]
-			[Terminal.clipboardSupported]
-
-		History:
-			Added February 17, 2020.
-
-			It was in Terminal briefly during an undocumented period, but it had to be moved here to have the context needed to send the real time paste event.
-	+/
-	void requestPasteFromClipboard() {
-		version(Win32Console) {
-			HWND hwndOwner = null;
-			if(OpenClipboard(hwndOwner) == 0)
-				throw new Exception("OpenClipboard");
-			scope(exit)
-				CloseClipboard();
-			if(auto dataHandle = GetClipboardData(CF_UNICODETEXT)) {
-
-				if(auto data = cast(wchar*) GlobalLock(dataHandle)) {
-					scope(exit)
-						GlobalUnlock(dataHandle);
-
-					int len = 0;
-					auto d = data;
-					while(*d) {
-						d++;
-						len++;
-					}
-					string s;
-					s.reserve(len);
-					foreach(idx, dchar ch; data[0 .. len]) {
-						// CR/LF -> LF
-						if(ch == '\r' && idx + 1 < len && data[idx + 1] == '\n')
-							continue;
-						s ~= ch;
-					}
-
-					injectEvent(InputEvent(PasteEvent(s), terminal), InjectionPosition.tail);
-				}
-			}
-		} else
-		if(terminal.clipboardSupported) {
-			if(UseVtSequences)
-				terminal.writeStringRaw("\033]52;c;?\007");
-		}
-	}
-
-	/// ditto
-	void requestPasteFromPrimary() {
-		if(terminal.clipboardSupported) {
-			if(UseVtSequences)
-				terminal.writeStringRaw("\033]52;p;?\007");
-		}
-	}
-
-
 	version(Posix) {
 		private int fdOut;
 		private int fdIn;
@@ -1988,7 +1361,7 @@ struct RealTimeConsoleInput {
 		// so this hack is just to give some room for that to happen without destroying the rest of the world
 	}
 
-	version(Win32Console) {
+	version(Windows) {
 		private DWORD oldInput;
 		private DWORD oldOutput;
 		HANDLE inputHandle;
@@ -2003,13 +1376,13 @@ struct RealTimeConsoleInput {
 		this.flags = flags;
 		this.terminal = terminal;
 
-		version(Win32Console) {
+		version(Windows) {
 			inputHandle = GetStdHandle(STD_INPUT_HANDLE);
 
 			GetConsoleMode(inputHandle, &oldInput);
 
 			DWORD mode = 0;
-			//mode |= ENABLE_PROCESSED_INPUT /* 0x01 */; // this gives Ctrl+C and automatic paste... which we probably want to be similar to linux
+			mode |= ENABLE_PROCESSED_INPUT /* 0x01 */; // this gives Ctrl+C which we probably want to be similar to linux
 			//if(flags & ConsoleInputFlags.size)
 			mode |= ENABLE_WINDOW_INPUT /* 0208 */; // gives size etc
 			if(flags & ConsoleInputFlags.echo)
@@ -2026,15 +1399,14 @@ struct RealTimeConsoleInput {
 			mode = 0;
 			// we want this to match linux too
 			mode |= ENABLE_PROCESSED_OUTPUT; /* 0x01 */
-			if(!(flags & ConsoleInputFlags.noEolWrap))
-				mode |= ENABLE_WRAP_AT_EOL_OUTPUT; /* 0x02 */
+			mode |= ENABLE_WRAP_AT_EOL_OUTPUT; /* 0x02 */
 			SetConsoleMode(terminal.hConsole, mode);
 			destructor ~= { SetConsoleMode(terminal.hConsole, oldOutput); };
+
+			// FIXME: change to UTF8 as well
 		}
 
-		version(TerminalDirectToEmulator) {
-			terminal.tew.terminalEmulator.echo = (flags & ConsoleInputFlags.echo) ? true : false;
-		} else version(Posix) {
+		version(Posix) {
 			this.fdIn = terminal.fdIn;
 			this.fdOut = terminal.fdOut;
 
@@ -2045,8 +1417,6 @@ struct RealTimeConsoleInput {
 				auto f = ICANON;
 				if(!(flags & ConsoleInputFlags.echo))
 					f |= ECHO;
-
-				// \033Z or \033[c
 
 				n.c_lflag &= ~f;
 				tcsetattr(fdIn, TCSANOW, &n);
@@ -2081,9 +1451,9 @@ struct RealTimeConsoleInput {
 				n.sa_flags = 0;
 				sigaction(SIGHUP, &n, &oldHupIntr);
 			}
-		}
 
-		if(UseVtSequences) {
+
+
 			if(flags & ConsoleInputFlags.mouse) {
 				// basic button press+release notification
 
@@ -2101,25 +1471,20 @@ struct RealTimeConsoleInput {
 					// this is vt200 mouse with full motion tracking, supported by xterm
 					terminal.writeStringRaw("\033[?1003h");
 					destructor ~= { terminal.writeStringRaw("\033[?1003l"); };
-				} else if(terminal.terminalInFamily("rxvt", "screen", "tmux") || environment.get("MOUSE_HACK") == "1002") {
+				} else if(terminal.terminalInFamily("rxvt", "screen") || environment.get("MOUSE_HACK") == "1002") {
 					terminal.writeStringRaw("\033[?1002h"); // this is vt200 mouse with press/release and motion notification iff buttons are pressed
 					destructor ~= { terminal.writeStringRaw("\033[?1002l"); };
 				}
 			}
 			if(flags & ConsoleInputFlags.paste) {
-				if(terminal.terminalInFamily("xterm", "rxvt", "screen", "tmux")) {
+				if(terminal.terminalInFamily("xterm", "rxvt", "screen")) {
 					terminal.writeStringRaw("\033[?2004h"); // bracketed paste mode
 					destructor ~= { terminal.writeStringRaw("\033[?2004l"); };
 				}
 			}
 
-			if(terminal.tcaps & TerminalCapabilities.arsdHyperlinks) {
-				terminal.writeStringRaw("\033[?3004h"); // bracketed link mode
-				destructor ~= { terminal.writeStringRaw("\033[?3004l"); };
-			}
-
 			// try to ensure the terminal is in UTF-8 mode
-			if(terminal.terminalInFamily("xterm", "screen", "linux", "tmux") && !terminal.isMacTerminal()) {
+			if(terminal.terminalInFamily("xterm", "screen", "linux") && !terminal.isMacTerminal()) {
 				terminal.writeStringRaw("\033%G");
 			}
 
@@ -2129,7 +1494,7 @@ struct RealTimeConsoleInput {
 
 		version(with_eventloop) {
 			import arsd.eventloop;
-			version(Win32Console)
+			version(Windows)
 				auto listenTo = inputHandle;
 			else version(Posix)
 				auto listenTo = this.fdIn;
@@ -2145,34 +1510,6 @@ struct RealTimeConsoleInput {
 			addOnIdle(&terminal.flush);
 			destructor ~= { removeOnIdle(&terminal.flush); };
 		}
-	}
-
-	void fdReadyReader() {
-		auto queue = readNextEvents();
-		foreach(event; queue)
-			userEventHandler(event);
-	}
-
-	void delegate(InputEvent) userEventHandler;
-
-	/++
-		If you are using [arsd.simpledisplay] and want terminal interop too, you can call
-		this function to add it to the sdpy event loop and get the callback called on new
-		input.
-
-		Note that you will probably need to call `terminal.flush()` when you are doing doing
-		output, as the sdpy event loop doesn't know to do that (yet). I will probably change
-		that in a future version, but it doesn't hurt to call it twice anyway, so I recommend
-		calling flush yourself in any code you write using this.
-	+/
-	void integrateWithSimpleDisplayEventLoop()(void delegate(InputEvent) userEventHandler) {
-		this.userEventHandler = userEventHandler;
-		import arsd.simpledisplay;
-		version(Win32Console)
-			auto listener = new WindowsHandleReader(&fdReadyReader, terminal.hConsole);
-		else version(linux)
-			auto listener = new PosixFdReader(&fdReadyReader, fdIn);
-		else static assert(0, "sdpy event loop integration not implemented on this platform");
 	}
 
 	version(with_eventloop) {
@@ -2198,20 +1535,12 @@ struct RealTimeConsoleInput {
 		}
 	}
 
-	bool _suppressDestruction;
-
 	~this() {
-		if(_suppressDestruction)
-			return;
-
 		// the delegate thing doesn't actually work for this... for some reason
-
-		version(TerminalDirectToEmulator) { } else
 		version(Posix)
 			if(fdIn != -1)
 				tcsetattr(fdIn, TCSANOW, &old);
 
-		version(TerminalDirectToEmulator) { } else
 		version(Posix) {
 			if(flags & ConsoleInputFlags.size) {
 				// restoration
@@ -2246,32 +1575,8 @@ struct RealTimeConsoleInput {
 
 	/// Check for input, waiting no longer than the number of milliseconds
 	bool timedCheckForInput(int milliseconds) {
-		if(inputQueue.length || timedCheckForInput_bypassingBuffer(milliseconds))
-			return true;
-		version(WithSignals)
-			if(interrupted || windowSizeChanged || hangedUp)
-				return true;
-		return false;
-	}
-
-	/* private */ bool anyInput_internal(int timeout = 0) {
-		return timedCheckForInput(timeout);
-	}
-
-	bool timedCheckForInput_bypassingBuffer(int milliseconds) {
-		version(TerminalDirectToEmulator) {
-			import core.time;
-			if(terminal.tew.terminalEmulator.pendingForApplication.length)
-				return true;
-			if(terminal.tew.terminalEmulator.outgoingSignal.wait(milliseconds.msecs))
-				// it was notified, but it could be left over from stuff we
-				// already processed... so gonna check the blocking conditions here too
-				// (FIXME: this sucks and is surely a race condition of pain)
-				return terminal.tew.terminalEmulator.pendingForApplication.length || interrupted || windowSizeChanged || hangedUp;
-			else
-				return false;
-		} else version(Win32Console) {
-			auto response = WaitForSingleObject(inputHandle, milliseconds);
+		version(Windows) {
+			auto response = WaitForSingleObject(terminal.hConsole, milliseconds);
 			if(response  == 0)
 				return true; // the object is ready
 			return false;
@@ -2287,23 +1592,21 @@ struct RealTimeConsoleInput {
 			FD_ZERO(&fs);
 
 			FD_SET(fdIn, &fs);
-			int tries = 0;
-			try_again:
-			auto ret = select(fdIn + 1, &fs, null, null, &tv);
-			if(ret == -1) {
-				import core.stdc.errno;
-				if(errno == EINTR) {
-					tries++;
-					if(tries < 3)
-						goto try_again;
-				}
+			if(select(fdIn + 1, &fs, null, null, &tv) == -1) {
 				return false;
 			}
-			if(ret == 0)
-				return false;
 
 			return FD_ISSET(fdIn, &fs);
 		}
+	}
+
+	/* private */ bool anyInput_internal() {
+		if(inputQueue.length || timedCheckForInput(0))
+			return true;
+		version(Posix)
+			if(interrupted || windowSizeChanged || hangedUp)
+				return true;
+		return false;
 	}
 
 	private dchar getchBuffer;
@@ -2341,65 +1644,40 @@ struct RealTimeConsoleInput {
 
 	//char[128] inputBuffer;
 	//int inputBufferPosition;
+	version(Posix)
 	int nextRaw(bool interruptable = false) {
-		version(TerminalDirectToEmulator) {
-			moar:
-			//if(interruptable && inputQueue.length)
-				//return -1;
-			if(terminal.tew.terminalEmulator.pendingForApplication.length == 0)
-				terminal.tew.terminalEmulator.outgoingSignal.wait();
-			synchronized(terminal.tew.terminalEmulator) {
-				if(terminal.tew.terminalEmulator.pendingForApplication.length == 0) {
-					if(interruptable)
-						return -1;
-					else
-						goto moar;
-				}
-				auto a = terminal.tew.terminalEmulator.pendingForApplication[0];
-				terminal.tew.terminalEmulator.pendingForApplication = terminal.tew.terminalEmulator.pendingForApplication[1 .. $];
-				return a;
-			}
-		} else version(Posix) {
-			if(fdIn == -1)
-				return 0;
+		if(fdIn == -1)
+			return 0;
 
-			char[1] buf;
-			try_again:
-			auto ret = read(fdIn, buf.ptr, buf.length);
-			if(ret == 0)
-				return 0; // input closed
-			if(ret == -1) {
-				import core.stdc.errno;
-				if(errno == EINTR)
-					// interrupted by signal call, quite possibly resize or ctrl+c which we want to check for in the event loop
-					if(interruptable)
-						return -1;
-					else
-						goto try_again;
+		char[1] buf;
+		try_again:
+		auto ret = read(fdIn, buf.ptr, buf.length);
+		if(ret == 0)
+			return 0; // input closed
+		if(ret == -1) {
+			import core.stdc.errno;
+			if(errno == EINTR)
+				// interrupted by signal call, quite possibly resize or ctrl+c which we want to check for in the event loop
+				if(interruptable)
+					return -1;
 				else
-					throw new Exception("read failed");
-			}
-
-			//terminal.writef("RAW READ: %d\n", buf[0]);
-
-			if(ret == 1)
-				return inputPrefilter ? inputPrefilter(buf[0]) : buf[0];
+					goto try_again;
 			else
-				assert(0); // read too much, should be impossible
-		} else version(Windows) {
-			char[1] buf;
-			DWORD d;
-			import std.conv;
-			if(!ReadFile(inputHandle, buf.ptr, cast(int) buf.length, &d, null))
-				throw new Exception("ReadFile " ~ to!string(GetLastError()));
-			return buf[0];
+				throw new Exception("read failed");
 		}
+
+		//terminal.writef("RAW READ: %d\n", buf[0]);
+
+		if(ret == 1)
+			return inputPrefilter ? inputPrefilter(buf[0]) : buf[0];
+		else
+			assert(0); // read too much, should be impossible
 	}
 
 	version(Posix)
 		int delegate(char) inputPrefilter;
 
-	// for VT
+	version(Posix)
 	dchar nextChar(int starting) {
 		if(starting <= 127)
 			return cast(dchar) starting;
@@ -2429,7 +1707,7 @@ struct RealTimeConsoleInput {
 		auto oldWidth = terminal.width;
 		auto oldHeight = terminal.height;
 		terminal.updateSize();
-		version(WithSignals)
+		version(Posix)
 		windowSizeChanged = false;
 		return InputEvent(SizeChangedEvent(oldWidth, oldHeight, terminal.width, terminal.height), terminal);
 	}
@@ -2448,29 +1726,28 @@ struct RealTimeConsoleInput {
 	/// require the module arsd.eventloop (Linux only at this point)
 	InputEvent nextEvent() {
 		terminal.flush();
+		if(inputQueue.length) {
+			auto e = inputQueue[0];
+			inputQueue = inputQueue[1 .. $];
+			return e;
+		}
 
 		wait_for_more:
-		version(WithSignals)
+		version(Posix)
 		if(interrupted) {
 			interrupted = false;
 			return InputEvent(UserInterruptionEvent(), terminal);
 		}
 
-		version(WithSignals)
+		version(Posix)
 		if(hangedUp) {
 			hangedUp = false;
 			return InputEvent(HangupEvent(), terminal);
 		}
 
-		version(WithSignals)
+		version(Posix)
 		if(windowSizeChanged) {
 			return checkWindowSizeChanged();
-		}
-
-		if(inputQueue.length) {
-			auto e = inputQueue[0];
-			inputQueue = inputQueue[1 .. $];
-			return e;
 		}
 
 		auto more = readNextEvents();
@@ -2504,23 +1781,14 @@ struct RealTimeConsoleInput {
 
 	InputEvent[] inputQueue;
 
+	version(Windows)
 	InputEvent[] readNextEvents() {
-		if(UseVtSequences)
-			return readNextEventsVt();
-		else version(Win32Console)
-			return readNextEventsWin32();
-		else
-			assert(0);
-	}
-
-	version(Win32Console)
-	InputEvent[] readNextEventsWin32() {
 		terminal.flush(); // make sure all output is sent out before waiting for anything
 
 		INPUT_RECORD[32] buffer;
 		DWORD actuallyRead;
 			// FIXME: ReadConsoleInputW
-		auto success = ReadConsoleInputW(inputHandle, buffer.ptr, buffer.length, &actuallyRead);
+		auto success = ReadConsoleInputA(inputHandle, buffer.ptr, buffer.length, &actuallyRead);
 		if(success == 0)
 			throw new Exception("ReadConsoleInput");
 
@@ -2533,22 +1801,14 @@ struct RealTimeConsoleInput {
 					CharacterEvent e;
 					NonCharacterKeyEvent ne;
 
+					e.eventType = ev.bKeyDown ? CharacterEvent.Type.Pressed : CharacterEvent.Type.Released;
+					ne.eventType = ev.bKeyDown ? NonCharacterKeyEvent.Type.Pressed : NonCharacterKeyEvent.Type.Released;
+
 					ke.pressed = ev.bKeyDown ? true : false;
 
 					// only send released events when specifically requested
-					// terminal.writefln("got %s %s", ev.UnicodeChar, ev.bKeyDown);
-					if(ev.UnicodeChar && ev.wVirtualKeyCode == VK_MENU && ev.bKeyDown == 0) {
-						// this indicates Windows is actually sending us
-						// an alt+xxx key sequence, may also be a unicode paste.
-						// either way, it cool.
-						ke.pressed = true;
-					} else {
-						if(!(flags & ConsoleInputFlags.releasedKeys) && !ev.bKeyDown)
-							break;
-					}
-
-					e.eventType = ke.pressed ? CharacterEvent.Type.Pressed : CharacterEvent.Type.Released;
-					ne.eventType = ke.pressed ? NonCharacterKeyEvent.Type.Pressed : NonCharacterKeyEvent.Type.Released;
+					if(!(flags & ConsoleInputFlags.releasedKeys) && !ev.bKeyDown)
+						break;
 
 					e.modifierState = ev.dwControlKeyState;
 					ne.modifierState = ev.dwControlKeyState;
@@ -2556,32 +1816,12 @@ struct RealTimeConsoleInput {
 
 					if(ev.UnicodeChar) {
 						// new style event goes first
+						ke.which = cast(dchar) cast(wchar) ev.UnicodeChar;
+						newEvents ~= InputEvent(ke, terminal);
 
-						if(ev.UnicodeChar == 3) {
-							// handling this internally for linux compat too
-							newEvents ~= InputEvent(UserInterruptionEvent(), terminal);
-						} else if(ev.UnicodeChar == '\r') {
-							// translating \r to \n for same result as linux...
-							ke.which = cast(dchar) cast(wchar) '\n';
-							newEvents ~= InputEvent(ke, terminal);
-
-							// old style event then follows as the fallback
-							e.character = cast(dchar) cast(wchar) '\n';
-							newEvents ~= InputEvent(e, terminal);
-						} else if(ev.wVirtualKeyCode == 0x1b) {
-							ke.which = cast(KeyboardEvent.Key) (ev.wVirtualKeyCode + 0xF0000);
-							newEvents ~= InputEvent(ke, terminal);
-
-							ne.key = cast(NonCharacterKeyEvent.Key) ev.wVirtualKeyCode;
-							newEvents ~= InputEvent(ne, terminal);
-						} else {
-							ke.which = cast(dchar) cast(wchar) ev.UnicodeChar;
-							newEvents ~= InputEvent(ke, terminal);
-
-							// old style event then follows as the fallback
-							e.character = cast(dchar) cast(wchar) ev.UnicodeChar;
-							newEvents ~= InputEvent(e, terminal);
-						}
+						// old style event then follows as the fallback
+						e.character = cast(dchar) cast(wchar) ev.UnicodeChar;
+						newEvents ~= InputEvent(e, terminal);
 					} else {
 						// old style event
 						ne.key = cast(NonCharacterKeyEvent.Key) ev.wVirtualKeyCode;
@@ -2659,8 +1899,8 @@ struct RealTimeConsoleInput {
 		return newEvents;
 	}
 
-	// for UseVtSequences....
-	InputEvent[] readNextEventsVt() {
+	version(Posix)
+	InputEvent[] readNextEvents() {
 		terminal.flush(); // make sure all output is sent out before we try to get input
 
 		// we want to starve the read, especially if we're called from an edge-triggered
@@ -2672,7 +1912,7 @@ struct RealTimeConsoleInput {
 		// it is the simplest thing that can possibly work. The alternative would be
 		// doing non-blocking reads and buffering in the nextRaw function (not a bad idea
 		// btw, just a bit more of a hassle).
-		while(timedCheckForInput_bypassingBuffer(0)) {
+		while(timedCheckForInput(0)) {
 			auto ne = readNextEventsHelper();
 			initial ~= ne;
 			foreach(n; ne)
@@ -2684,8 +1924,8 @@ struct RealTimeConsoleInput {
 	}
 
 	// The helper reads just one actual event from the pipe...
-	// for UseVtSequences....
-	InputEvent[] readNextEventsHelper(int remainingFromLastTime = int.max) {
+	version(Posix)
+	InputEvent[] readNextEventsHelper() {
 		InputEvent[] charPressAndRelease(dchar character) {
 			if((flags & ConsoleInputFlags.releasedKeys))
 				return [
@@ -2719,23 +1959,6 @@ struct RealTimeConsoleInput {
 				// old style event
 				InputEvent(NonCharacterKeyEvent(NonCharacterKeyEvent.Type.Pressed, key, modifiers), terminal)
 			];
-		}
-
-		InputEvent[] keyPressAndRelease2(dchar c, uint modifiers = 0) {
-			if((flags & ConsoleInputFlags.releasedKeys))
-				return [
-					InputEvent(KeyboardEvent(true, c, modifiers), terminal),
-					InputEvent(KeyboardEvent(false, c, modifiers), terminal),
-					// old style event
-					InputEvent(CharacterEvent(CharacterEvent.Type.Pressed, c, modifiers), terminal),
-					InputEvent(CharacterEvent(CharacterEvent.Type.Released, c, modifiers), terminal),
-				];
-			else return [
-				InputEvent(KeyboardEvent(true, c, modifiers), terminal),
-				// old style event
-				InputEvent(CharacterEvent(CharacterEvent.Type.Pressed, c, modifiers), terminal)
-			];
-
 		}
 
 		char[30] sequenceBuffer;
@@ -2825,7 +2048,7 @@ struct RealTimeConsoleInput {
 				default:
 					// don't know it, just ignore
 					//import std.stdio;
-					//terminal.writeln(cap);
+					//writeln(cap);
 			}
 
 			return null;
@@ -2864,41 +2087,6 @@ struct RealTimeConsoleInput {
 						}
 					}
 					return [InputEvent(PasteEvent(data), terminal)];
-				case "\033[220~":
-					// bracketed hyperlink begin (arsd extension)
-
-					string data;
-					for(;;) {
-						auto n = nextRaw();
-						if(n == '\033') {
-							n = nextRaw();
-							if(n == '[') {
-								auto esc = readEscapeSequence(sequenceBuffer);
-								if(esc == "\033[221~") {
-									// complete!
-									break;
-								} else {
-									// was something else apparently, but it is pasted, so keep it
-									data ~= esc;
-								}
-							} else {
-								data ~= '\033';
-								data ~= cast(char) n;
-							}
-						} else {
-							data ~= cast(char) n;
-						}
-					}
-
-					import std.string, std.conv;
-					auto idx = data.indexOf(";");
-					auto id = data[0 .. idx].to!ushort;
-					data = data[idx + 1 .. $];
-					idx = data.indexOf(";");
-					auto cmd = data[0 .. idx].to!ushort;
-					data = data[idx + 1 .. $];
-
-					return [InputEvent(LinkEvent(data, id, cmd), terminal)];
 				case "\033[M":
 					// mouse event
 					auto buttonCode = nextRaw() - 32;
@@ -2963,111 +2151,92 @@ struct RealTimeConsoleInput {
 
 					return [InputEvent(m, terminal)];
 				default:
-					// screen doesn't actually do the modifiers, but
-					// it uses the same format so this branch still works fine.
-					if(terminal.terminalInFamily("xterm", "screen", "tmux")) {
-						import std.conv, std.string;
-						auto terminator = sequence[$ - 1];
-						auto parts = sequence[2 .. $ - 1].split(";");
-						// parts[0] and terminator tells us the key
-						// parts[1] tells us the modifierState
-
-						uint modifierState;
-
-						int modGot;
-						if(parts.length > 1)
-							modGot = to!int(parts[1]);
-						mod_switch: switch(modGot) {
-							case 2: modifierState |= ModifierState.shift; break;
-							case 3: modifierState |= ModifierState.alt; break;
-							case 4: modifierState |= ModifierState.shift | ModifierState.alt; break;
-							case 5: modifierState |= ModifierState.control; break;
-							case 6: modifierState |= ModifierState.shift | ModifierState.control; break;
-							case 7: modifierState |= ModifierState.alt | ModifierState.control; break;
-							case 8: modifierState |= ModifierState.shift | ModifierState.alt | ModifierState.control; break;
-							case 9:
-							..
-							case 16:
-								modifierState |= ModifierState.meta;
-								if(modGot != 9) {
-									modGot -= 8;
-									goto mod_switch;
-								}
-							break;
-
-							// this is an extension in my own terminal emulator
-							case 20:
-							..
-							case 36:
-								modifierState |= ModifierState.windows;
-								modGot -= 20;
-								goto mod_switch;
-							default:
-						}
-
-						switch(terminator) {
-							case 'A': return keyPressAndRelease(NonCharacterKeyEvent.Key.UpArrow, modifierState);
-							case 'B': return keyPressAndRelease(NonCharacterKeyEvent.Key.DownArrow, modifierState);
-							case 'C': return keyPressAndRelease(NonCharacterKeyEvent.Key.RightArrow, modifierState);
-							case 'D': return keyPressAndRelease(NonCharacterKeyEvent.Key.LeftArrow, modifierState);
-
-							case 'H': return keyPressAndRelease(NonCharacterKeyEvent.Key.Home, modifierState);
-							case 'F': return keyPressAndRelease(NonCharacterKeyEvent.Key.End, modifierState);
-
-							case 'P': return keyPressAndRelease(NonCharacterKeyEvent.Key.F1, modifierState);
-							case 'Q': return keyPressAndRelease(NonCharacterKeyEvent.Key.F2, modifierState);
-							case 'R': return keyPressAndRelease(NonCharacterKeyEvent.Key.F3, modifierState);
-							case 'S': return keyPressAndRelease(NonCharacterKeyEvent.Key.F4, modifierState);
-
-							case '~': // others
-								switch(parts[0]) {
-									case "1": return keyPressAndRelease(NonCharacterKeyEvent.Key.Home, modifierState);
-									case "4": return keyPressAndRelease(NonCharacterKeyEvent.Key.End, modifierState);
-									case "5": return keyPressAndRelease(NonCharacterKeyEvent.Key.PageUp, modifierState);
-									case "6": return keyPressAndRelease(NonCharacterKeyEvent.Key.PageDown, modifierState);
-									case "2": return keyPressAndRelease(NonCharacterKeyEvent.Key.Insert, modifierState);
-									case "3": return keyPressAndRelease(NonCharacterKeyEvent.Key.Delete, modifierState);
-
-									case "15": return keyPressAndRelease(NonCharacterKeyEvent.Key.F5, modifierState);
-									case "17": return keyPressAndRelease(NonCharacterKeyEvent.Key.F6, modifierState);
-									case "18": return keyPressAndRelease(NonCharacterKeyEvent.Key.F7, modifierState);
-									case "19": return keyPressAndRelease(NonCharacterKeyEvent.Key.F8, modifierState);
-									case "20": return keyPressAndRelease(NonCharacterKeyEvent.Key.F9, modifierState);
-									case "21": return keyPressAndRelease(NonCharacterKeyEvent.Key.F10, modifierState);
-									case "23": return keyPressAndRelease(NonCharacterKeyEvent.Key.F11, modifierState);
-									case "24": return keyPressAndRelease(NonCharacterKeyEvent.Key.F12, modifierState);
-
-									// starting at 70 i do some magic for like shift+enter etc.
-									// this only happens on my own terminal emulator.
-									case "70": return keyPressAndRelease(NonCharacterKeyEvent.Key.ScrollLock, modifierState);
-									case "78": return keyPressAndRelease2('\b', modifierState);
-									case "79": return keyPressAndRelease2('\t', modifierState);
-									case "83": return keyPressAndRelease2('\n', modifierState);
-									default:
-								}
-							break;
-
-							default:
-						}
-					} else if(terminal.terminalInFamily("rxvt")) {
-						// look it up in the termcap key database
-						string cap = terminal.findSequenceInTermcap(sequence);
-						if(cap !is null) {
-						//terminal.writeln("found in termcap " ~ cap);
-							return translateTermcapName(cap);
-						}
-						// FIXME: figure these out. rxvt seems to just change the terminator while keeping the rest the same
-						// though it isn't consistent. ugh.
+					// look it up in the termcap key database
+					auto cap = terminal.findSequenceInTermcap(sequence);
+					if(cap !is null) {
+						return translateTermcapName(cap);
 					} else {
-						// maybe we could do more terminals, but linux doesn't even send it and screen just seems to pass through, so i don't think so; xterm prolly covers most them anyway
-						// so this space is semi-intentionally left blank
-						//terminal.writeln("wtf ", sequence[1..$]);
+						if(terminal.terminalInFamily("xterm")) {
+							import std.conv, std.string;
+							auto terminator = sequence[$ - 1];
+							auto parts = sequence[2 .. $ - 1].split(";");
+							// parts[0] and terminator tells us the key
+							// parts[1] tells us the modifierState
 
-						// look it up in the termcap key database
-						string cap = terminal.findSequenceInTermcap(sequence);
-						if(cap !is null) {
-						//terminal.writeln("found in termcap " ~ cap);
-							return translateTermcapName(cap);
+							uint modifierState;
+
+							int modGot;
+							if(parts.length > 1)
+								modGot = to!int(parts[1]);
+							mod_switch: switch(modGot) {
+								case 2: modifierState |= ModifierState.shift; break;
+								case 3: modifierState |= ModifierState.alt; break;
+								case 4: modifierState |= ModifierState.shift | ModifierState.alt; break;
+								case 5: modifierState |= ModifierState.control; break;
+								case 6: modifierState |= ModifierState.shift | ModifierState.control; break;
+								case 7: modifierState |= ModifierState.alt | ModifierState.control; break;
+								case 8: modifierState |= ModifierState.shift | ModifierState.alt | ModifierState.control; break;
+								case 9:
+								..
+								case 16:
+									modifierState |= ModifierState.meta;
+									if(modGot != 9) {
+										modGot -= 8;
+										goto mod_switch;
+									}
+								break;
+
+								// this is an extension in my own terminal emulator
+								case 20:
+								..
+								case 36:
+									modifierState |= ModifierState.windows;
+									modGot -= 20;
+									goto mod_switch;
+								default:
+							}
+
+							switch(terminator) {
+								case 'A': return keyPressAndRelease(NonCharacterKeyEvent.Key.UpArrow, modifierState);
+								case 'B': return keyPressAndRelease(NonCharacterKeyEvent.Key.DownArrow, modifierState);
+								case 'C': return keyPressAndRelease(NonCharacterKeyEvent.Key.RightArrow, modifierState);
+								case 'D': return keyPressAndRelease(NonCharacterKeyEvent.Key.LeftArrow, modifierState);
+
+								case 'H': return keyPressAndRelease(NonCharacterKeyEvent.Key.Home, modifierState);
+								case 'F': return keyPressAndRelease(NonCharacterKeyEvent.Key.End, modifierState);
+
+								case 'P': return keyPressAndRelease(NonCharacterKeyEvent.Key.F1, modifierState);
+								case 'Q': return keyPressAndRelease(NonCharacterKeyEvent.Key.F2, modifierState);
+								case 'R': return keyPressAndRelease(NonCharacterKeyEvent.Key.F3, modifierState);
+								case 'S': return keyPressAndRelease(NonCharacterKeyEvent.Key.F4, modifierState);
+
+								case '~': // others
+									switch(parts[0]) {
+										case "5": return keyPressAndRelease(NonCharacterKeyEvent.Key.PageUp, modifierState);
+										case "6": return keyPressAndRelease(NonCharacterKeyEvent.Key.PageDown, modifierState);
+										case "2": return keyPressAndRelease(NonCharacterKeyEvent.Key.Insert, modifierState);
+										case "3": return keyPressAndRelease(NonCharacterKeyEvent.Key.Delete, modifierState);
+
+										case "15": return keyPressAndRelease(NonCharacterKeyEvent.Key.F5, modifierState);
+										case "17": return keyPressAndRelease(NonCharacterKeyEvent.Key.F6, modifierState);
+										case "18": return keyPressAndRelease(NonCharacterKeyEvent.Key.F7, modifierState);
+										case "19": return keyPressAndRelease(NonCharacterKeyEvent.Key.F8, modifierState);
+										case "20": return keyPressAndRelease(NonCharacterKeyEvent.Key.F9, modifierState);
+										case "21": return keyPressAndRelease(NonCharacterKeyEvent.Key.F10, modifierState);
+										case "23": return keyPressAndRelease(NonCharacterKeyEvent.Key.F11, modifierState);
+										case "24": return keyPressAndRelease(NonCharacterKeyEvent.Key.F12, modifierState);
+										default:
+									}
+								break;
+
+								default:
+							}
+						} else if(terminal.terminalInFamily("rxvt")) {
+							// FIXME: figure these out. rxvt seems to just change the terminator while keeping the rest the same
+							// though it isn't consistent. ugh.
+						} else {
+							// maybe we could do more terminals, but linux doesn't even send it and screen just seems to pass through, so i don't think so; xterm prolly covers most them anyway
+							// so this space is semi-intentionally left blank
 						}
 					}
 			}
@@ -3075,13 +2244,13 @@ struct RealTimeConsoleInput {
 			return null;
 		}
 
-		auto c = remainingFromLastTime == int.max ? nextRaw(true) : remainingFromLastTime;
+		auto c = nextRaw(true);
 		if(c == -1)
 			return null; // interrupted; give back nothing so the other level can recheck signal flags
 		if(c == 0)
 			return [InputEvent(EndOfFileEvent(), terminal)];
 		if(c == '\033') {
-			if(timedCheckForInput_bypassingBuffer(50)) {
+			if(timedCheckForInput(50)) {
 				// escape sequence
 				c = nextRaw();
 				if(c == '[') { // CSI, ends on anything >= 'A'
@@ -3103,9 +2272,6 @@ struct RealTimeConsoleInput {
 					} else {
 						return translateTermcapName(cap);
 					}
-				} else if(c == '\033') {
-					// could be escape followed by an escape sequence!
-					return keyPressAndRelease(NonCharacterKeyEvent.Key.escape) ~ readNextEventsHelper(c);
 				} else {
 					// I don't know, probably unsupported terminal or just quick user input or something
 					return keyPressAndRelease(NonCharacterKeyEvent.Key.escape) ~ charPressAndRelease(nextChar(c));
@@ -3128,8 +2294,6 @@ struct RealTimeConsoleInput {
 struct KeyboardEvent {
 	bool pressed; ///
 	dchar which; ///
-	alias key = which; /// I often use this when porting old to new so i took it
-	alias character = which; /// I often use this when porting old to new so i took it
 	uint modifierState; ///
 
 	///
@@ -3165,7 +2329,6 @@ struct KeyboardEvent {
 		End = 0x23 + 0xF0000, /// .
 		PageUp = 0x21 + 0xF0000, /// .
 		PageDown = 0x22 + 0xF0000, /// .
-		ScrollLock = 0x91 + 0xF0000, /// unlikely to work outside my custom terminal emulator
 	}
 
 
@@ -3221,7 +2384,6 @@ struct NonCharacterKeyEvent {
 		End = 0x23, /// .
 		PageUp = 0x21, /// .
 		PageDown = 0x22, /// .
-		ScrollLock = 0x91, /// unlikely to work outside my terminal emulator
 		}
 	Key key; /// .
 
@@ -3232,22 +2394,6 @@ struct NonCharacterKeyEvent {
 /// .
 struct PasteEvent {
 	string pastedText; /// .
-}
-
-/++
-	Indicates a hyperlink was clicked in my custom terminal emulator
-	or with version `TerminalDirectToEmulator`.
-
-	You can simply ignore this event in a `final switch` if you aren't
-	using the feature.
-
-	History:
-		Added March 18, 2020
-+/
-struct LinkEvent {
-	string text; ///
-	ushort identifier; ///
-	ushort command; /// set by the terminal to indicate how it was clicked. values tbd
 }
 
 /// .
@@ -3300,7 +2446,7 @@ struct EndOfFileEvent {}
 
 interface CustomEvent {}
 
-version(Win32Console)
+version(Windows)
 enum ModifierState : uint {
 	shift = 0x10,
 	control = 0x8 | 0x4, // 8 == left ctrl, 4 == right ctrl
@@ -3347,18 +2493,12 @@ struct InputEvent {
 		CharacterEvent, /// Do not use this in new programs, use KeyboardEvent instead
 		NonCharacterKeyEvent, /// Do not use this in new programs, use KeyboardEvent instead
 		PasteEvent, /// The user pasted some text. Not always available, the pasted text might come as a series of character events instead.
-		LinkEvent, /// User clicked a hyperlink you created. Simply ignore if you are not using that feature.
 		MouseEvent, /// only sent if you subscribed to mouse events
 		SizeChangedEvent, /// only sent if you subscribed to size events
 		UserInterruptionEvent, /// the user hit ctrl+c
 		EndOfFileEvent, /// stdin has received an end of file
 		HangupEvent, /// the terminal hanged up - for example, if the user closed a terminal emulator
 		CustomEvent /// .
-	}
-
-	/// If this event is deprecated, you should filter it out in new programs
-	bool isDeprecated() {
-		return type == Type.CharacterEvent || type == Type.NonCharacterKeyEvent;
 	}
 
 	/// .
@@ -3394,8 +2534,6 @@ struct InputEvent {
 			return nonCharacterKeyEvent;
 		else static if(T == Type.PasteEvent)
 			return pasteEvent;
-		else static if(T == Type.LinkEvent)
-			return linkEvent;
 		else static if(T == Type.MouseEvent)
 			return mouseEvent;
 		else static if(T == Type.SizeChangedEvent)
@@ -3434,10 +2572,6 @@ struct InputEvent {
 			t = Type.PasteEvent;
 			pasteEvent = c;
 		}
-		this(LinkEvent c, Terminal* p) {
-			t = Type.LinkEvent;
-			linkEvent = c;
-		}
 		this(MouseEvent c, Terminal* p) {
 			t = Type.MouseEvent;
 			mouseEvent = c;
@@ -3472,281 +2606,10 @@ struct InputEvent {
 			UserInterruptionEvent userInterruptionEvent;
 			HangupEvent hangupEvent;
 			EndOfFileEvent endOfFileEvent;
-			LinkEvent linkEvent;
 			CustomEvent customEvent;
 		}
 	}
 }
-
-version(Demo)
-/// View the source of this!
-void main() {
-	auto terminal = Terminal(ConsoleOutputType.cellular);
-
-	//terminal.color(Color.DEFAULT, Color.DEFAULT);
-
-	//
-	///*
-	auto getter = new FileLineGetter(&terminal, "test");
-	getter.prompt = "> ";
-	getter.history = ["abcdefghijklmnopqrstuvwzyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
-	terminal.writeln("\n" ~ getter.getline());
-	terminal.writeln("\n" ~ getter.getline());
-	terminal.writeln("\n" ~ getter.getline());
-	getter.dispose();
-	//*/
-
-	terminal.writeln(terminal.getline());
-	terminal.writeln(terminal.getline());
-	terminal.writeln(terminal.getline());
-
-	//input.getch();
-
-	// return;
-	//
-
-	terminal.setTitle("Basic I/O");
-	auto input = RealTimeConsoleInput(&terminal, ConsoleInputFlags.raw | ConsoleInputFlags.allInputEventsWithRelease);
-	terminal.color(Color.green | Bright, Color.black);
-
-	terminal.write("test some long string to see if it wraps or what because i dont really know what it is going to do so i just want to test i think it will wrap but gotta be sure lolololololololol");
-	terminal.writefln("%d %d", terminal.cursorX, terminal.cursorY);
-
-	terminal.color(Color.DEFAULT, Color.DEFAULT);
-
-	int centerX = terminal.width / 2;
-	int centerY = terminal.height / 2;
-
-	bool timeToBreak = false;
-
-	terminal.hyperlink("test", 4);
-	terminal.hyperlink("another", 7);
-
-	void handleEvent(InputEvent event) {
-		//terminal.writef("%s\n", event.type);
-		final switch(event.type) {
-			case InputEvent.Type.LinkEvent:
-				auto ev = event.get!(InputEvent.Type.LinkEvent);
-				terminal.writeln(ev);
-			break;
-			case InputEvent.Type.UserInterruptionEvent:
-			case InputEvent.Type.HangupEvent:
-			case InputEvent.Type.EndOfFileEvent:
-				timeToBreak = true;
-				version(with_eventloop) {
-					import arsd.eventloop;
-					exit();
-				}
-			break;
-			case InputEvent.Type.SizeChangedEvent:
-				auto ev = event.get!(InputEvent.Type.SizeChangedEvent);
-				terminal.writeln(ev);
-			break;
-			case InputEvent.Type.KeyboardEvent:
-				auto ev = event.get!(InputEvent.Type.KeyboardEvent);
-					terminal.writef("\t%s", ev);
-				terminal.writef(" (%s)", cast(KeyboardEvent.Key) ev.which);
-				terminal.writeln();
-				if(ev.which == 'Q') {
-					timeToBreak = true;
-					version(with_eventloop) {
-						import arsd.eventloop;
-						exit();
-					}
-				}
-
-				if(ev.which == 'C')
-					terminal.clear();
-			break;
-			case InputEvent.Type.CharacterEvent: // obsolete
-				auto ev = event.get!(InputEvent.Type.CharacterEvent);
-				terminal.writef("\t%s\n", ev);
-			break;
-			case InputEvent.Type.NonCharacterKeyEvent: // obsolete
-				terminal.writef("\t%s\n", event.get!(InputEvent.Type.NonCharacterKeyEvent));
-			break;
-			case InputEvent.Type.PasteEvent:
-				terminal.writef("\t%s\n", event.get!(InputEvent.Type.PasteEvent));
-			break;
-			case InputEvent.Type.MouseEvent:
-				//terminal.writef("\t%s\n", event.get!(InputEvent.Type.MouseEvent));
-			break;
-			case InputEvent.Type.CustomEvent:
-			break;
-		}
-
-		//terminal.writefln("%d %d", terminal.cursorX, terminal.cursorY);
-
-		/*
-		if(input.kbhit()) {
-			auto c = input.getch();
-			if(c == 'q' || c == 'Q')
-				break;
-			terminal.moveTo(centerX, centerY);
-			terminal.writef("%c", c);
-			terminal.flush();
-		}
-		usleep(10000);
-		*/
-	}
-
-	version(with_eventloop) {
-		import arsd.eventloop;
-		addListener(&handleEvent);
-		loop();
-	} else {
-		loop: while(true) {
-			auto event = input.nextEvent();
-			handleEvent(event);
-			if(timeToBreak)
-				break loop;
-		}
-	}
-}
-
-enum TerminalCapabilities : uint {
-	minimal = 0,
-	vt100 = 1 << 0,
-
-	// my special terminal emulator extensions
-	arsdClipboard = 1 << 15, // 90 in caps
-	arsdImage = 1 << 16, // 91 in caps
-	arsdHyperlinks = 1 << 17, // 92 in caps
-}
-
-version(Posix)
-private uint /* TerminalCapabilities bitmask */ getTerminalCapabilities(int fdIn, int fdOut) {
-	if(fdIn == -1 || fdOut == -1)
-		return TerminalCapabilities.minimal;
-
-	import std.conv;
-	import core.stdc.errno;
-	import core.sys.posix.unistd;
-
-	ubyte[128] hack2;
-	termios old;
-	ubyte[128] hack;
-	tcgetattr(fdIn, &old);
-	auto n = old;
-	n.c_lflag &= ~(ICANON | ECHO);
-	tcsetattr(fdIn, TCSANOW, &n);
-	scope(exit)
-		tcsetattr(fdIn, TCSANOW, &old);
-
-	// drain the buffer? meh
-
-	string cmd = "\033[c";
-	auto err = write(fdOut, cmd.ptr, cmd.length);
-	if(err != cmd.length) {
-		throw new Exception("couldn't ask terminal for ID");
-	}
-
-	// reading directly to bypass any buffering
-	int retries = 16;
-	int len;
-	ubyte[96] buffer;
-	try_again:
-
-
-	timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = 250 * 1000; // 250 ms
-
-	fd_set fs;
-	FD_ZERO(&fs);
-
-	FD_SET(fdIn, &fs);
-	if(select(fdIn + 1, &fs, null, null, &tv) == -1) {
-		goto try_again;
-	}
-
-	if(FD_ISSET(fdIn, &fs)) {
-		auto len2 = read(fdIn, &buffer[len], buffer.length - len);
-		if(len2 <= 0) {
-			retries--;
-			if(retries > 0)
-				goto try_again;
-			throw new Exception("can't get terminal id");
-		} else {
-			len += len2;
-		}
-	} else {
-		// no data... assume terminal doesn't support giving an answer
-		return TerminalCapabilities.minimal;
-	}
-
-	ubyte[] answer;
-	bool hasAnswer(ubyte[] data) {
-		if(data.length < 4)
-			return false;
-		answer = null;
-		size_t start;
-		int position = 0;
-		foreach(idx, ch; data) {
-			switch(position) {
-				case 0:
-					if(ch == '\033') {
-						start = idx;
-						position++;
-					}
-				break;
-				case 1:
-					if(ch == '[')
-						position++;
-					else
-						position = 0;
-				break;
-				case 2:
-					if(ch == '?')
-						position++;
-					else
-						position = 0;
-				break;
-				case 3:
-					// body
-					if(ch == 'c') {
-						answer = data[start .. idx + 1];
-						return true;
-					} else if(ch == ';' || (ch >= '0' && ch <= '9')) {
-						// good, keep going
-					} else {
-						// invalid, drop it
-						position = 0;
-					}
-				break;
-				default: assert(0);
-			}
-		}
-		return false;
-	}
-
-	auto got = buffer[0 .. len];
-	if(!hasAnswer(got)) {
-		goto try_again;
-	}
-	auto gots = cast(char[]) answer[3 .. $-1];
-
-	import std.string;
-
-	auto pieces = split(gots, ";");
-	uint ret = TerminalCapabilities.vt100;
-	foreach(p; pieces)
-		switch(p) {
-			case "90":
-				ret |= TerminalCapabilities.arsdClipboard;
-			break;
-			case "91":
-				ret |= TerminalCapabilities.arsdImage;
-			break;
-			case "92":
-				ret |= TerminalCapabilities.arsdHyperlinks;
-			break;
-			default:
-		}
-	return ret;
-}
-
-private extern(C) int mkstemp(char *templ);
 
 /**
 	FIXME: support lines that wrap
@@ -3840,52 +2703,20 @@ class LineGetter {
 
 	/// You can customize the colors here. You should set these after construction, but before
 	/// calling startGettingLine or getline.
-	Color suggestionForeground = Color.blue;
-	Color regularForeground = Color.DEFAULT; /// ditto
-	Color background = Color.DEFAULT; /// ditto
-	Color promptColor = Color.DEFAULT; /// ditto
-	Color specialCharBackground = Color.green; /// ditto
+	Color suggestionForeground;
+	Color regularForeground; /// .
+	Color background; /// .
 	//bool reverseVideo;
 
 	/// Set this if you want a prompt to be drawn with the line. It does NOT support color in string.
-	@property void prompt(string p) {
-		this.prompt_ = p;
+	string prompt;
 
-		promptLength = 0;
-		foreach(dchar c; p)
-			promptLength++;
-	}
+	/// Turn on auto suggest if you want a greyed thing of what tab
+	/// would be able to fill in as you type.
+	///
+	/// You might want to turn it off if generating a completion list is slow.
+	bool autoSuggest = true;
 
-	/// ditto
-	@property string prompt() {
-		return this.prompt_;
-	}
-
-	private string prompt_;
-	private int promptLength;
-
-	/++
-		Turn on auto suggest if you want a greyed thing of what tab
-		would be able to fill in as you type.
-
-		You might want to turn it off if generating a completion list is slow.
-
-		Or if you know you want it, be sure to turn it on explicitly in your
-		code because I reserve the right to change the default without advance notice.
-
-		History:
-			On March 4, 2020, I changed the default to `false` because it
-			is kinda slow and not useful in all cases.
-	+/
-	bool autoSuggest = false;
-
-	/++
-		Returns true if there was any input in the buffer. Can be
-		checked in the case of a [UserInterruptionException].
-	+/
-	bool hadInput() {
-		return line.length > 0;
-	}
 
 	/// Override this if you don't want all lines added to the history.
 	/// You can return null to not add it at all, or you can transform it.
@@ -3905,17 +2736,9 @@ class LineGetter {
 			file.writeln(item);
 	}
 
-	/++
-		History:
-			Introduced on January 31, 2020
-	+/
-	/* virtual */ string historyFileExtension() {
-		return ".history";
-	}
-
 	private string historyPath() {
 		import std.path;
-		auto filename = historyFileDirectory() ~ dirSeparator ~ historyFilename ~ historyFileExtension();
+		auto filename = historyFileDirectory() ~ dirSeparator ~ historyFilename ~ ".history";
 		return filename;
 	}
 
@@ -3932,85 +2755,21 @@ class LineGetter {
 		}
 	}
 
-	/++
+	/**
 		Override this to provide tab completion. You may use the candidate
 		argument to filter the list, but you don't have to (LineGetter will
-		do it for you on the values you return). This means you can ignore
-		the arguments if you like.
+		do it for you on the values you return).
 
 		Ideally, you wouldn't return more than about ten items since the list
 		gets difficult to use if it is too long.
 
-		Tab complete cannot modify text before or after the cursor at this time.
-		I *might* change that later to allow tab complete to fuzzy search and spell
-		check fix before. But right now it ONLY inserts.
-
 		Default is to provide recent command history as autocomplete.
-
-		Returns:
-			This function should return the full string to replace
-			`candidate[tabCompleteStartPoint(args) .. $]`.
-			For example, if your user wrote `wri<tab>` and you want to complete
-			it to `write` or `writeln`, you should return `["write", "writeln"]`.
-
-			If you offer different tab complete in different places, you still
-			need to return the whole string. For example, a file competition of
-			a second argument, when the user writes `terminal.d term<tab>` and you
-			want it to complete to an additional `terminal.d`, you should return
-			`["terminal.d terminal.d"]`; in other words, `candidate ~ completion`
-			for each completion.
-
-			It does this so you can simply return an array of words without having
-			to rebuild that array for each combination.
-
-			To choose the word separator, override [tabCompleteStartPoint].
-
-		Params:
-			candidate = the text of the line up to the text cursor, after
-			which the completed text would be inserted
-
-			afterCursor = the remaining text after the cursor. You can inspect
-			this, but cannot change it - this will be appended to the line
-			after completion, keeping the cursor in the same relative location.
-
-		History:
-			Prior to January 30, 2020, this method took only one argument,
-			`candidate`. It now takes `afterCursor` as well, to allow you to
-			make more intelligent completions with full context.
-	+/
-	/* virtual */ protected string[] tabComplete(in dchar[] candidate, in dchar[] afterCursor) {
+	*/
+	/* virtual */ protected string[] tabComplete(in dchar[] candidate) {
 		return history.length > 20 ? history[0 .. 20] : history;
 	}
 
-	/++
-		Override this to provide a different tab competition starting point. The default
-		is `0`, always completing the complete line, but you may return the index of another
-		character of `candidate` to provide a new split.
-
-		Returns:
-			The index of `candidate` where we should start the slice to keep in [tabComplete].
-			It must be `>= 0 && <= candidate.length`.
-
-		History:
-			Added on February 1, 2020. Initial default is to return 0 to maintain
-			old behavior.
-	+/
-	/* virtual */ protected size_t tabCompleteStartPoint(in dchar[] candidate, in dchar[] afterCursor) {
-		return 0;
-	}
-
-	/++
-		This gives extra information for an item when displaying tab competition details.
-
-		History:
-			Added January 31, 2020.
-
-	+/
-	/* virtual */ protected string tabCompleteHelp(string candidate) {
-		return null;
-	}
-
-	private string[] filterTabCompleteList(string[] list, size_t start) {
+	private string[] filterTabCompleteList(string[] list) {
 		if(list.length == 0)
 			return list;
 
@@ -4019,26 +2778,17 @@ class LineGetter {
 
 		foreach(item; list) {
 			import std.algorithm;
-			if(startsWith(item, line[start .. cursorPosition]))
+			if(startsWith(item, line[0 .. cursorPosition]))
 				f ~= item;
 		}
 
 		return f;
 	}
 
-	/++
-		Override this to provide a custom display of the tab completion list.
-
-		History:
-			Prior to January 31, 2020, it only displayed the list. After
-			that, it would call [tabCompleteHelp] for each candidate and display
-			that string (if present) as well.
-	+/
+	/// Override this to provide a custom display of the tab completion list
 	protected void showTabCompleteList(string[] list) {
 		if(list.length) {
 			// FIXME: allow mouse clicking of an item, that would be cool
-
-			auto start = tabCompleteStartPoint(line[0 .. cursorPosition], line[cursorPosition .. $]);
 
 			// FIXME: scroll
 			//if(terminal.type == ConsoleOutputType.linear) {
@@ -4046,112 +2796,16 @@ class LineGetter {
 				foreach(item; list) {
 					terminal.color(suggestionForeground, background);
 					import std.utf;
-					auto idx = codeLength!char(line[start .. cursorPosition]);
+					auto idx = codeLength!char(line[0 .. cursorPosition]);
 					terminal.write("  ", item[0 .. idx]);
 					terminal.color(regularForeground, background);
-					terminal.write(item[idx .. $]);
-					auto help = tabCompleteHelp(item);
-					if(help !is null) {
-						import std.string;
-						help = help.replace("\t", " ").replace("\n", " ").replace("\r", " ");
-						terminal.write("\t\t");
-						int remaining;
-						if(terminal.cursorX + 2 < terminal.width) {
-							remaining = terminal.width - terminal.cursorX - 2;
-						}
-						if(remaining > 8)
-							terminal.write(remaining < help.length ? help[0 .. remaining] : help);
-					}
-					terminal.writeln();
-
+					terminal.writeln(item[idx .. $]);
 				}
 				updateCursorPosition();
 				redraw();
 			//}
 		}
 	}
-
-	/++
-		Called by the default event loop when the user presses F1. Override
-		`showHelp` to change the UI, override [helpMessage] if you just want
-		to change the message.
-
-		History:
-			Introduced on January 30, 2020
-	+/
-	protected void showHelp() {
-		terminal.writeln();
-		terminal.writeln(helpMessage);
-		updateCursorPosition();
-		redraw();
-	}
-
-	/++
-		History:
-			Introduced on January 30, 2020
-	+/
-	protected string helpMessage() {
-		return "Press F2 to edit current line in your editor. F3 searches. F9 runs current line while maintaining current edit state.";
-	}
-
-	/++
-		History:
-			Introduced on January 30, 2020
-	+/
-	protected dchar[] editLineInEditor(in dchar[] line, in size_t cursorPosition) {
-		import std.conv;
-		import std.process;
-		import std.file;
-
-		char[] tmpName;
-
-		version(Windows) {
-			import core.stdc.string;
-			char[280] path;
-			auto l = GetTempPathA(cast(DWORD) path.length, path.ptr);
-			if(l == 0) throw new Exception("GetTempPathA");
-			path[l] = 0;
-			char[280] name;
-			auto r = GetTempFileNameA(path.ptr, "adr", 0, name.ptr);
-			if(r == 0) throw new Exception("GetTempFileNameA");
-			tmpName = name[0 .. strlen(name.ptr)];
-			scope(exit)
-				std.file.remove(tmpName);
-			std.file.write(tmpName, to!string(line));
-
-			string editor = environment.get("EDITOR", "notepad.exe");
-		} else {
-			import core.stdc.stdlib;
-			import core.sys.posix.unistd;
-			char[120] name;
-			string p = "/tmp/adrXXXXXX";
-			name[0 .. p.length] = p[];
-			name[p.length] = 0;
-			auto fd = mkstemp(name.ptr);
-			tmpName = name[0 .. p.length];
-			if(fd == -1) throw new Exception("mkstemp");
-			scope(exit)
-				close(fd);
-			scope(exit)
-				std.file.remove(tmpName);
-
-			string s = to!string(line);
-			while(s.length) {
-				auto x = write(fd, s.ptr, s.length);
-				if(x == -1) throw new Exception("write");
-				s = s[x .. $];
-			}
-			string editor = environment.get("EDITOR", "vi");
-		}
-
-		// FIXME the spawned process changes terminal state!
-
-		spawnProcess([editor, tmpName]).wait;
-		import std.string;
-		return to!(dchar[])(cast(char[]) std.file.read(tmpName)).chomp;
-	}
-
-	//private RealTimeConsoleInput* rtci;
 
 	/// One-call shop for the main workhorse
 	/// If you already have a RealTimeConsoleInput ready to go, you
@@ -4160,15 +2814,10 @@ class LineGetter {
 	public string getline(RealTimeConsoleInput* input = null) {
 		startGettingLine();
 		if(input is null) {
-			auto i = RealTimeConsoleInput(terminal, ConsoleInputFlags.raw | ConsoleInputFlags.allInputEvents | ConsoleInputFlags.noEolWrap);
-			//rtci = &i;
-			//scope(exit) rtci = null;
-			while(workOnLine(i.nextEvent(), &i)) {}
-		} else {
-			//rtci = input;
-			//scope(exit) rtci = null;
-			while(workOnLine(input.nextEvent(), input)) {}
-		}
+			auto i = RealTimeConsoleInput(terminal, ConsoleInputFlags.raw | ConsoleInputFlags.allInputEvents);
+			while(workOnLine(i.nextEvent())) {}
+		} else
+			while(workOnLine(input.nextEvent())) {}
 		return finishGettingLine();
 	}
 
@@ -4237,11 +2886,9 @@ class LineGetter {
 	private string suggestion(string[] list = null) {
 		import std.algorithm, std.utf;
 		auto relevantLineSection = line[0 .. cursorPosition];
-		auto start = tabCompleteStartPoint(relevantLineSection, line[cursorPosition .. $]);
-		relevantLineSection = relevantLineSection[start .. $];
 		// FIXME: see about caching the list if we easily can
 		if(list is null)
-			list = filterTabCompleteList(tabComplete(relevantLineSection, line[cursorPosition .. $]), start);
+			list = filterTabCompleteList(tabComplete(relevantLineSection));
 
 		if(list.length) {
 			string commonality = list[0];
@@ -4299,86 +2946,35 @@ class LineGetter {
 
 	///
 	void deleteToEndOfLine() {
-		line = line[0 .. cursorPosition];
-		line.assumeSafeAppend();
-		//while(cursorPosition < line.length)
-			//deleteChar();
+		while(cursorPosition < line.length)
+			deleteChar();
 	}
 
 	int availableLineLength() {
-		return terminal.width - startOfLineX - promptLength - 1;
+		return terminal.width - startOfLineX - cast(int) prompt.length - 1;
 	}
 
 	private int lastDrawLength = 0;
 	void redraw() {
-		terminal.hideCursor();
-		scope(exit) {
-			version(Win32Console) {
-				// on Windows, we want to make sure all
-				// is displayed before the cursor jumps around
-				terminal.flush();
-				terminal.showCursor();
-			} else {
-				// but elsewhere, the showCursor is itself buffered,
-				// so we can do it all at once for a slight speed boost
-				terminal.showCursor();
-				//import std.string; import std.stdio; writeln(terminal.writeBuffer.replace("\033", "\\e"));
-				terminal.flush();
-			}
-		}
 		terminal.moveTo(startOfLineX, startOfLineY);
 
 		auto lineLength = availableLineLength();
 		if(lineLength < 0)
 			throw new Exception("too narrow terminal to draw");
 
-		terminal.color(promptColor, background);
 		terminal.write(prompt);
-		terminal.color(regularForeground, background);
 
 		auto towrite = line[horizontalScrollPosition .. $];
 		auto cursorPositionToDrawX = cursorPosition - horizontalScrollPosition;
 		auto cursorPositionToDrawY = 0;
 
-		int written = promptLength;
-
-		void specialChar(char c) {
-			terminal.color(regularForeground, specialCharBackground);
-			terminal.write(c);
-			terminal.color(regularForeground, background);
-
-			written++;
-			lineLength--;
+		if(towrite.length > lineLength) {
+			towrite = towrite[0 .. lineLength];
 		}
 
-		void regularChar(dchar ch) {
-			import std.utf;
-			char[4] buffer;
-			auto l = encode(buffer, ch);
-			// note the Terminal buffers it so meh
-			terminal.write(buffer[0 .. l]);
+		terminal.write(towrite);
 
-			written++;
-			lineLength--;
-		}
-
-		// FIXME: if there is a color at the end of the line it messes up as you scroll
-		// FIXME: need a way to go to multi-line editing
-
-		foreach(dchar ch; towrite) {
-			if(lineLength == 0)
-				break;
-			switch(ch) {
-				case '\n': specialChar('n'); break;
-				case '\r': specialChar('r'); break;
-				case '\a': specialChar('a'); break;
-				case '\t': specialChar('t'); break;
-				case '\b': specialChar('b'); break;
-				case '\033': specialChar('e'); break;
-				default:
-					regularChar(ch);
-			}
-		}
+		lineLength -= towrite.length;
 
 		string suggestion;
 
@@ -4386,23 +2982,20 @@ class LineGetter {
 			suggestion = ((cursorPosition == towrite.length) && autoSuggest) ? this.suggestion() : null;
 			if(suggestion.length) {
 				terminal.color(suggestionForeground, background);
-				foreach(dchar ch; suggestion) {
-					if(lineLength == 0)
-						break;
-					regularChar(ch);
-				}
+				terminal.write(suggestion);
 				terminal.color(regularForeground, background);
 			}
 		}
 
-		// FIXME: graphemes
+		// FIXME: graphemes and utf-8 on suggestion/prompt
+		auto written = cast(int) (towrite.length + suggestion.length + prompt.length);
 
 		if(written < lastDrawLength)
 		foreach(i; written .. lastDrawLength)
 			terminal.write(" ");
 		lastDrawLength = written;
 
-		terminal.moveTo(startOfLineX + cursorPositionToDrawX + promptLength, startOfLineY + cursorPositionToDrawY);
+		terminal.moveTo(startOfLineX + cursorPositionToDrawX + cast(int) prompt.length, startOfLineY + cursorPositionToDrawY);
 	}
 
 	/// Starts getting a new line. Call workOnLine and finishGettingLine afterward.
@@ -4411,64 +3004,19 @@ class LineGetter {
 	/// function or else you might lose events or get exceptions from this.
 	void startGettingLine() {
 		// reset from any previous call first
-		if(!maintainBuffer) {
-			cursorPosition = 0;
-			horizontalScrollPosition = 0;
-			justHitTab = false;
-			currentHistoryViewPosition = 0;
-			if(line.length) {
-				line = line[0 .. 0];
-				line.assumeSafeAppend();
-			}
+		cursorPosition = 0;
+		horizontalScrollPosition = 0;
+		justHitTab = false;
+		currentHistoryViewPosition = 0;
+		if(line.length) {
+			line = line[0 .. 0];
+			line.assumeSafeAppend();
 		}
-
-		maintainBuffer = false;
-
-		initializeWithSize(true);
-
-		terminal.cursor = TerminalCursor.insert;
-		terminal.showCursor();
-	}
-
-	private void positionCursor() {
-		if(cursorPosition == 0)
-			horizontalScrollPosition = 0;
-		else if(cursorPosition == line.length)
-			scrollToEnd();
-		else {
-			// otherwise just try to center it in the screen
-			horizontalScrollPosition = cursorPosition;
-			horizontalScrollPosition -= terminal.width / 2;
-			// align on a code point boundary
-			aligned(horizontalScrollPosition, -1);
-			if(horizontalScrollPosition < 0)
-				horizontalScrollPosition = 0;
-		}
-	}
-
-	private void aligned(ref int what, int direction) {
-		// whereas line is right now dchar[] no need for this
-		// at least until we go by grapheme...
-		/*
-		while(what > 0 && what < line.length && ((line[what] & 0b1100_0000) == 0b1000_0000))
-			what += direction;
-		*/
-	}
-
-	private void initializeWithSize(bool firstEver = false) {
-		auto x = startOfLineX;
 
 		updateCursorPosition();
+		terminal.showCursor();
 
-		if(!firstEver) {
-			startOfLineX = x;
-			positionCursor();
-		}
-
-		lastDrawLength = terminal.width - terminal.cursorX;
-		version(Win32Console)
-			lastDrawLength -= 1; // I don't like this but Windows resizing is different anyway and it is liable to scroll if i go over..
-
+		lastDrawLength = availableLineLength();
 		redraw();
 	}
 
@@ -4476,10 +3024,7 @@ class LineGetter {
 		terminal.flush();
 
 		// then get the current cursor position to start fresh
-		version(TerminalDirectToEmulator) {
-			startOfLineX = terminal.tew.terminalEmulator.cursorX;
-			startOfLineY = terminal.tew.terminalEmulator.cursorY;
-		} else version(Win32Console) {
+		version(Windows) {
 			CONSOLE_SCREEN_BUFFER_INFO info;
 			GetConsoleScreenBufferInfo(terminal.hConsole, &info);
 			startOfLineX = info.dwCursorPosition.X;
@@ -4492,13 +3037,6 @@ class LineGetter {
 
 			// We also can't use RealTimeConsoleInput here because it also does event loop stuff
 			// which would be broken by the child destructor :( (maybe that should be a FIXME)
-
-			/+
-			if(rtci !is null) {
-				while(rtci.timedCheckForInput_bypassingBuffer(1000))
-					rtci.inputQueue ~= rtci.readNextEvents();
-			}
-			+/
 
 			ubyte[128] hack2;
 			termios old;
@@ -4514,46 +3052,20 @@ class LineGetter {
 			terminal.writeStringRaw("\033[6n");
 			terminal.flush();
 
-			import std.conv;
-			import core.stdc.errno;
-
 			import core.sys.posix.unistd;
 			// reading directly to bypass any buffering
-			int retries = 16;
 			ubyte[16] buffer;
-			try_again:
 			auto len = read(terminal.fdIn, buffer.ptr, buffer.length);
-			if(len <= 0) {
-				if(len == -1) {
-					if(errno == EINTR)
-						goto try_again;
-					if(errno == EAGAIN || errno == EWOULDBLOCK) {
-						import core.thread;
-						Thread.sleep(10.msecs);
-						goto try_again;
-					}
-				}
-				throw new Exception("Couldn't get cursor position to initialize get line " ~ to!string(len) ~ " " ~ to!string(errno));
-			}
-			regot:
+			if(len <= 0)
+				throw new Exception("Couldn't get cursor position to initialize get line");
 			auto got = buffer[0 .. len];
-			if(got.length < 6) {
-				auto len2 = read(terminal.fdIn, &buffer[len], buffer.length - len);
-				if(len2 <= 0)
-					throw new Exception("not enough cursor reply answer");
-				else {
-					len += len2;
-					goto regot;
-				}
-			}
-			if(got[0] != '\033' || got[1] != '[' || got[$-1] != 'R') {
-				retries--;
-				if(retries > 0)
-					goto try_again;
-				throw new Exception("wrong answer for cursor position " ~ cast(string) got[1 .. $]);
-			}
+			if(got.length < 6)
+				throw new Exception("not enough cursor reply answer");
+			if(got[0] != '\033' || got[1] != '[' || got[$-1] != 'R')
+				throw new Exception("wrong answer for cursor position");
 			auto gots = cast(char[]) got[2 .. $-1];
 
+			import std.conv;
 			import std.string;
 
 			auto pieces = split(gots, ";");
@@ -4569,39 +3081,16 @@ class LineGetter {
 	}
 
 	private bool justHitTab;
-	private bool eof;
 
+	/// for integrating into another event loop
+	/// you can pass individual events to this and
+	/// the line getter will work on it
 	///
-	string delegate(string s) pastePreprocessor;
-
-	string defaultPastePreprocessor(string s) {
-		return s;
-	}
-
-	void showIndividualHelp(string help) {
-		terminal.writeln();
-		terminal.writeln(help);
-	}
-
-	private bool maintainBuffer;
-
-	/++
-		for integrating into another event loop
-		you can pass individual events to this and
-		the line getter will work on it
-
-		returns false when there's nothing more to do
-
-		History:
-			On February 17, 2020, it was changed to take
-			a new argument which should be the input source
-			where the event came from.
-	+/
-	bool workOnLine(InputEvent e, RealTimeConsoleInput* rtti = null) {
+	/// returns false when there's nothing more to do
+	bool workOnLine(InputEvent e) {
 		switch(e.type) {
 			case InputEvent.Type.EndOfFileEvent:
 				justHitTab = false;
-				eof = true;
 				// FIXME: this should be distinct from an empty line when hit at the beginning
 				return false;
 			//break;
@@ -4612,21 +3101,14 @@ class LineGetter {
 				/* Insert the character (unless it is backspace, tab, or some other control char) */
 				auto ch = ev.which;
 				switch(ch) {
-					version(Windows) case 26: // and this is really for Windows
-						goto case;
 					case 4: // ctrl+d will also send a newline-equivalent
-						if(line.length == 0)
-							eof = true;
-						goto case;
 					case '\r':
 					case '\n':
 						justHitTab = false;
 						return false;
 					case '\t':
 						auto relevantLineSection = line[0 .. cursorPosition];
-						auto start = tabCompleteStartPoint(relevantLineSection, line[cursorPosition .. $]);
-						relevantLineSection = relevantLineSection[start .. $];
-						auto possibilities = filterTabCompleteList(tabComplete(relevantLineSection, line[cursorPosition .. $]), start);
+						auto possibilities = filterTabCompleteList(tabComplete(relevantLineSection));
 						import std.utf;
 
 						if(possibilities.length == 1) {
@@ -4634,13 +3116,6 @@ class LineGetter {
 							if(toFill.length) {
 								addString(toFill);
 								redraw();
-							} else {
-								auto help = this.tabCompleteHelp(possibilities[0]);
-								if(help.length) {
-									showIndividualHelp(help);
-									updateCursorPosition();
-									redraw();
-								}
 							}
 							justHitTab = false;
 						} else {
@@ -4677,62 +3152,13 @@ class LineGetter {
 							redraw();
 						}
 					break;
-					case KeyboardEvent.Key.escape:
-						justHitTab = false;
-						cursorPosition = 0;
-						horizontalScrollPosition = 0;
-						line = line[0 .. 0];
-						line.assumeSafeAppend();
-						redraw();
-					break;
-					case KeyboardEvent.Key.F1:
-						justHitTab = false;
-						showHelp();
-					break;
-					case KeyboardEvent.Key.F2:
-						justHitTab = false;
-						line = editLineInEditor(line, cursorPosition);
-						if(cursorPosition > line.length)
-							cursorPosition = cast(int) line.length;
-						if(horizontalScrollPosition > line.length)
-							horizontalScrollPosition = cast(int) line.length;
-						positionCursor();
-						redraw();
-					break;
-					case KeyboardEvent.Key.F3:
-					// case 'r' - 'a' + 1: // ctrl+r
-						justHitTab = false;
-						// search in history
-						// FIXME: what about search in completion too?
-					break;
-					case KeyboardEvent.Key.F4:
-						justHitTab = false;
-						// FIXME: clear line
-					break;
-					case KeyboardEvent.Key.F9:
-						justHitTab = false;
-						// compile and run analog; return the current string
-						// but keep the buffer the same
-						maintainBuffer = true;
-						return false;
-					case 0x1d: // ctrl+5, because of vim % shortcut
-						justHitTab = false;
-						// FIXME: find matching delimiter
-					break;
 					case KeyboardEvent.Key.LeftArrow:
 						justHitTab = false;
 						if(cursorPosition)
 							cursorPosition--;
-						if(ev.modifierState & ModifierState.control) {
-							while(cursorPosition && line[cursorPosition - 1] != ' ')
-								cursorPosition--;
-						}
-						aligned(cursorPosition, -1);
 						if(!multiLineMode) {
-							if(cursorPosition < horizontalScrollPosition) {
+							if(cursorPosition < horizontalScrollPosition)
 								horizontalScrollPosition--;
-								aligned(horizontalScrollPosition, -1);
-							}
 						}
 
 						redraw();
@@ -4741,20 +3167,9 @@ class LineGetter {
 						justHitTab = false;
 						if(cursorPosition < line.length)
 							cursorPosition++;
-
-						if(ev.modifierState & ModifierState.control) {
-							while(cursorPosition + 1 < line.length && line[cursorPosition + 1] != ' ')
-								cursorPosition++;
-							cursorPosition += 2;
-							if(cursorPosition > line.length)
-								cursorPosition = cast(int) line.length;
-						}
-						aligned(cursorPosition, 1);
 						if(!multiLineMode) {
-							if(cursorPosition >= horizontalScrollPosition + availableLineLength()) {
+							if(cursorPosition >= horizontalScrollPosition + availableLineLength())
 								horizontalScrollPosition++;
-								aligned(horizontalScrollPosition, 1);
-							}
 						}
 
 						redraw();
@@ -4793,33 +3208,11 @@ class LineGetter {
 						scrollToEnd();
 						redraw();
 					break;
-					case ('v' - 'a' + 1):
-						if(rtti)
-							rtti.requestPasteFromClipboard();
-					break;
 					case KeyboardEvent.Key.Insert:
 						justHitTab = false;
-						if(ev.modifierState & ModifierState.shift) {
-							// paste
-
-							// shift+insert = request paste
-							// ctrl+insert = request copy. but that needs a selection
-
-							// those work on Windows!!!! and many linux TEs too.
-							// but if it does make it here, we'll attempt it at this level
-							if(rtti)
-								rtti.requestPasteFromClipboard();
-						} else if(ev.modifierState & ModifierState.control) {
-							// copy
-							// FIXME
-						} else {
-							insertMode = !insertMode;
-
-							if(insertMode)
-								terminal.cursor = TerminalCursor.insert;
-							else
-								terminal.cursor = TerminalCursor.block;
-						}
+						insertMode = !insertMode;
+						// FIXME: indicate this on the UI somehow
+						// like change the cursor or something
 					break;
 					case KeyboardEvent.Key.Delete:
 						justHitTab = false;
@@ -4843,10 +3236,7 @@ class LineGetter {
 			break;
 			case InputEvent.Type.PasteEvent:
 				justHitTab = false;
-				if(pastePreprocessor)
-					addString(pastePreprocessor(e.pasteEvent.pastedText));
-				else
-					addString(defaultPastePreprocessor(e.pasteEvent.pastedText));
+				addString(e.pasteEvent.pastedText);
 				redraw();
 			break;
 			case InputEvent.Type.MouseEvent:
@@ -4857,7 +3247,8 @@ class LineGetter {
 				if(me.eventType == MouseEvent.Type.Pressed) {
 					if(me.buttons & MouseEvent.Button.Left) {
 						if(me.y == startOfLineY) {
-							int p = me.x - startOfLineX - promptLength + horizontalScrollPosition;
+							// FIXME: prompt.length should be graphemes or at least code poitns
+							int p = me.x - startOfLineX - cast(int) prompt.length + horizontalScrollPosition;
 							if(p >= 0 && p < line.length) {
 								justHitTab = false;
 								cursorPosition = p;
@@ -4865,17 +3256,12 @@ class LineGetter {
 							}
 						}
 					}
-					if(me.buttons & MouseEvent.Button.Middle) {
-						if(rtti)
-							rtti.requestPasteFromPrimary();
-					}
 				}
 			break;
 			case InputEvent.Type.SizeChangedEvent:
 				/* We'll adjust the bounding box. If you don't like this, handle SizeChangedEvent
 				   yourself and then don't pass it to this function. */
 				// FIXME
-				initializeWithSize();
 			break;
 			case InputEvent.Type.UserInterruptionEvent:
 				/* I'll take this as canceling the line. */
@@ -4900,7 +3286,7 @@ class LineGetter {
 			this.history ~= history;
 
 		// FIXME: we should hide the cursor if it was hidden in the call to startGettingLine
-		return eof ? null : f.length ? f : "";
+		return f;
 	}
 }
 
@@ -4920,19 +3306,21 @@ class FileLineGetter : LineGetter {
 	/// to complete.
 	string searchDirectory = ".";
 
-	override size_t tabCompleteStartPoint(in dchar[] candidate, in dchar[] afterCursor) {
-		import std.string;
-		return candidate.lastIndexOf(" ") + 1;
-	}
-
-	override protected string[] tabComplete(in dchar[] candidate, in dchar[] afterCursor) {
+	override protected string[] tabComplete(in dchar[] candidate) {
 		import std.file, std.conv, std.algorithm, std.string;
+		const(dchar)[] soFar = candidate;
+		auto idx = candidate.lastIndexOf(" ");
+		if(idx != -1)
+			soFar = candidate[idx + 1 .. $];
 
 		string[] list;
 		foreach(string name; dirEntries(searchDirectory, SpanMode.breadth)) {
-			// both with and without the (searchDirectory ~ "/")
-			list ~= name[searchDirectory.length + 1 .. $];
-			list ~= name[0 .. $];
+			// try without the ./
+			if(startsWith(name[2..$], soFar))
+				list ~= text(candidate, name[searchDirectory.length + 1 + soFar.length .. $]);
+			else // and with
+			if(startsWith(name, soFar))
+				list ~= text(candidate, name[soFar.length .. $]);
 		}
 
 		return list;
@@ -4980,7 +3368,7 @@ struct ScrollbackBuffer {
 	}
 
 	void clear() {
-		lines.clear();
+		lines = null;
 		clickRegions = null;
 		scrollbackPosition = 0;
 	}
@@ -5082,87 +3470,9 @@ struct ScrollbackBuffer {
 		}
 	}
 
-	static struct CircularBuffer(T) {
-		T[] backing;
+	// FIXME: limit scrollback lines.length
 
-		enum maxScrollback = 8192; // as a power of 2, i hope the compiler optimizes the % below to a simple bit mask...
-
-		int start;
-		int length_;
-
-		void clear() {
-			backing = null;
-			start = 0;
-			length_ = 0;
-		}
-
-		size_t length() {
-			return length_;
-		}
-
-		void opOpAssign(string op : "~")(T line) {
-			if(length_ < maxScrollback) {
-				backing.assumeSafeAppend();
-				backing ~= line;
-				length_++;
-			} else {
-				backing[start] = line;
-				start++;
-				if(start == maxScrollback)
-					start = 0;
-			}
-		}
-
-		ref T opIndex(int idx) {
-			return backing[(start + idx) % maxScrollback];
-		}
-		ref T opIndex(Dollar idx) {
-			return backing[(start + (length + idx.offsetFromEnd)) % maxScrollback];
-		}
-
-		CircularBufferRange opSlice(int startOfIteration, Dollar end) {
-			return CircularBufferRange(&this, startOfIteration, cast(int) length - startOfIteration + end.offsetFromEnd);
-		}
-		CircularBufferRange opSlice(int startOfIteration, int end) {
-			return CircularBufferRange(&this, startOfIteration, end - startOfIteration);
-		}
-		CircularBufferRange opSlice() {
-			return CircularBufferRange(&this, 0, cast(int) length);
-		}
-
-		static struct CircularBufferRange {
-			CircularBuffer* item;
-			int position;
-			int remaining;
-			this(CircularBuffer* item, int startOfIteration, int count) {
-				this.item = item;
-				position = startOfIteration;
-				remaining = count;
-			}
-
-			ref T front() { return (*item)[position]; }
-			bool empty() { return remaining <= 0; }
-			void popFront() {
-				position++;
-				remaining--;
-			}
-
-			ref T back() { return (*item)[remaining - 1 - position]; }
-			void popBack() {
-				remaining--;
-			}
-		}
-
-		static struct Dollar {
-			int offsetFromEnd;
-			Dollar opBinary(string op : "-")(int rhs) {
-				return Dollar(offsetFromEnd - rhs);
-			}
-		}
-		Dollar opDollar() { return Dollar(0); }
-	}
-
-	CircularBuffer!Line lines;
+	Line[] lines;
 	string name;
 
 	int x, y, width, height;
@@ -5292,7 +3602,7 @@ struct ScrollbackBuffer {
 		// second pass: actually draw it
 		int linePos = remaining;
 
-		foreach(line; lines[start .. start + howMany]) {
+		foreach(idx, line; lines[start .. start + howMany]) {
 			int written = 0;
 
 			if(linePos < 0) {
@@ -5387,9 +3697,6 @@ struct ScrollbackBuffer {
 	/// Returns true if it should be redrawn
 	bool handleEvent(InputEvent e) {
 		final switch(e.type) {
-			case InputEvent.Type.LinkEvent:
-				// meh
-			break;
 			case InputEvent.Type.KeyboardEvent:
 				auto ev = e.keyboardEvent;
 
@@ -5552,35 +3859,6 @@ class HangupException : Exception {
        XK_KP_9           9                                       ESC O y
 */
 
-version(Demo_kbhit)
-void main() {
-	auto terminal = Terminal(ConsoleOutputType.linear);
-	auto input = RealTimeConsoleInput(&terminal, ConsoleInputFlags.raw);
-
-	int a;
-	char ch = '.';
-	while(a < 1000) {
-		a++;
-		if(a % terminal.width == 0) {
-			terminal.write("\r");
-			if(ch == '.')
-				ch = ' ';
-			else
-				ch = '.';
-		}
-
-		if(input.kbhit())
-			terminal.write(input.getch());
-		else
-			terminal.write(ch);
-
-		terminal.flush();
-
-		import core.thread;
-		Thread.sleep(50.msecs);
-	}
-}
-
 /*
 	The Xterm palette progression is:
 	[0, 95, 135, 175, 215, 255]
@@ -5692,558 +3970,3 @@ int approximate16Color(RGB color) {
 
 	return c;
 }
-
-version(TerminalDirectToEmulator) {
-
-	///
-	enum IntegratedEmulator = true;
-
-	/++
-		Allows customization of the integrated emulator window.
-		You may change the default colors, font, and other aspects
-		of GUI integration.
-
-		Test for its presence before using with `static if(arsd.terminal.IntegratedEmulator)`.
-
-		History:
-			Added March 7, 2020.
-	+/
-	struct IntegratedTerminalEmulatorConfiguration {
-		/// Note that all Colors in here are 24 bit colors.
-		alias Color = arsd.color.Color;
-
-		/// Default foreground color of the terminal.
-		Color defaultForeground = Color.black;
-		/// Default background color of the terminal.
-		Color defaultBackground = Color.white;
-
-		/// Font to use in the window. It should be a monospace font,
-		/// and your selection may not actually be used if not available on
-		/// the user's system, in which case it will fallback to one.
-		string fontName;
-		/// ditto
-		int fontSize = 14;
-
-		/// Requested initial terminal size in character cells. You may not actually get exactly this.
-		int initialWidth = 80;
-		/// ditto
-		int initialHeight = 40;
-	}
-
-	/+
-		status bar should probably tell
-		if scroll lock is on...
-	+/
-
-	/// You can set this in a static module constructor.
-	immutable IntegratedTerminalEmulatorConfiguration integratedTerminalEmulatorConfiguration;
-
-	import arsd.terminalemulator;
-	import arsd.minigui;
-
-	private class TerminalEmulatorWindow : MainWindow {
-		this(Terminal* term) {
-			super("Terminal Application", integratedTerminalEmulatorConfiguration.initialWidth * 7, integratedTerminalEmulatorConfiguration.initialHeight * 14);
-
-			smw = new ScrollMessageWidget(this);
-			tew = new TerminalEmulatorWidget(term, smw);
-
-			smw.addEventListener("scroll", () {
-				// import std.stdio; writeln(smw.position.x, " ", smw.position.y);
-				tew.terminalEmulator.scrollbackTo(smw.position.x, smw.position.y + tew.terminalEmulator.height);
-				redraw();
-			});
-
-			smw.setTotalArea(1, 1);
-
-			setMenuAndToolbarFromAnnotatedCode(this);
-		}
-
-		TerminalEmulatorWidget tew;
-		ScrollMessageWidget smw;
-
-		@menu("&History") {
-			@tip("Saves the currently visible content to a file")
-			void Save() {
-				getSaveFileName((string name) {
-					tew.terminalEmulator.writeScrollbackToFile(name);
-				});
-			}
-
-			// FIXME
-			version(FIXME)
-			void Save_HTML() {
-
-			}
-
-			@separator
-			/*
-			void Find() {
-				// FIXME
-				// jump to the previous instance in the scrollback
-
-			}
-			*/
-
-			void Filter() {
-				// open a new window that just shows items that pass the filter
-
-				static struct FilterParams {
-					string searchTerm;
-					bool caseSensitive;
-				}
-
-				dialog((FilterParams p) {
-					// FIXME: this should update in real time... somehow.
-					auto nw = new TerminalEmulatorWindow(null);
-					nw.tew.terminalEmulator.toggleScrollLock();
-					foreach(line; tew.terminalEmulator.sbb[0 .. $]) {
-						import std.algorithm;
-						import std.uni;
-						// omg autodecoding being kinda useful for once LOL
-						if(line.map!(c => c.hasNonCharacterData ? dchar(0) : (p.caseSensitive ? c.ch : c.ch.toLower)).
-							canFind(p.searchTerm))
-							nw.tew.terminalEmulator.addScrollbackLine(line);
-					}
-					nw.tew.terminalEmulator.drawScrollback();
-					nw.title = "Filter Display";
-					nw.show();
-				});
-
-			}
-
-			@separator
-			void Clear() {
-				tew.terminalEmulator.clearScrollbackHistory();
-				//tew.terminalEmulator.cls();
-				// FIXME: move cursor back to 0,0
-				// tell the application to redraw too (maybe signal size changed)
-				tew.redraw();
-			}
-
-			@separator
-			void Exit() @accelerator("Alt+F4") @hotkey('x') {
-				this.close();
-			}
-		}
-
-		@menu("&Edit") {
-			void Copy() {
-				tew.terminalEmulator.copyToClipboard(tew.terminalEmulator.getSelectedText());
-				//messageBox("copy", tew.terminalEmulator.getSelectedText());
-			}
-
-			void Paste() {
-				tew.terminalEmulator.pasteFromClipboard(&tew.terminalEmulator.sendPasteData);
-				//messageBox("paste", "idk");
-			}
-		}
-	}
-
-	private class InputEventInternal {
-		const(ubyte)[] data;
-		this(in ubyte[] data) {
-			this.data = data;
-		}
-	}
-
-	private class TerminalEmulatorWidget : Widget {
-
-		Menu ctx;
-
-		override Menu contextMenu(int x, int y) {
-			if(ctx is null) {
-				ctx = new Menu("");
-				auto i = ctx.addItem(new MenuItem("Copy"));
-				i.addEventListener("triggered", {
-					terminalEmulator.copyToClipboard(terminalEmulator.getSelectedText());
-
-				});
-				i = ctx.addItem(new MenuItem("Paste"));
-				i.addEventListener("triggered", {
-					terminalEmulator.pasteFromClipboard(&terminalEmulator.sendPasteData);
-				});
-			}
-			return ctx;
-		}
-
-		this(Terminal* term, ScrollMessageWidget parent) {
-			this.smw = parent;
-			this.term = term;
-			terminalEmulator = new TerminalEmulatorInsideWidget(this);
-			super(parent);
-			this.parentWindow.win.onClosing = {
-				if(term)
-					hangedUp = true;
-				terminalEmulator.outgoingSignal.notify();
-				terminalEmulator.incomingSignal.notify();
-			};
-
-			this.parentWindow.win.addEventListener((InputEventInternal ie) {
-				terminalEmulator.sendRawInput(ie.data);
-				this.redraw();
-				terminalEmulator.incomingSignal.notify();
-			});
-		}
-
-		ScrollMessageWidget smw;
-		Terminal* term;
-
-		void sendRawInput(const(ubyte)[] data) {
-			if(this.parentWindow) {
-				this.parentWindow.win.postEvent(new InputEventInternal(data));
-				terminalEmulator.incomingSignal.wait(); // blocking write basically, wait until the TE confirms the receipt of it
-			}
-		}
-
-		TerminalEmulatorInsideWidget terminalEmulator;
-
-		override void registerMovement() {
-			super.registerMovement();
-			terminalEmulator.resized(width, height);
-		}
-
-		override void focus() {
-			super.focus();
-			terminalEmulator.attentionReceived();
-		}
-
-		override MouseCursor cursor() { return GenericCursor.Text; }
-
-		override void erase(WidgetPainter painter) { /* intentionally blank, paint does it better */ }
-
-		override void paint(WidgetPainter painter) {
-			bool forceRedraw = false;
-			if(terminalEmulator.invalidateAll || terminalEmulator.clearScreenRequested) {
-				auto clearColor = terminalEmulator.defaultBackground;
-				painter.outlineColor = clearColor;
-				painter.fillColor = clearColor;
-				painter.drawRectangle(Point(0, 0), this.width, this.height);
-				terminalEmulator.clearScreenRequested = false;
-				forceRedraw = true;
-			}
-
-			terminalEmulator.redrawPainter(painter, forceRedraw);
-		}
-	}
-
-	private class TerminalEmulatorInsideWidget : TerminalEmulator {
-
-		private ScrollbackBuffer sbb() { return scrollbackBuffer; }
-
-		void resized(int w, int h) {
-			this.resizeTerminal(w / fontWidth, h / fontHeight);
-			if(widget && widget.smw) {
-				widget.smw.setViewableArea(this.width, this.height);
-				widget.smw.setPageSize(this.width / 2, this.height / 2);
-			}
-			clearScreenRequested = true;
-			if(widget && widget.term)
-				windowSizeChanged = true;
-			outgoingSignal.notify();
-			redraw();
-		}
-
-		override void notifyScrollbackAdded() {
-			if(this.scrollbackLength > this.height)
-				widget.smw.setTotalArea(this.scrollbackWidth, this.scrollbackLength);
-			else
-				widget.smw.setTotalArea(this.width, this.height);
-		}
-
-		override void notifyScrollbarPosition(int x, int y) {
-			widget.smw.setPosition(x, y);
-			widget.redraw();
-		}
-
-		override void notifyScrollbarRelevant(bool isRelevantHorizontally, bool isRelevantVertically) {
-			if(isRelevantVertically)
-				notifyScrollbackAdded();
-			else
-				widget.smw.setTotalArea(width, height);
-		}
-
-		override @property public int cursorX() { return super.cursorX; }
-		override @property public int cursorY() { return super.cursorY; }
-
-		protected override void changeCursorStyle(CursorStyle s) { }
-
-		string currentTitle;
-		protected override void changeWindowTitle(string t) {
-			if(widget && widget.parentWindow && t.length) {
-				widget.parentWindow.win.title = t;
-				currentTitle = t;
-			}
-		}
-		protected override void changeWindowIcon(IndexedImage t) {
-			if(widget && widget.parentWindow && t)
-				widget.parentWindow.win.icon = t;
-		}
-
-		protected override void changeIconTitle(string) {}
-		protected override void changeTextAttributes(TextAttributes) {}
-		protected override void soundBell() {
-			static if(UsingSimpledisplayX11)
-				XBell(XDisplayConnection.get(), 50);
-		}
-
-		protected override void demandAttention() {
-			//window.requestAttention();
-		}
-
-		protected override void copyToClipboard(string text) {
-			setClipboardText(widget.parentWindow.win, text);
-		}
-
-		protected override void pasteFromClipboard(void delegate(in char[]) dg) {
-			static if(UsingSimpledisplayX11)
-				getPrimarySelection(widget.parentWindow.win, dg);
-			else
-				getClipboardText(widget.parentWindow.win, (in char[] dataIn) {
-					char[] data;
-					// change Windows \r\n to plain \n
-					foreach(char ch; dataIn)
-						if(ch != 13)
-							data ~= ch;
-					dg(data);
-				});
-		}
-
-		protected override void copyToPrimary(string text) {
-			static if(UsingSimpledisplayX11)
-				setPrimarySelection(widget.parentWindow.win, text);
-			else
-				{}
-		}
-		protected override void pasteFromPrimary(void delegate(in char[]) dg) {
-			static if(UsingSimpledisplayX11)
-				getPrimarySelection(widget.parentWindow.win, dg);
-		}
-
-		override void requestExit() {
-			widget.parentWindow.close();
-		}
-
-		bool echo = false;
-
-		override void sendRawInput(in ubyte[] data) {
-			void send(in ubyte[] data) {
-				super.sendRawInput(data);
-				if(echo)
-				sendToApplication(data);
-			}
-
-			// need to echo, translate 10 to 13/10 cr-lf
-			size_t last = 0;
-			const ubyte[2] crlf = [13, 10];
-			foreach(idx, ch; data) {
-				if(ch == 10) {
-					send(data[last .. idx]);
-					send(crlf[]);
-					last = idx + 1;
-				} else if(ch == 3) {
-					if(widget && widget.term)
-						interrupted = true;
-				}
-			}
-
-			if(last < data.length)
-				send(data[last .. $]);
-		}
-
-		bool focused;
-
-		TerminalEmulatorWidget widget;
-
-		import arsd.simpledisplay;
-		import arsd.color;
-		import core.sync.semaphore;
-		alias ModifierState = arsd.simpledisplay.ModifierState;
-		alias Color = arsd.color.Color;
-		alias fromHsl = arsd.color.fromHsl;
-
-		const(ubyte)[] pendingForApplication;
-		Semaphore outgoingSignal;
-		Semaphore incomingSignal;
-
-		override void sendToApplication(scope const(void)[] what) {
-			synchronized(this) {
-				pendingForApplication ~= cast(const(ubyte)[]) what;
-			}
-			outgoingSignal.notify();
-		}
-
-		@property int width() { return screenWidth; }
-		@property int height() { return screenHeight; }
-
-		@property bool invalidateAll() { return super.invalidateAll; }
-
-		private this(TerminalEmulatorWidget widget) {
-
-			this.outgoingSignal = new Semaphore();
-			this.incomingSignal = new Semaphore();
-
-			this.widget = widget;
-
-			loadDefaultFont();
-
-			auto desiredWidth = 80;
-			auto desiredHeight = 24;
-
-			super(desiredWidth, desiredHeight);
-
-			defaultForeground = integratedTerminalEmulatorConfiguration.defaultForeground;
-			defaultBackground = integratedTerminalEmulatorConfiguration.defaultBackground;
-
-			bool skipNextChar = false;
-
-			widget.addEventListener("mousedown", (Event ev) {
-				int termX = (ev.clientX - paddingLeft) / fontWidth;
-				int termY = (ev.clientY - paddingTop) / fontHeight;
-
-				if((!mouseButtonTracking || (ev.state & ModifierState.shift)) && ev.button == MouseButton.right)
-					widget.showContextMenu(ev.clientX, ev.clientY);
-				else
-					if(sendMouseInputToApplication(termX, termY,
-						arsd.terminalemulator.MouseEventType.buttonPressed,
-						cast(arsd.terminalemulator.MouseButton) ev.button,
-						(ev.state & ModifierState.shift) ? true : false,
-						(ev.state & ModifierState.ctrl) ? true : false,
-						(ev.state & ModifierState.alt) ? true : false
-					))
-						redraw();
-			});
-
-			widget.addEventListener("mouseup", (Event ev) {
-				int termX = (ev.clientX - paddingLeft) / fontWidth;
-				int termY = (ev.clientY - paddingTop) / fontHeight;
-
-				if(sendMouseInputToApplication(termX, termY,
-					arsd.terminalemulator.MouseEventType.buttonReleased,
-					cast(arsd.terminalemulator.MouseButton) ev.button,
-					(ev.state & ModifierState.shift) ? true : false,
-					(ev.state & ModifierState.ctrl) ? true : false,
-					(ev.state & ModifierState.alt) ? true : false
-				))
-					redraw();
-			});
-
-			widget.addEventListener("mousemove", (Event ev) {
-				int termX = (ev.clientX - paddingLeft) / fontWidth;
-				int termY = (ev.clientY - paddingTop) / fontHeight;
-
-				if(sendMouseInputToApplication(termX, termY,
-					arsd.terminalemulator.MouseEventType.motion,
-					cast(arsd.terminalemulator.MouseButton) ev.button,
-					(ev.state & ModifierState.shift) ? true : false,
-					(ev.state & ModifierState.ctrl) ? true : false,
-					(ev.state & ModifierState.alt) ? true : false
-				))
-					redraw();
-			});
-
-			widget.addEventListener("keydown", (Event ev) {
-				static string magic() {
-					string code;
-					foreach(member; __traits(allMembers, TerminalKey))
-						if(member != "Escape")
-							code ~= "case Key." ~ member ~ ": if(sendKeyToApplication(TerminalKey." ~ member ~ "
-								, (ev.state & ModifierState.shift)?true:false
-								, (ev.state & ModifierState.alt)?true:false
-								, (ev.state & ModifierState.ctrl)?true:false
-								, (ev.state & ModifierState.windows)?true:false
-							)) redraw(); break;";
-					return code;
-				}
-
-
-				switch(ev.key) {
-					mixin(magic());
-					default:
-						// keep going, not special
-				}
-
-				return; // the character event handler will do others
-			});
-
-			widget.addEventListener("char", (Event ev) {
-				dchar c = ev.character;
-				if(skipNextChar) {
-					skipNextChar = false;
-					return;
-				}
-
-				endScrollback();
-				char[4] str;
-				import std.utf;
-				if(c == '\n') c = '\r'; // terminal seem to expect enter to send 13 instead of 10
-				auto data = str[0 .. encode(str, c)];
-
-				// on X11, the delete key can send a 127 character too, but that shouldn't be sent to the terminal since xterm shoots \033[3~ instead, which we handle in the KeyEvent handler.
-				if(c != 127)
-					sendToApplication(data);
-			});
-		}
-
-		static int fontSize = 14;
-
-		bool clearScreenRequested = true;
-		void redraw() {
-			if(widget.parentWindow is null || widget.parentWindow.win is null || widget.parentWindow.win.closed)
-				return;
-
-			widget.redraw();
-		}
-
-		mixin SdpyDraw;
-	}
-} else {
-	///
-	enum IntegratedEmulator = false;
-}
-
-/*
-void main() {
-	auto terminal = Terminal(ConsoleOutputType.linear);
-	terminal.setTrueColor(RGB(255, 0, 255), RGB(255, 255, 255));
-	terminal.writeln("Hello, world!");
-}
-*/
-
-
-/*
-	ONLY SUPPORTED ON MY TERMINAL EMULATOR IN GENERAL
-
-	bracketed section can collapse and scroll independently in the TE. may also pop out into a window (possibly with a comparison window)
-
-	hyperlink can either just indicate something to the TE to handle externally
-	OR
-	indicate a certain input sequence be triggered when it is clicked (prolly wrapped up as a paste event). this MAY also be a custom event.
-
-	internally it can set two bits: one indicates it is a hyperlink, the other just flips each use to separate consecutive sequences.
-
-	it might require the content of the paste event to be the visible word but it would bne kinda cool if it could be some secret thing elsewhere.
-
-
-	I could spread a unique id number across bits, one bit per char so the memory isn't too bad.
-	so it would set a number and a word. this is sent back to the application to handle internally.
-
-	1) turn on special input
-	2) turn off special input
-	3) special input sends a paste event with a number and the text
-	4) to make a link, you write out the begin sequence, the text, and the end sequence. including the magic number somewhere.
-		magic number is allowed to have one bit per char. the terminal discards anything else. terminal.d api will enforce.
-
-	if magic number is zero, it is not sent in the paste event. maybe.
-
-	or if it is like 255, it is handled as a url and opened externally
-		tho tbh a url could just be detected by regex pattern
-
-
-	NOTE: if your program requests mouse input, the TE does not process it! Thus the user will have to shift+click for it.
-
-	mode 3004 for bracketed hyperlink
-
-	hyperlink sequence: \033[?220hnum;text\033[?220l~
-
-*/
