@@ -23,7 +23,7 @@ import dub.internal.vibecompat.data.json;
 import dub.internal.vibecompat.inet.url;
 import dub.package_;
 import dub.packagemanager;
-import dub.packagesupplier;
+import dub.packagesuppliers;
 import dub.platform;
 import dub.project;
 import dub.description;
@@ -172,7 +172,7 @@ version(unitttest) {} else {
         string destination = buildPath(runnerSettings.settings.artifactsLocation, "coverage");
         logDiagnostic("calculate the code coverage");
 
-        writeln("Line coverage: ", 
+        writeln("Line coverage: ",
           convertLstFiles(source, destination, dub.rootPath.toString, dub.projectName), "%");
       }
     }
