@@ -120,8 +120,7 @@ private {
         endTests = [];
         steps = [];
 
-        failures.clear;
-        failures.rehash;
+        failures = typeof(failures).init;
 
         testCount = 0;
       }
