@@ -52,8 +52,8 @@ dmd-ubuntu:
   <<: *build_definition
   image: ubuntu:18.04
   script:
-    - wget http://downloads.dlang.org/releases/2.x/2.083.0/dmd_2.083.0-0_amd64.deb
-    - dpkg -i dmd_2.083.0-0_amd64.deb
+    - wget http://downloads.dlang.org/releases/2.x/2.091.0/dmd_2.091.0-0_amd64.deb
+    - dpkg -i dmd_2.091.0-0_amd64.deb
     - dmd --version
     - dub --version
     - dub build :runner --build release
@@ -71,7 +71,7 @@ ldc-ubuntu:
 
 dmd-fedora:
   stage: build
-  image: fedora:28
+  image: fedora:31
   tags:
     - docker-trial
   before_script:
@@ -80,8 +80,8 @@ dmd-fedora:
     - dnf install -y openssl-devel libcurl-devel wget
     - mkdir -p vendor/rpm
     - cd vendor/rpm
-    - ls dmd-2.083.0-0.fedora.x86_64.rpm || wget http://downloads.dlang.org/releases/2.x/2.083.0/dmd-2.083.0-0.fedora.x86_64.rpm
-    - dnf install -y dmd-2.083.0-0.fedora.x86_64.rpm
+    - ls dmd-2.091.0-0.fedora.x86_64.rpm || wget http://downloads.dlang.org/releases/2.x/2.091.0/dmd-2.091.0-0.fedora.x86_64.rpm
+    - dnf install -y dmd-2.091.0-0.fedora.x86_64.rpm
     - cd ../..
   script:
     - dmd --version
@@ -101,26 +101,14 @@ dmd-fedora:
       - vendor/dnf
       - vendor/dub
 
-trial-dmd-2.080.0:
-  <<: *test_definition
-  script:
-    - wget http://downloads.dlang.org/releases/2.x/2.080.1/dmd_2.080.1-0_amd64.deb
-    - dpkg -i dmd_2.080.1-0_amd64.deb
-    - trial --coverage
-  artifacts:
-    paths:
-      - .trial
-    reports:
-      junit: .trial/xunit/*.xml
-
-trial-ldc-1.9.0:
+trial-ldc-1.20.1:
   <<: *test_definition
   script:
     - mkdir -p vendor/ldc
     - cd vendor/ldc
-    - wget https://github.com/ldc-developers/ldc/releases/download/v1.9.0/ldc2-1.9.0-linux-x86_64.tar.xz
-    - tar -xf ldc2-1.9.0-linux-x86_64.tar.xz
-    - rsync -vau ldc2-1.9.0-linux-x86_64/ /usr/local/
+    - wget https://github.com/ldc-developers/ldc/releases/download/v1.20.1/ldc2-1.20.1-linux-x86_64.tar.xz
+    - tar -xf ldc2-1.20.1-linux-x86_64.tar.xz
+    - rsync -vau ldc2-1.20.1-linux-x86_64.tar.xz/ /usr/local/
     - cd ../../
     - trial --coverage
   artifacts:
@@ -129,14 +117,14 @@ trial-ldc-1.9.0:
     reports:
       junit: .trial/xunit/*.xml
 
-trial-dmd-2.079.1:
+trial-dmd-2.091.0:
   <<: *test_definition
   only:
     - tags
     - master
   script:
-    - wget http://downloads.dlang.org/releases/2.x/2.079.1/dmd_2.079.1-0_amd64.deb
-    - dpkg -i dmd_2.079.1-0_amd64.deb
+    - wget http://downloads.dlang.org/releases/2.x/2.091.0/dmd_2.091.0-0_amd64.deb
+    - dpkg -i dmd_2.091.0-0_amd64.deb
     - trial --coverage
 
 trial-ldc-1.8.0:
@@ -310,25 +298,6 @@ docker-ldc:
     - docker build --no-cache=true -t $IMAGE_TAG .
     - docker push $IMAGE_TAG
 
-ubuntu-16.04:
-  stage: test-package
-  only:
-    - tags
-    - master
-  image:
-    name: ubuntu:16.04
-  dependencies:
-    - linux-packages
-    - master-linux-packages
-  script:
-    - ls -lsa
-    - pwd
-    - ls -lsa tmp
-    - apt-get update -y || true
-    - apt-get install -y libssl1.0.0
-    - dpkg -i tmp/*.deb
-    - trial --version
-
 ubuntu-18.04:
   stage: test-package
   only:
@@ -348,13 +317,13 @@ ubuntu-18.04:
     - dpkg -i tmp/*.deb
     - trial --version
 
-ubuntu-18.10:
+ubuntu-19.10:
   stage: test-package
   only:
     - tags
     - master
   image:
-    name: ubuntu:18.10
+    name: ubuntu:19.10
   dependencies:
     - linux-packages
     - master-linux-packages
@@ -367,13 +336,13 @@ ubuntu-18.10:
     - dpkg -i tmp/*.deb
     - trial --version
 
-fedora-28:
+fedora-31:
   stage: test-package
   only:
     - tags
     - master
   image:
-    name: fedora:28
+    name: fedora:31
   dependencies:
     - linux-packages
     - master-linux-packages
@@ -391,13 +360,13 @@ pages:
   only:
     - tags
   image:
-    name: fedora:28
+    name: fedora:31
   tags:
     - docker-trial
   dependencies:
     - linux-packages
     - master-linux-packages
-    - trial-dmd-2.080.0
+    - trial-dmd-2.091.0
   before_script:
     - dnf update -y
     - dnf install -y npm wget gcc glibc-devel libcurl libgcc
