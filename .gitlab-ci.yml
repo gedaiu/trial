@@ -13,7 +13,7 @@ stages:
     - mkdir -p vendor/apt
     - mv vendor/dub /root/.dub || true
     - apt-get update || true
-    - apt-get -o dir::cache::archives="vendor/apt" install -y libssl1.0-dev libevent-dev libcurl4 gcc wget libc6-dev xz-utils libz-dev
+    - apt-get -o dir::cache::archives="vendor/apt" install -y libssl-dev libevent-dev libcurl4 gcc wget libc6-dev xz-utils libz-dev
   after_script:
     - mv /root/.dub vendor/dub || true
   artifacts:
@@ -34,7 +34,7 @@ stages:
     - mkdir -p vendor/apt
     - mv vendor/dub /root/.dub || true
     - apt-get update || true
-    - apt-get -o dir::cache::archives="vendor/apt" install -y libssl1.0-dev libevent-dev gcc wget libc6-dev xz-utils libz-dev rsync libcurl3
+    - apt-get -o dir::cache::archives="vendor/apt" install -y libssl-dev libevent-dev gcc wget libc6-dev xz-utils libz-dev rsync libcurl3
     - mv trial /usr/local/bin
   after_script:
     - mv /root/.dub vendor/dub || true
@@ -262,7 +262,7 @@ docker-dmd:
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay2
-    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.083.0:$CI_COMMIT_REF_NAME
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.091.0:$CI_COMMIT_REF_NAME
   dependencies:
     - dmd-ubuntu
   services:
@@ -284,7 +284,7 @@ docker-ldc:
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay2
-    IMAGE_TAG: $CI_REGISTRY_IMAGE/ldc-1.13.0:$CI_COMMIT_REF_NAME
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/ldc-1.20.1:$CI_COMMIT_REF_NAME
   dependencies:
     - ldc-ubuntu
   services:
@@ -313,7 +313,7 @@ ubuntu-18.04:
     - pwd
     - ls -lsa tmp
     - apt-get update -y || true
-    - apt-get install -y libssl1.0.0
+    - apt-get install -y libssl libevent
     - dpkg -i tmp/*.deb
     - trial --version
 
@@ -332,7 +332,7 @@ ubuntu-19.10:
     - pwd
     - ls -lsa tmp
     - apt-get update -y || true
-    - apt-get install -y libssl1.0.0
+    - apt-get install -y libssl libevent
     - dpkg -i tmp/*.deb
     - trial --version
 
@@ -351,7 +351,7 @@ fedora-31:
     - pwd
     - ls -lsa tmp
     - dnf update -y
-    - dnf install -y compat-openssl10-1:1.0.2o-1.fc28.x86_64
+    - dnf install -y openssl
     - dnf install -y tmp/*.rpm
     - trial --version
 
