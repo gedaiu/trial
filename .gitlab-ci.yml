@@ -108,7 +108,7 @@ trial-ldc-1.20.1:
     - cd vendor/ldc
     - wget https://github.com/ldc-developers/ldc/releases/download/v1.20.1/ldc2-1.20.1-linux-x86_64.tar.xz
     - tar -xf ldc2-1.20.1-linux-x86_64.tar.xz
-    - rsync -vau ldc2-1.20.1-linux-x86_64.tar.xz/ /usr/local/
+    - rsync -vau ldc2-1.20.1-linux-x86_64/ /usr/local/
     - cd ../../
     - trial --coverage
   artifacts:
