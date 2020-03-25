@@ -61,9 +61,6 @@
           "optional": true
         },
         "vibe-d:data": "~>0.8.0"
-      },
-      "subConfigurations": {
-        "dub": "library-nonet"
       }
     }
   ],
@@ -110,9 +107,6 @@
         "vibe-d:data": "~>0.8.4",
         "libdparse": "~>0.8.7",
         "fluent-asserts": ">=0.12.0"
-      },
-      "subConfigurations": {
-        "dub": "library-nonet"
       }
     }
   ]
