@@ -173,7 +173,7 @@ version(unitttest) {} else {
         logDiagnostic("calculate the code coverage");
 
         writeln("Line coverage: ",
-          convertLstFiles(source, destination, dub.rootPath.toString, dub.projectName), "%");
+          convertLstFiles(source, destination, dub.projectPath.toString, dub.projectName), "%");
       }
     }
 
