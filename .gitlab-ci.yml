@@ -71,7 +71,7 @@ ldc-ubuntu:
 
 dmd-fedora:
   stage: build
-  image: fedora:32
+  image: fedora:31
   tags:
     - docker-trial
   before_script:
@@ -349,7 +349,7 @@ fedora-32:
     - tags
     - master
   image:
-    name: fedora:32
+    name: fedora:31
   dependencies:
     - linux-packages
     - master-linux-packages
@@ -367,7 +367,7 @@ pages:
   only:
     - tags
   image:
-    name: fedora:32
+    name: fedora:31
   tags:
     - docker-trial
   dependencies:
