@@ -26,7 +26,7 @@ stages:
       - vendor/dub
 
 .test_template: &test_definition
-  image: ubuntu:18.04
+  image: ubuntu:20.04
   stage: test
   tags:
     - docker-trial
@@ -50,7 +50,7 @@ stages:
 
 dmd-ubuntu:
   <<: *build_definition
-  image: ubuntu:18.04
+  image: ubuntu:20.04
   script:
     - wget http://downloads.dlang.org/releases/2.x/2.091.0/dmd_2.091.0-0_amd64.deb
     - dpkg -i dmd_2.091.0-0_amd64.deb
@@ -60,7 +60,7 @@ dmd-ubuntu:
 
 ldc-ubuntu:
   <<: *build_definition
-  image: ubuntu:18.04
+  image: ubuntu:20.04
   script:
     - ls ldc2-1.13.0-beta1-linux-x86_64.tar.xz || wget https://github.com/ldc-developers/ldc/releases/download/v1.13.0-beta1/ldc2-1.13.0-beta1-linux-x86_64.tar.xz
     - tar -xf ldc2-1.13.0-beta1-linux-x86_64.tar.xz
@@ -71,7 +71,7 @@ ldc-ubuntu:
 
 dmd-fedora:
   stage: build
-  image: fedora:31
+  image: fedora:32
   tags:
     - docker-trial
   before_script:
@@ -119,9 +119,6 @@ trial-ldc-1.20.1:
 
 trial-dmd-2.091.0:
   <<: *test_definition
-  only:
-    - tags
-    - master
   script:
     - wget http://downloads.dlang.org/releases/2.x/2.091.0/dmd_2.091.0-0_amd64.deb
     - dpkg -i dmd_2.091.0-0_amd64.deb
@@ -129,9 +126,6 @@ trial-dmd-2.091.0:
 
 trial-ldc-1.8.0:
   <<: *test_definition
-  only:
-    - tags
-    - master
   script:
     - mkdir -p vendor/ldc
     - cd vendor/ldc
@@ -143,9 +137,6 @@ trial-ldc-1.8.0:
 
 trial-dmd-2.082.1:
   <<: *test_definition
-  only:
-    - tags
-    - master
   script:
     - wget http://downloads.dlang.org/releases/2.x/2.082.1/dmd_2.082.1-0_amd64.deb
     - dpkg -i dmd_2.082.1-0_amd64.deb
@@ -153,9 +144,6 @@ trial-dmd-2.082.1:
 
 trial-ldc-1.7.0:
   <<: *test_definition
-  only:
-    - tags
-    - master
   script:
     - mkdir -p vendor/ldc
     - cd vendor/ldc
@@ -336,13 +324,32 @@ ubuntu-19.10:
     - dpkg -i tmp/*.deb
     - trial --version
 
-fedora-31:
+ubuntu-20.04:
   stage: test-package
   only:
     - tags
     - master
   image:
-    name: fedora:31
+    name: ubuntu:20.04
+  dependencies:
+    - linux-packages
+    - master-linux-packages
+  script:
+    - ls -lsa
+    - pwd
+    - ls -lsa tmp
+    - apt-get update -y || true
+    - apt-get install -y libssl libevent
+    - dpkg -i tmp/*.deb
+    - trial --version
+
+fedora-32:
+  stage: test-package
+  only:
+    - tags
+    - master
+  image:
+    name: fedora:32
   dependencies:
     - linux-packages
     - master-linux-packages
@@ -360,7 +367,7 @@ pages:
   only:
     - tags
   image:
-    name: fedora:31
+    name: fedora:32
   tags:
     - docker-trial
   dependencies:
