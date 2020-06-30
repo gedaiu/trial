@@ -1,7 +1,0 @@
-{
-	"fileVersion": 1,
-	"versions": {
-		"trial": { "path": "../../" },
-		"stdx-allocator": "2.77.0"
-	}
-}
