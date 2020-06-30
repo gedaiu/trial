@@ -34,7 +34,7 @@ stages:
     - mkdir -p vendor/apt
     - mv vendor/dub /root/.dub || true
     - apt-get update || true
-    - apt-get -o dir::cache::archives="vendor/apt" install -y libssl-dev libevent-dev gcc wget libc6-dev xz-utils libz-dev rsync libcurl3
+    - apt-get -o dir::cache::archives="vendor/apt" install -y libssl-dev libevent-dev gcc wget libc6-dev xz-utils libz-dev rsync libcurl4
     - mv trial /usr/local/bin
   after_script:
     - mv /root/.dub vendor/dub || true
