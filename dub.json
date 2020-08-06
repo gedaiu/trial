@@ -4,7 +4,7 @@
     "Szabo Bogdan"
   ],
   "description": "The extensible test runner for DLang",
-  "copyright": "Copyright © 2018, Szabo Bogdan",
+  "copyright": "Copyright © 2020, Szabo Bogdan",
   "license": "MIT",
   "homepage": "http://trial.szabobogdan.com/",
   "dependencies": {},
@@ -54,7 +54,7 @@
         "tests"
       ],
       "dependencies": {
-        "dub": "~>1.20.0",
+        "dub": "~>1.22.0",
         "fluent-asserts": ">=0.12.0",
         "libdparse": {
           "version": ">=0.8.0",
@@ -105,9 +105,9 @@
         "lifecycle"
       ],
       "dependencies": {
-        "dub": "~>1.20.0",
-        "vibe-d:http": "~>0.8.4",
-        "vibe-d:data": "~>0.8.4",
+        "dub": "~>1.22.0",
+        "vibe-d:http": "~>0.8.6",
+        "vibe-d:data": "~>0.8.6",
         "libdparse": "~>0.8.7",
         "fluent-asserts": ">=0.12.0"
       },

@@ -7,9 +7,8 @@ import std.string;
 import std.file;
 import std.datetime;
 import std.path;
+import std.conv;
 import std.array;
-import trial.description;
-import trial.version_;
 
 import dub.internal.vibecompat.data.json;
 
@@ -32,38 +31,54 @@ import dub.commandline;
 
 import trial.runnersettings;
 import trial.generator;
+import trial.version_;
+import trial.discovery.code;
+import trial.coverage;
 
-class TrialProject : Project {
+import std.stdio;
 
+class TrialProject {
   private {
-    Project project;
-    PackageDescriptionCommand m_description;
     BuildSettingsTemplate tcinfo;
     bool hasTcinfo;
+
+    Dub dub;
+    Project project;
   }
 
+  ProjectDescription desc;
   RunnerSettings runnerSettings;
 
+  string configuration;
+  string packageName;
   string reporters;
   string plugins;
 
   alias getDependency = Project.getDependency;
   alias getTopologicalPackageList = Project.getTopologicalPackageList;
 
-  this(PackageDescriptionCommand description, RunnerSettings runnerSettings) {
-    this.project = description.project;
+  this(Dub dub, RunnerSettings runnerSettings) {
+    this.dub = dub;
     this.runnerSettings = runnerSettings;
-    this.m_description = description;
-
-    logDiagnostic("create the trial configuration");
-    project.rootPackage.recipe.configurations = [ConfigurationInfo(m_description.buildFile, testBuildSettings)];
-
-    super(project.packageManager, project.rootPackage);
-    this.reinit;
   }
 
-  PackageDescriptionCommand description() {
-    return m_description;
+  Project dubProject() {
+    return dub.project;
+  }
+
+  Project testProject() {
+    if(project !is null) {
+      return project;
+    }
+
+    auto tcinfo = testBuildSettings;
+
+    project = dubProject;
+
+    logInfo("Creating a new configuration named `%s`.", buildFile);
+    project.rootPackage.recipe.configurations ~= ConfigurationInfo(buildFile, tcinfo);
+
+    return project;
   }
 
   bool hasTrialDependency() {
@@ -71,7 +86,7 @@ class TrialProject : Project {
   }
 
   string embededLibraryPath() {
-    return (NativePath(m_description.mainFile).parentPath ~ runnerSettings.settings.artifactsLocation ~ "lifecycle").toNativeString();
+    return (NativePath(mainFile).parentPath ~ runnerSettings.settings.artifactsLocation ~ "lifecycle").toNativeString();
   }
 
   BuildSettingsTemplate testBuildSettings() {
@@ -79,18 +94,22 @@ class TrialProject : Project {
       return tcinfo;
     }
 
-    tcinfo = project.rootPackage.recipe.getConfiguration(m_description.configuration).buildSettings;
-    tcinfo.targetType = TargetType.executable;
-    tcinfo.targetName = m_description.buildFile;
-    tcinfo.excludedSourceFiles[""] ~= tcinfo.mainSourceFile;
-    tcinfo.importPaths[""] ~= NativePath(m_description.mainFile).parentPath.toNativeString();
+    enforce(configuration != "", "No test configuration was found.");
 
-    if(getBasePackageName(project.rootPackage.name) != "trial" && !tcinfo.dependencies.keys.canFind("trial:lifecycle")) {
+    logInfo("Building configuration using the `%s` configuration.", configuration);
+
+    tcinfo = dubProject.rootPackage.recipe.getConfiguration(configuration).buildSettings;
+    tcinfo.targetType = TargetType.executable;
+    tcinfo.targetName = buildFile;
+    tcinfo.excludedSourceFiles[""] ~= tcinfo.mainSourceFile;
+    tcinfo.importPaths[""] ~= NativePath(mainFile).parentPath.toNativeString();
+
+    if(getBasePackageName(dubProject.rootPackage.name) != "trial" && !tcinfo.dependencies.keys.canFind("trial:lifecycle")) {
       tcinfo.sourcePaths[""] ~= embededLibraryPath;
       tcinfo.stringImportPaths[""] ~= embededLibraryPath;
     }
 
-    tcinfo.sourceFiles[""] ~= m_description.mainFile;
+    tcinfo.sourceFiles[""] ~= mainFile;
     tcinfo.versions[""] ~= "VibeCustomMain";
 
     string[] plugins = runnerSettings.settings.plugins;
@@ -105,7 +124,7 @@ class TrialProject : Project {
       tcinfo.dependencies[plugin].optional = true;
     }
 
-    project.saveSelections;
+    dubProject.saveSelections;
     hasTcinfo = true;
     return tcinfo;
   }
@@ -116,12 +135,12 @@ class TrialProject : Project {
     auto baseName = name.canFind(":") ? name.split(":")[0] : name;
     bool isSelected;
 
-    if(baseName == getBasePackageName(project.name)) {
+    if(baseName == getBasePackageName(dubProject.name)) {
       return null;
     }
 
-    if(project.selections.hasSelectedVersion(baseName)) {
-      dep = project.selections.getSelectedVersion(baseName);
+    if(dubProject.selections.hasSelectedVersion(baseName)) {
+      dep = dubProject.selections.getSelectedVersion(baseName);
       dep.optional = false;
     }
 
@@ -129,30 +148,30 @@ class TrialProject : Project {
 
     if(!dep.optional && dep.path.toString != "") {
       if(!dep.path.absolute) {
-        dep.path = project.rootPackage.path ~ dep.path;
+        dep.path = dubProject.rootPackage.path ~ dep.path;
       }
 
-      project.packageManager.getOrLoadPackage(dep.path, NativePath.init, true);
+      dubProject.packageManager.getOrLoadPackage(dep.path, NativePath.init, true);
     }
 
     /// if the package is not optional
     if(!dep.optional) {
-      pack = project.packageManager.getBestPackage(name, dep, true);
+      pack = dubProject.packageManager.getBestPackage(name, dep, true);
     }
 
     /// it the package can not be resolved, it means it is not cached
     if(pack is null && !dep.optional) {
-      m_description.dub.fetch(baseName, dep, PlacementLocation.user, FetchOptions.usePrerelease);
-      pack = project.packageManager.getBestPackage(baseName, dep, true);
+      dub.fetch(baseName, dep, PlacementLocation.user, FetchOptions.usePrerelease);
+      pack = dubProject.packageManager.getBestPackage(baseName, dep, true);
 
       if(pack is null) {
-        pack = project.packageManager.getPackage(baseName, dep.version_);
+        pack = dubProject.packageManager.getPackage(baseName, dep.version_);
       }
     }
 
     if(pack !is null) {
       if(!isSelected) {
-        project.selections.selectVersion(pack.basePackage.name, pack.version_);
+        dubProject.selections.selectVersion(pack.basePackage.name, pack.version_);
       }
 
       foreach(dependency; pack.getAllDependencies) {
@@ -164,7 +183,6 @@ class TrialProject : Project {
   }
 
   void writeTestFile() {
-    auto mainFile = m_description.mainFile;
     logDiagnostic("write the test file to '%s'", mainFile);
 
     if (reporters != "") {
@@ -179,7 +197,7 @@ class TrialProject : Project {
       writeTrialFolder(embededLibraryPath);
     }
 
-    auto content = generateTestFile(runnerSettings.settings, m_description.hasTrial, m_description.modules, m_description.externalModules);
+    auto content = generateTestFile(runnerSettings.settings, this.hasTrial, this.modules, this.externalModules);
 
 
     if (!mainFile.exists) {
@@ -194,17 +212,87 @@ class TrialProject : Project {
       std.file.write(mainFile, content);
     }
   }
+
+  auto modules() {
+    logInfo("Looking for files inside `" ~ dubProject.name ~ "`");
+
+    auto currentPackage = this.desc.packages.filter!(a => a.name == dubProject.rootPackage.name).front;
+    auto packagePath = currentPackage.path;
+
+    auto neededTarget = this.desc.targets.filter!(a => a.rootPackage.canFind(dubProject.rootPackage.name))
+      .filter!(a => a.rootPackage.canFind(subPackageName)).array;
+
+    if (neededTarget.empty) {
+      string[2][] val;
+      return val;
+    }
+
+    return neededTarget.front.buildSettings.sourceFiles.map!(a => a.to!string)
+      .filter!(a => a.startsWith(packagePath)).map!(a => [a, getModuleName(a)])
+      .filter!(a => a[1] != "").array.to!(string[2][]);
+  }
+
+  string[] externalModules() {
+    auto neededTargets = this.desc.targets.filter!(a => !a.rootPackage.canFind(dubProject.rootPackage.name));
+
+    if (neededTargets.empty) {
+      return [];
+    }
+
+    auto files = cast(string[]) reduce!((a, b) => a ~ b)([],
+        neededTargets.map!(a => a.buildSettings.sourceFiles));
+
+    return files.map!(a => getModuleName(a)).filter!(a => a != "").array;
+  }
+
+  string subPackageName() {
+    return "";
+  }
+
+  string mainFile() {
+    string name = subPackageName != "" ? subPackageName : "root";
+    name = name.replace(":", "");
+
+    return buildPath(dub.rootPath.toNativeString, "trial_" ~ name ~ ".d").to!string;
+  }
+
+  string buildFile() {
+    string name = subPackageName != "" ? subPackageName : "root";
+    name = name.replace(":", "");
+
+    return "trial-" ~ name;
+  }
+
+  bool hasTrial() {
+    if (dubProject.rootPackage.name == "trial") {
+      return true;
+    }
+
+    auto neededTarget = this.desc.targets.filter!(a => a.rootPackage.canFind(dubProject.rootPackage.name))
+      .filter!(a => a.rootPackage.canFind(subPackageName)).array;
+
+    if (neededTarget.empty) {
+      return false;
+    }
+
+    return !neededTarget[0].buildSettings.versions.filter!(a => a.canFind("Have_trial")).empty;
+  }
+
+  bool hasTrialConfiguration() {
+    return dub.configurations.canFind("trial");
+  }
 }
 
-class TrialCommand : PackageBuildCommand {
+class TrialRunCommand : PackageBuildCommand {
   protected {
     TrialProject project;
+    Dub dub;
   }
 
   RunnerSettings runnerSettings;
 
-  this() {
-    this.name = "trial";
+  this(RunnerSettings runnerSettings) {
+    this.name = "run";
     this.argumentsPattern = "[<package>]";
     this.description = "Executes the tests of the selected package";
     this.helpText = [`Builds the package and executes all contained test.`, ``,
@@ -214,30 +302,79 @@ class TrialCommand : PackageBuildCommand {
       ~ `exist either, the first executable configuration is chosen.`];
 
     this.acceptsAppArgs = false;
+    this.runnerSettings = runnerSettings;
   }
 
-  void setProject(TrialProject project) {
-    this.project = project;
+  override void prepare(scope CommandArgs args) {
+    m_buildType = runnerSettings.buildType;
+
+    super.prepare(args);
+  }
+
+  protected void setup(Dub dub, string[] free_args, string[] app_args = []) {
+    enforce(loadCwdPackage(dub, true), "Can't load the package.");
+
+    logInfo("Setup the Trial project.");
+
+    this.project = new TrialProject(dub, runnerSettings);
+
+    if(!m_buildConfig && this.project.hasTrialConfiguration) {
+      m_buildConfig = "trial";
+    }
+
+    setupPackage(dub, this.project.packageName, m_buildConfig);
+    this.project.configuration = m_buildConfig;
+
+    this.dub = dub;
+  }
+
+  private bool loadCwdPackage(Dub dub, bool warn_missing_package) {
+    bool found;
+    foreach (f; packageInfoFiles)
+      if (existsFile(dub.rootPath ~ f.filename))
+      {
+        found = true;
+        break;
+      }
+
+    if (!found) {
+      if (warn_missing_package) {
+        logInfo("");
+        logInfo("No package manifest (dub.json or dub.sdl) was found in");
+        logInfo(dub.rootPath.toNativeString());
+        logInfo("Please run DUB from the root directory of an existing package, or run");
+        logInfo("\"dub init --help\" to get information on creating a new package.");
+        logInfo("");
+      }
+      return false;
+    }
+
+    dub.loadPackage();
+
+    return true;
   }
 
   override int execute(Dub dub, string[] free_args, string[] app_args = []) {
-    string package_name;
-
     enforce(free_args.length <= 1, "Expected one or zero arguments.");
 
     if (free_args.length >= 1) {
-      package_name = free_args[0];
+      this.project.packageName = free_args[0];
     }
 
-    logInfo("Generate main file: " ~ project.description.mainFile);
+    setup(dub, free_args, app_args);
 
+    auto settings = getSettings;
+    logInfo("Generate main file in `%s`", project.mainFile);
+
+    settings.buildSettings.addOptions([BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo]);
+    settings.buildSettings.targetType = TargetType.executable;
+
+    if(project.configuration == "") {
+      project.configuration = this.configuration;
+    }
+
+    project.desc = project.testProject.describe(settings);
     project.writeTestFile();
-
-    setupPackage(dub, package_name, runnerSettings.buildType);
-
-    m_buildSettings.addOptions([BuildOption.unittests, BuildOption.debugMode,
-        BuildOption.debugInfo]);
-
     string[] arguments;
 
     if (runnerSettings.testName != "") {
@@ -252,47 +389,91 @@ class TrialCommand : PackageBuildCommand {
       arguments ~= ["-e", runnerSettings.executor];
     }
 
-    logDiagnostic("running the tests");
-    run(arguments);
+    logDiagnostic("Running the tests");
+
+    settings.runArgs = arguments;
+
+    //dub.project = project.testProject;
+    auto generator = createProjectGenerator("build", project.testProject);
+
+    generator.generate(settings);
+
+    if(runnerSettings.buildType == "unittest-cov") {
+      string source = buildPath("coverage", "raw");
+      string destination = buildPath(runnerSettings.settings.artifactsLocation, "coverage");
+      logDiagnostic("calculate the code coverage");
+
+      logInfo("");
+      logInfo("Line coverage: %s%s", convertLstFiles(source, destination, dub.rootPath.toString, dub.projectName), "%");
+      logInfo("");
+    }
 
     return 0;
   }
 
-  void run(string[] runArgs = []) {
-    auto settings = getSettings;
-    settings.runArgs = runArgs;
-
-    auto generator = createProjectGenerator("build", project);
-
-    generator.generate(settings);
-  }
-
   protected GeneratorSettings getSettings() {
-    auto m_description = project.description;
-
     GeneratorSettings settings;
-    settings.config = m_description.configuration;
+    settings.config = project.buildFile;
     settings.platform = m_buildPlatform;
     settings.compiler = getCompiler(m_buildPlatform.compilerBinary);
     settings.buildType = m_buildType;
     settings.buildMode = m_buildMode;
-    settings.buildSettings = m_buildSettings;
     settings.combined = runnerSettings.combined;
     settings.parallelBuild = runnerSettings.parallel;
     settings.force = runnerSettings.force;
     settings.tempBuild = m_single;
     settings.run = true;
     settings.runArgs = [];
-    settings.buildSettings.mainSourceFile = m_description.mainFile;
-    settings.config = m_description.buildFile;
+
+    settings.buildSettings = m_buildSettings;
+    settings.buildSettings.mainSourceFile = project.mainFile;
+    settings.buildSettings.targetName = project.buildFile;
+    settings.buildSettings.targetType = TargetType.executable;
+    settings.buildSettings.addVersions(["Have_trial_lifecycle", "trial_lifecycle"]);
 
     return settings;
   }
+
+  string configuration() {
+    if (m_buildConfig.length) {
+      return m_buildConfig;
+    }
+
+    if (project.hasTrialConfiguration) {
+      return "trial";
+    }
+
+    auto defaultConfiguration = project.dubProject.getDefaultConfiguration(m_buildPlatform);
+
+    if(defaultConfiguration == "") {
+      defaultConfiguration = "unittest";
+    }
+
+    return defaultConfiguration;
+  }
+
+  auto dubDescription() {
+    return project.dubProject.describe(getSettings);
+  }
+
+  auto neededTarget() {
+    auto desc = dubDescription;
+    auto rootPackage = desc.rootPackage;
+
+    return desc.targets.filter!(a => a.rootPackage.canFind(rootPackage))
+      .filter!(a => a.rootPackage.canFind(this.project.packageName)).array;
+  }
+
+  auto files() {
+    return neededTarget.front.buildSettings.sourceFiles.map!(a => a.to!string).array;
+  }
 }
 
-class TrialDescribeCommand : TrialCommand {
+class TrialDescribeCommand : TrialRunCommand {
 
-  this() {
+  this(RunnerSettings runnerSettings) {
+    super(runnerSettings);
+
     this.name = "describe";
     this.argumentsPattern = "[<package>]";
     this.description = "lists the tests of the selected package";
@@ -307,11 +488,12 @@ class TrialDescribeCommand : TrialCommand {
 
   override {
     void prepare(scope CommandArgs args) {
-      m_buildType = "unittest";
+      m_buildType = runnerSettings.buildType;
       super.prepare(args);
     }
 
     int execute(Dub dub, string[] free_args, string[] app_args = []) {
+      this.setup(dub, free_args, app_args);
       import trial.runner;
       import trial.discovery.unit;
       import trial.discovery.testclass;
@@ -331,13 +513,11 @@ class TrialDescribeCommand : TrialCommand {
         testCases ~= testClassDiscovery.discoverTestCases(free_args[0]);
         testCases ~= specDiscovery.discoverTestCases(free_args[0]);
       } else {
-        auto m_description = project.description;
-
-        testCases = m_description.files.map!(a => unitTestDiscovery.discoverTestCases(a))
+        testCases = this.files.map!(a => unitTestDiscovery.discoverTestCases(a))
           .join.array;
-        testCases ~= m_description.files.map!(a => testClassDiscovery.discoverTestCases(a))
+        testCases ~= this.files.map!(a => testClassDiscovery.discoverTestCases(a))
           .join.array;
-        testCases ~= m_description.files.map!(a => specDiscovery.discoverTestCases(a)).join.array;
+        testCases ~= this.files.map!(a => specDiscovery.discoverTestCases(a)).join.array;
       }
 
       testCases.describeTests.toJSONHierarchy.write;
@@ -347,8 +527,11 @@ class TrialDescribeCommand : TrialCommand {
   }
 }
 
-class TrialSubpackagesCommand : TrialCommand {
-  this() {
+class TrialSubpackagesCommand : TrialRunCommand {
+
+  this(RunnerSettings runnerSettings) {
+    super(runnerSettings);
+
     this.name = "subpackages";
     this.argumentsPattern = "";
     this.description = "lists the project subpackages";
@@ -358,7 +541,9 @@ class TrialSubpackagesCommand : TrialCommand {
   }
 
   override int execute(Dub dub, string[] free_args, string[] app_args = []) {
-    auto list = [project.description.getRootPackage] ~ project.description.subPackages;
+    setup(dub, free_args, app_args);
+
+    auto list = [this.dubDescription.rootPackage] ~ this.dubDescription.packages.map!(a => a.name).array;
     list.join("\n").writeln;
 
     return 0;
