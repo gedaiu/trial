@@ -35,6 +35,8 @@ import trial.version_;
 import trial.discovery.code;
 import trial.coverage;
 
+import std.stdio;
+
 class TrialProject {
   private {
     BuildSettingsTemplate tcinfo;
@@ -313,9 +315,10 @@ class TrialRunCommand : PackageBuildCommand {
     enforce(loadCwdPackage(dub, true), "Can't load the package.");
 
     logInfo("Setup the Trial project.");
+
     this.project = new TrialProject(dub, runnerSettings);
 
-    if(!m_buildConfig) {
+    if(!m_buildConfig && this.project.hasTrialConfiguration) {
       m_buildConfig = "trial";
     }
 
@@ -365,6 +368,10 @@ class TrialRunCommand : PackageBuildCommand {
 
     settings.buildSettings.addOptions([BuildOption.unittests, BuildOption.debugMode, BuildOption.debugInfo]);
     settings.buildSettings.targetType = TargetType.executable;
+
+    if(project.configuration == "") {
+      project.configuration = this.configuration;
+    }
 
     project.desc = project.testProject.describe(settings);
     project.writeTestFile();
