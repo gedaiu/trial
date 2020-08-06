@@ -214,15 +214,13 @@ master-linux-packages:
     - master
   tags:
     - docker-trial
-  image:
-    name: dlanguage/dmd:2.080.0
-    entrypoint: [""]
+  image: ubuntu:20.04
   dependencies:
       - dmd-ubuntu
       - dmd-fedora
   script:
     - apt-get update -y
-    - apt-get install -y ruby ruby-dev rubygems build-essential libevent-dev rpm
+    - apt-get install -y ruby ruby-dev rubygems build-essential libevent-dev rpm libssl-dev
     - gem install --no-ri --no-rdoc fpm
     - fpm --version
     - ls -lsah
@@ -234,8 +232,8 @@ master-linux-packages:
     - cp trial tmp/ubuntu/usr/local/bin
     - cp trial-fedora tmp/fedora/usr/local/bin/trial
     - cd tmp
-    - fpm -s dir -t deb -n trial -v $VER --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" -d "libssl1.0.0 > 0" ./ubuntu/usr/local/bin/=/usr/local/bin
-    - fpm -s dir -t rpm -n trial -v $VER --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" --depends "compat-openssl10" ./fedora/usr/local/bin/=/usr/local/bin
+    - fpm -s dir -t deb -n trial -v $VER --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" -d "libssl-dev" ./ubuntu/usr/local/bin/=/usr/local/bin
+    - fpm -s dir -t rpm -n trial -v $VER --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" --depends "openssl-devel" ./fedora/usr/local/bin/=/usr/local/bin
     - cd ..
   artifacts:
     paths:
