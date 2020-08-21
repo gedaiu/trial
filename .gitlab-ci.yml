@@ -40,6 +40,9 @@ stages:
     - mv /root/.dub vendor/dub || true
   script:
     - trial
+  artifacts:
+    paths:
+      - .trial
   cache:
     key: "$CI_JOB_NAME"
     paths:
@@ -374,7 +377,6 @@ pages:
     - docker-trial
   dependencies:
     - linux-packages
-    - master-linux-packages
     - trial-dmd-2.091.0
   before_script:
     - dnf update -y
