@@ -351,7 +351,7 @@ fedora-32:
     - tags
     - master
   image:
-    name: fedora:31
+    name: fedora:32
   dependencies:
     - linux-packages
     - master-linux-packages
@@ -369,7 +369,7 @@ pages:
   only:
     - tags
   image:
-    name: fedora:31
+    name: fedora:32
   tags:
     - docker-trial
   dependencies:
@@ -381,7 +381,7 @@ pages:
     - dnf install -y npm wget gcc glibc-devel libcurl libgcc
     - npm install -g allure-commandline@1.4.23
     - wget http://downloads.dlang.org/releases/2.x/2.080.1/dmd-2.080.1-0.fedora.x86_64.rpm
-    - dnf install -y rsync openssl-devel compat-openssl10-1:1.0.2o-1.fc28.x86_64 dmd-2.080.1-0.fedora.x86_64.rpm java-1.8.0-openjdk.x86_64
+    - dnf install -y rsync openssl-devel dmd-2.080.1-0.fedora.x86_64.rpm java-1.8.0-openjdk.x86_64
   script:
     - dub build :lifecycle -b ddox
     - cd website
