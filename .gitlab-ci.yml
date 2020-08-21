@@ -305,7 +305,7 @@ ubuntu-18.04:
     - pwd
     - ls -lsa tmp
     - apt-get update -y || true
-    - apt-get install -y libssl libevent
+    - apt-get install -y libssl-dev libevent-dev
     - dpkg -i tmp/*.deb
     - trial --version
 
@@ -324,7 +324,7 @@ ubuntu-19.10:
     - pwd
     - ls -lsa tmp
     - apt-get update -y || true
-    - apt-get install -y libssl libevent
+    - apt-get install -y libssl-dev libevent-dev
     - dpkg -i tmp/*.deb
     - trial --version
 
@@ -343,7 +343,7 @@ ubuntu-20.04:
     - pwd
     - ls -lsa tmp
     - apt-get update -y || true
-    - apt-get install -y libssl libevent
+    - apt-get install -y libssl-dev libevent-dev
     - dpkg -i tmp/*.deb
     - trial --version
 
