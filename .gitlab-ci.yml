@@ -188,8 +188,8 @@ linux-packages:
       - dmd-fedora
   script:
     - apt-get update -y
-    - apt-get install -y ruby ruby-dev rubygems build-essential libevent-dev rpm
-    - gem install --no-ri --no-rdoc fpm
+    - TZ=Europe/Moscow apt-get install -y ruby ruby-dev rubygems build-essential libevent-dev rpm libssl-dev
+    - gem install --no-document fpm
     - fpm --version
     - ls -lsah
     - pwd
@@ -220,8 +220,8 @@ master-linux-packages:
       - dmd-fedora
   script:
     - apt-get update -y
-    - apt-get install -y ruby ruby-dev rubygems build-essential libevent-dev rpm libssl-dev
-    - gem install --no-ri --no-rdoc fpm
+    - TZ=Europe/Moscow apt-get install -y ruby ruby-dev rubygems build-essential libevent-dev rpm libssl-dev
+    - gem install --no-document fpm
     - fpm --version
     - ls -lsah
     - pwd
