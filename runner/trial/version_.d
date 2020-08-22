@@ -1,3 +1,3 @@
 module trial.version_;
 
-enum trialVersion = "0.7.2-dev";
+enum trialVersion = "0.7.4";
