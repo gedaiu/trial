@@ -73,7 +73,7 @@ ldc-ubuntu:
   script:
     - ls ldc2-1.23.0-linux-x86_64.tar.xz || wget https://github.com/ldc-developers/ldc/releases/download/v1.23.0/ldc2-1.23.0-linux-x86_64.tar.xz
     - tar -xf ldc2-1.23.0-linux-x86_64.tar.xz
-    - mv ldc2-1.23.0-linux-x86_64/* /usr/local
+    - rsync -vau ldc2-1.23.0-linux-x86_64/ /usr/local/
     - ldc2 --version
     - dub --version
     - dub build :runner --build release
