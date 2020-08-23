@@ -55,8 +55,8 @@ dmd-ubuntu:
   <<: *build_definition
   image: ubuntu:20.04
   script:
-    - wget http://downloads.dlang.org/releases/2.x/2.091.0/dmd_2.091.0-0_amd64.deb
-    - dpkg -i dmd_2.091.0-0_amd64.deb
+    - wget http://downloads.dlang.org/releases/2.x/2.093.1/dmd_2.093.1-0_amd64.deb
+    - dpkg -i dmd_2.093.1-0_amd64.deb
     - dmd --version
     - dub --version
     - dub build :runner --build release
@@ -65,16 +65,16 @@ ldc-ubuntu:
   <<: *build_definition
   image: ubuntu:20.04
   script:
-    - ls ldc2-1.13.0-beta1-linux-x86_64.tar.xz || wget https://github.com/ldc-developers/ldc/releases/download/v1.13.0-beta1/ldc2-1.13.0-beta1-linux-x86_64.tar.xz
-    - tar -xf ldc2-1.13.0-beta1-linux-x86_64.tar.xz
-    - mv ldc2-1.13.0-beta1-linux-x86_64/* /usr/local
+    - ls ldc2-1.23.0-linux-x86_64.tar.xz || wget https://github.com/ldc-developers/ldc/releases/download/v1.23.0/ldc2-1.23.0-linux-x86_64.tar.xz
+    - tar -xf ldc2-1.23.0-linux-x86_64.tar.xz
+    - mv ldc2-1.23.0-linux-x86_64/* /usr/local
     - ldc2 --version
     - dub --version
     - dub build :runner --build release
 
 dmd-fedora:
   stage: build
-  image: fedora:31
+  image: fedora:32
   tags:
     - docker-trial
   before_script:
@@ -83,8 +83,8 @@ dmd-fedora:
     - dnf install -y openssl-devel libcurl-devel wget
     - mkdir -p vendor/rpm
     - cd vendor/rpm
-    - ls dmd-2.091.0-0.fedora.x86_64.rpm || wget http://downloads.dlang.org/releases/2.x/2.091.0/dmd-2.091.0-0.fedora.x86_64.rpm
-    - dnf install -y dmd-2.091.0-0.fedora.x86_64.rpm
+    - ls wget http://downloads.dlang.org/releases/2.x/2.093.1/dmd-2.093.1-0.fedora.x86_64.rpm
+    - dnf install -y ./dmd-2.093.1-0.fedora.x86_64.rpm
     - cd ../..
   script:
     - dmd --version
@@ -255,7 +255,7 @@ docker-dmd:
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay2
-    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.091.0:$CI_COMMIT_REF_NAME
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.093.0:$CI_COMMIT_REF_NAME
   dependencies:
     - dmd-ubuntu
   services:
