@@ -13,7 +13,7 @@ stages:
     - mkdir -p vendor/apt
     - mv vendor/dub /root/.dub || true
     - apt-get update || true
-    - apt-get -o dir::cache::archives="vendor/apt" install -y libssl-dev libevent-dev libcurl4 gcc wget libc6-dev xz-utils libz-dev
+    - apt-get -o dir::cache::archives="vendor/apt" install -y build-essential libssl-dev libevent-dev libcurl4 gcc wget libc6-dev git libmagickwand-dev rsync xz-utils libz-dev libsqlite3-dev
   after_script:
     - mv /root/.dub vendor/dub || true
   artifacts:
