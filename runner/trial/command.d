@@ -317,6 +317,9 @@ class TrialRunCommand : PackageBuildCommand {
     logInfo("Setup the Trial project.");
 
     this.project = new TrialProject(dub, runnerSettings);
+    if(free_args.length >= 1) {
+      this.project.packageName = free_args[0];
+    }
 
     if(!m_buildConfig && this.project.hasTrialConfiguration) {
       m_buildConfig = "trial";
@@ -357,10 +360,6 @@ class TrialRunCommand : PackageBuildCommand {
   override int execute(Dub dub, string[] free_args, string[] app_args = []) {
     enforce(free_args.length <= 1, "Expected one or zero arguments.");
     setup(dub, free_args, app_args);
-
-    if(free_args.length >= 1) {
-      this.project.packageName = free_args[0];
-    }
 
     auto settings = getSettings;
     logInfo("Generate main file in `%s`", project.mainFile);
