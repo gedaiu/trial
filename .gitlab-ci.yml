@@ -127,47 +127,29 @@ trial-dmd-2.091.0:
     - dpkg -i dmd_2.091.0-0_amd64.deb
     - trial --coverage
 
-trial-ldc-1.8.0:
+trial-ldc-1.23.0:
   <<: *test_definition
   script:
     - mkdir -p vendor/ldc
     - cd vendor/ldc
-    - wget https://github.com/ldc-developers/ldc/releases/download/v1.8.0/ldc2-1.8.0-linux-x86_64.tar.xz
-    - tar -xf ldc2-1.8.0-linux-x86_64.tar.xz
-    - rsync -vau ldc2-1.8.0-linux-x86_64/ /usr/local/
+    - wget https://github.com/ldc-developers/ldc/releases/download/v1.23.0/ldc2-1.23.0-linux-x86_64.tar.xz
+    - tar -xf ldc2-1.23.0-linux-x86_64.tar.xz
+    - rsync -vau ldc2-1.23.0-linux-x86_64/ /usr/local/
     - cd ../../
     - trial --coverage
 
-trial-dmd-2.082.1:
+trial-dmd-2.093.1:
   <<: *test_definition
   script:
-    - wget http://downloads.dlang.org/releases/2.x/2.082.1/dmd_2.082.1-0_amd64.deb
-    - dpkg -i dmd_2.082.1-0_amd64.deb
-    - trial --coverage
-
-trial-ldc-1.7.0:
-  <<: *test_definition
-  script:
-    - mkdir -p vendor/ldc
-    - cd vendor/ldc
-    - wget https://github.com/ldc-developers/ldc/releases/download/v1.7.0/ldc2-1.7.0-linux-x86_64.tar.xz
-    - tar -xf ldc2-1.7.0-linux-x86_64.tar.xz
-    - rsync -vau ldc2-1.7.0-linux-x86_64/ /usr/local/
-    - cd ../../
-    - trial --coverage
-
-trial-dmd-2.083.0:
-  <<: *test_definition
-  script:
-    - wget http://downloads.dlang.org/releases/2.x/2.083.0/dmd_2.083.0-0_amd64.deb
-    - dpkg -i dmd_2.083.0-0_amd64.deb
+    - wget http://downloads.dlang.org/releases/2.x/2.093.1/dmd_2.093.1-0_amd64.deb
+    - dpkg -i dmd_2.093.1-0_amd64.deb
     - trial --coverage
 
 examples:
   <<: *test_definition
   script:
-    - wget http://downloads.dlang.org/releases/2.x/2.080.1/dmd_2.080.1-0_amd64.deb
-    - dpkg -i dmd_2.080.1-0_amd64.deb
+    - wget http://downloads.dlang.org/releases/2.x/2.093.1/dmd_2.093.1-0_amd64.deb
+    - dpkg -i dmd_2.093.1-0_amd64.deb
     - trial --coverage
     - cd examples/spec
     - trial
