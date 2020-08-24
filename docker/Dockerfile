@@ -6,6 +6,9 @@ COPY trial /usr/local/bin
 
 WORKDIR /src
 
+ENV TZ="Europe/Moscow"
+ENV DEBIAN_FRONTEND="noninteractive"
+
 RUN apt-get update \
   && apt-get install -y build-essential libssl-dev libevent-dev libcurl4 gcc wget libc6-dev git libmagickwand-dev libsqlite3-dev \
   && cd /tmp/ \

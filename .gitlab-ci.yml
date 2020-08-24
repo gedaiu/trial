@@ -243,7 +243,7 @@ docker-dmd:
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay2
-    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.093.0:$CI_COMMIT_REF_NAME
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.093.1:$CI_COMMIT_REF_NAME
   dependencies:
     - dmd-ubuntu
   services:
