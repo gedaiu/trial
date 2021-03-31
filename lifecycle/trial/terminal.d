@@ -3635,11 +3635,11 @@ struct ScrollbackBuffer {
 					firstPartial = false;
 				}
 
-				foreach(idx, dchar ch; towrite) {
+				foreach(chIdx, dchar ch; towrite) {
 					if(written >= width) {
 						clickRegions ~= ClickRegion(&component, terminal.cursorX, terminal.cursorY, written);
-						terminal.write(towrite[0 .. idx]);
-						towrite = towrite[idx .. $];
+						terminal.write(towrite[0 .. chIdx]);
+						towrite = towrite[chIdx .. $];
 						linePos++;
 						written = 0;
 						terminal.moveTo(x, y + linePos);

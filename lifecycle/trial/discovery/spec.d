@@ -110,20 +110,26 @@ private void updateTestCounter(string[] path, long value)
 /// Define a Spec
 void it(T)(string name, T test, string file = __FILE__, size_t line = __LINE__)
 {
-  auto before = beforeList.dup;
-  auto after = afterList.dup;
   auto path = suitePath.dup;
-
-  reverse(after);
 
   updateTestCounter(path, 1);
 
+  import std.stdio;
+  auto before = beforeList;
+  auto after = afterList;
+
   auto testCase = TestCase(suitePath.join("."), name, ({
-      before.each!"a()";
+      foreach(a; before) {
+        a();
+      }
+
       test();
 
       updateTestCounter(path, -1);
-      after.each!"a()";
+
+      foreach_reverse(a; after) {
+        a();
+      }
     }));
 
   testCase.location = SourceLocation(file, line);
@@ -135,11 +141,7 @@ void it(T)(string name, T test, string file = __FILE__, size_t line = __LINE__)
 /// Define a pending Spec
 void it(string name, string file = __FILE__, size_t line = __LINE__)
 {
-  auto before = beforeList.dup;
-  auto after = afterList.dup;
   auto path = suitePath.dup;
-
-  reverse(after);
 
   updateTestCounter(path, 1);
 
@@ -279,7 +281,7 @@ unittest
 
 version (unittest)
 {
-  version(Have_fluent_asserts): 
+  version(Have_fluent_asserts):
 
   import fluent.asserts;
 
