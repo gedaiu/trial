@@ -279,25 +279,6 @@ docker-ldc:
     - docker build --no-cache=true -t $IMAGE_TAG .
     - docker push $IMAGE_TAG
 
-ubuntu-19.10:
-  stage: test-package
-  only:
-    - tags
-    - master
-  image:
-    name: ubuntu:19.10
-  dependencies:
-    - linux-packages
-    - master-linux-packages
-  script:
-    - ls -lsa
-    - pwd
-    - ls -lsa tmp
-    - apt-get update -y || true
-    - apt-get install -y libssl-dev libevent-dev
-    - dpkg -i tmp/*.deb
-    - trial --version
-
 ubuntu-20.04:
   stage: test-package
   only:
