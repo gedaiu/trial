@@ -249,7 +249,7 @@ class VisualTrialReporterParser {
       if(onResult !is null) {
         onResult(testResult);
       }
-      
+
       readingErrorMessage = false;
       testResult = null;
       return;
@@ -265,7 +265,7 @@ class VisualTrialReporterParser {
     }
 
     auto pos = line.indexOf(":");
-    
+
     if(pos == -1) {
       if(onOutput !is null) {
         onOutput(line);
@@ -339,8 +339,8 @@ unittest {
 
   parser.add("BEGIN TEST;");
   parser.testResult.should.not.beNull;
-  parser.testResult.begin.should.be.greaterThan(begin);
-  parser.testResult.end.should.be.greaterThan(begin);
+  parser.testResult.begin.should.be.greaterOrEqualTo(begin);
+  parser.testResult.end.should.be.greaterOrEqualTo(begin);
   parser.testResult.status.should.equal(TestResult.Status.created);
 
   parser.add("suite:suite name");
@@ -437,7 +437,7 @@ unittest {
 }
 
 class ParsedVisualTrialException : Exception {
-  this() { 
+  this() {
     super("");
   }
 }

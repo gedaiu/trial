@@ -260,7 +260,7 @@ version (Have_fluent_asserts) {
     }
   }
 
-  @("The stack result should display the stack in a readable form")
+  /// The stack result should display the stack in a readable form
   unittest
   {
     Throwable exception;
@@ -486,7 +486,7 @@ unittest
 }
 
 version(unittest) {
-  version(Have_fluent_asserts): 
+  version(Have_fluent_asserts):
   class MockPrinter : ResultPrinter {
     string buffer;
 
@@ -628,12 +628,12 @@ Frame toWindows1Frame(string line)
   if(matched.length < 4) {
     return frame;
   }
- 
+
   frame.address = matched["address"];
   frame.name = matched["name"];
   frame.file = matched["file"];
   frame.line = matched["line"].to!int;
-  
+
   frame.invalid = frame.address == "" || frame.name == "" || frame.file == "";
 
   return frame;
