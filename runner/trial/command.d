@@ -11,6 +11,7 @@ import std.conv;
 import std.array;
 
 import dub.internal.vibecompat.data.json;
+import dub.internal.vibecompat.inet.path;
 
 import dub.compilers.compiler;
 import dub.dependency;
@@ -36,6 +37,10 @@ import trial.discovery.code;
 import trial.coverage;
 
 import std.stdio;
+
+import vibe.core.path;
+
+alias NP = GenericPath!(vibe.core.path.PosixPathFormat);
 
 class TrialProject {
   private {
@@ -146,12 +151,14 @@ class TrialProject {
 
     Package pack;
 
-    if(!dep.optional && dep.path.toString != "") {
+    NP path = dep.path();
+
+    if(!dep.optional && path.toString != "") {
       if(!dep.path.absolute) {
-        dep.path = dubProject.rootPackage.path ~ dep.path;
+        dep.path = dubProject.rootPackage.path ~ path;
       }
 
-      dubProject.packageManager.getOrLoadPackage(dep.path, NativePath.init, true);
+      dubProject.packageManager.getOrLoadPackage(path, NativePath.init, true);
     }
 
     /// if the package is not optional

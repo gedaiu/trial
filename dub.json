@@ -10,10 +10,12 @@
   "dependencies": {},
   "configurations": [
     {
-      "name": "executable"
+      "name": "executable",
+      "dflags": ["-allinst"]
     },
     {
       "name": "trial",
+      "dflags": ["-allinst"],
       "excludedSourceFiles": [
         "source/app.d",
         "runner/app.d"
@@ -92,6 +94,7 @@
       "name": "runner",
       "targetType": "executable",
       "targetName": "trial",
+      "dflags": ["-allinst"],
       "sourcePaths": [
         "runner",
         "lifecycle"
