@@ -65,7 +65,7 @@ dmd-ubuntu:
     - dpkg -i dmd_2.093.1-0_amd64.deb
     - dmd --version
     - dub --version
-    - dub build :runner --build release
+    - dub -v build :runner --build release
 
 ldc-ubuntu:
   <<: *build_definition
@@ -76,7 +76,7 @@ ldc-ubuntu:
     - rsync -vau ldc2-1.28.0-linux-x86_64/ /usr/local/
     - ldc2 --version
     - dub --version
-    - dub build :runner --build release
+    - dub -v build :runner --build release
 
 dmd-fedora:
   stage: build
@@ -95,7 +95,7 @@ dmd-fedora:
   script:
     - dmd --version
     - dub --version
-    - dub build :runner --build release --override-config vibe-d:tls/openssl-1.1
+    - dub -v build :runner --build release --override-config vibe-d:tls/openssl-1.1
     - mv trial trial-fedora
   after_script:
     - mv /var/cache/dnf vendor/dnf || true
