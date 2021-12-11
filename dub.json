@@ -114,7 +114,8 @@
         "fluent-asserts": ">=0.12.0"
       },
       "subConfigurations": {
-        "dub": "library-nonet"
+        "dub": "library-nonet",
+        "vibe-d:tls": "botan"
       }
     }
   ]
