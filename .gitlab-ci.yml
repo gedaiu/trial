@@ -89,7 +89,7 @@ dmd-fedora:
     - dnf install -y openssl-devel libcurl-devel wget
     - mkdir -p vendor/rpm
     - cd vendor/rpm
-    - ls dmd-2.093.1-0.fedora.x86_64.rpm || wget https://s3.us-west-2.amazonaws.com/downloads.dlang.org/releases/2021/dmd-2.098.0-0.fedora.x86_64.rpm
+    - ls dmd-2.098.0-0.fedora.x86_64.rpm || wget https://s3.us-west-2.amazonaws.com/downloads.dlang.org/releases/2021/dmd-2.098.0-0.fedora.x86_64.rpm
     - dnf install -y ./dmd-2.098.0-0.fedora.x86_64.rpm
     - cd ../..
   script:
