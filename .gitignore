@@ -44,4 +44,3 @@ examples/unittest/dub.selections.json
 examples/optional-fluent-asserts/dub.selections.json
 node_modules
 website/web
-dub.selections.json
