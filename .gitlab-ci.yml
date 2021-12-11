@@ -315,7 +315,6 @@ pages:
   stage: web
   only:
     - tags
-    - v0.7
   image:
     name: fedora:35
   tags:
