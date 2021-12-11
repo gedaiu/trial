@@ -95,6 +95,7 @@ dmd-fedora:
   script:
     - dmd --version
     - dub --version
+    - pkg-config openssl --modversion || true
     - dub -v build :runner --build release --override-config vibe-d:tls/openssl-1.1
     - mv trial trial-fedora
   after_script:
