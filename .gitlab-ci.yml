@@ -29,7 +29,7 @@ stages:
       - vendor/dub
 
 .test_template: &test_definition
-  image: ubuntu:22.04
+  image: ubuntu:21.04
   stage: test
   tags:
     - docker-trial
@@ -59,7 +59,7 @@ stages:
 
 dmd-ubuntu:
   <<: *build_definition
-  image: ubuntu:22.04
+  image: ubuntu:21.04
   script:
     - wget https://s3.us-west-2.amazonaws.com/downloads.dlang.org/releases/2021/dmd_2.098.0-0_amd64.deb
     - dpkg -i dmd_2.098.0-0_amd64.deb
@@ -69,7 +69,7 @@ dmd-ubuntu:
 
 ldc-ubuntu:
   <<: *build_definition
-  image: ubuntu:22.04
+  image: ubuntu:21.04
   script:
     - ls ldc2-1.23.0-linux-x86_64.tar.xz || wget https://github.com/ldc-developers/ldc/releases/download/v1.28.0/ldc2-1.28.0-linux-x86_64.tar.xz
     - tar -xf ldc2-1.28.0-linux-x86_64.tar.xz
@@ -165,7 +165,7 @@ linux-packages:
     - tags
   tags:
     - docker-trial
-  image: ubuntu:22.04
+  image: ubuntu:21.04
   dependencies:
       - dmd-ubuntu
       - dmd-fedora
@@ -200,7 +200,7 @@ master-linux-packages:
     - master
   tags:
     - docker-trial
-  image: ubuntu:22.04
+  image: ubuntu:21.04
   dependencies:
       - dmd-ubuntu
       - dmd-fedora
@@ -273,13 +273,13 @@ docker-ldc:
     - docker build --no-cache=true -t $IMAGE_TAG .
     - docker push $IMAGE_TAG
 
-ubuntu-22.04:
+ubuntu-21.04:
   stage: test-package
   only:
     - tags
     - master
   image:
-    name: ubuntu:22.04
+    name: ubuntu:21.04
   dependencies:
     - linux-packages
     - master-linux-packages
