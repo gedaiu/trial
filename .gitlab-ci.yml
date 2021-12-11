@@ -61,8 +61,8 @@ dmd-ubuntu:
   <<: *build_definition
   image: ubuntu:22.04
   script:
-    - wget http://downloads.dlang.org/releases/2.x/2.093.1/dmd_2.093.1-0_amd64.deb
-    - dpkg -i dmd_2.093.1-0_amd64.deb
+    - wget https://s3.us-west-2.amazonaws.com/downloads.dlang.org/releases/2021/dmd_2.098.0-0_amd64.deb
+    - dpkg -i dmd_2.098.0-0_amd64.deb
     - dmd --version
     - dub --version
     - dub -v build :runner --build release
@@ -148,8 +148,8 @@ trial-ldc-1.23.0:
 examples:
   <<: *test_definition
   script:
-    - wget http://downloads.dlang.org/releases/2.x/2.093.1/dmd_2.093.1-0_amd64.deb
-    - dpkg -i dmd_2.093.1-0_amd64.deb
+    - wget https://s3.us-west-2.amazonaws.com/downloads.dlang.org/releases/2021/dmd_2.098.0-0_amd64.deb
+    - dpkg -i dmd_2.098.0-0_amd64.deb
     - trial --coverage
     - cd examples/spec
     - trial
@@ -237,7 +237,7 @@ docker-dmd:
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay2
-    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.093.1:$CI_COMMIT_REF_NAME
+    IMAGE_TAG: $CI_REGISTRY_IMAGE/dmd-2.098.0:$CI_COMMIT_REF_NAME
   dependencies:
     - dmd-ubuntu
   services:
