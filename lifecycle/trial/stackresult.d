@@ -486,7 +486,7 @@ unittest
 }
 
 version(unittest) {
-  version(Have_fluent_asserts): 
+  version(Have_fluent_asserts):
   class MockPrinter : ResultPrinter {
     string buffer;
 
@@ -628,12 +628,12 @@ Frame toWindows1Frame(string line)
   if(matched.length < 4) {
     return frame;
   }
- 
+
   frame.address = matched["address"];
   frame.name = matched["name"];
   frame.file = matched["file"];
   frame.line = matched["line"].to!int;
-  
+
   frame.invalid = frame.address == "" || frame.name == "" || frame.file == "";
 
   return frame;
@@ -681,8 +681,11 @@ Frame toGLibCFrame(string line)
     frame.name = frame.name[0 .. plusSign];
   }
 
+  auto openParanthesis = frame.name.count('(');
+  auto closedParanthesis = frame.name.count(')');
+
   frame.invalid = frame.address == "" || frame.name == "" || frame.moduleName == "" ||
-    frame.name.indexOf("(") >= 0;
+    frame.name.indexOf("(") >= 0 || openParanthesis != closedParanthesis;
 
   return frame;
 }
@@ -767,7 +770,7 @@ Frame toFrame(string line)
   return frames.filter!(a => !a.invalid).front;
 }
 
-@("Get frame info from Darwin platform format")
+/// Get frame info from Darwin platform format
 unittest
 {
   auto line = "1  ???fluent-asserts    0x00abcdef000000 D6module4funcAFZv + 0";
@@ -781,7 +784,7 @@ unittest
   frame.offset.should.equal("0");
 }
 
-@("Get frame info from windows platform format without path")
+/// Get frame info from windows platform format without path
 unittest
 {
   auto line = "0x779CAB5A in RtlInitializeExceptionChain";
@@ -795,7 +798,7 @@ unittest
   frame.offset.should.equal("");
 }
 
-@("Get frame info from windows platform format with path")
+/// Get frame info from windows platform format with path
 unittest
 {
   auto line = `0x00402669 in void app.__unitestL82_8() at D:\tidynumbers\source\app.d(84)`;
@@ -811,7 +814,7 @@ unittest
   frame.offset.should.equal("");
 }
 
-@("Get frame info from CRuntime_Glibc format without offset")
+/// Get frame info from CRuntime_Glibc format without offset
 unittest
 {
   auto line = `module(_D6module4funcAFZv) [0x00000000]`;
@@ -868,6 +871,21 @@ unittest {
   frame.line.should.equal(45);
   frame.name.should.equal("_Dmain");
   frame.address.should.equal("0x8e80c4");
+  frame.index.should.equal(-1);
+  frame.offset.should.equal("");
+}
+
+/// Get a function frame info from linux format when it looks like a glib frame
+unittest {
+  auto line = `lifecycle/trial/executor/single.d:115 void trial.executor.single.DefaultExecutor.createTestResult(const(trial.interfaces.TestCase)) [0xe2b101]`;
+  auto frame = line.toFrame;
+
+  frame.invalid.should.equal(false);
+  frame.moduleName.should.equal("");
+  frame.file.should.equal("lifecycle/trial/executor/single.d");
+  frame.line.should.equal(115);
+  frame.name.should.equal("void trial.executor.single.DefaultExecutor.createTestResult(const(trial.interfaces.TestCase))");
+  frame.address.should.equal("0xe2b101");
   frame.index.should.equal(-1);
   frame.offset.should.equal("");
 }
