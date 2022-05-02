@@ -294,8 +294,7 @@ version (Have_fluent_asserts) {
     Frame[] frames;
 
     ///
-    this(Throwable.TraceInfo t)
-    {
+    this(Throwable.TraceInfo t) {
       foreach (line; t)
       {
         auto frame = line.to!string.toFrame;
@@ -682,8 +681,7 @@ Frame toGLibCFrame(string line)
   }
 
   frame.invalid = frame.address == "" || frame.name == "" || frame.moduleName == "" ||
-    frame.name.indexOf("(") >= 0;
-
+  frame.name.indexOf("(") >= 0;
   return frame;
 }
 
@@ -757,9 +755,9 @@ Frame toFrame(string line)
     line.toDarwinFrame,
     line.toWindows1Frame,
     line.toWindows2Frame,
+    line.toLinuxFrame,
     line.toGLibCFrame,
     line.toNetBsdFrame,
-    line.toLinuxFrame,
     line.toMissingInfoLinuxFrame,
     frame
   ];
@@ -768,8 +766,7 @@ Frame toFrame(string line)
 }
 
 @("Get frame info from Darwin platform format")
-unittest
-{
+unittest {
   auto line = "1  ???fluent-asserts    0x00abcdef000000 D6module4funcAFZv + 0";
 
   auto frame = line.toFrame;
@@ -812,8 +809,7 @@ unittest
 }
 
 @("Get frame info from CRuntime_Glibc format without offset")
-unittest
-{
+unittest {
   auto line = `module(_D6module4funcAFZv) [0x00000000]`;
 
   auto frame = line.toFrame;
@@ -827,8 +823,7 @@ unittest
 }
 
 @("Get frame info from CRuntime_Glibc format with offset")
-unittest
-{
+unittest {
   auto line = `module(_D6module4funcAFZv+0x78) [0x00000000]`;
 
   auto frame = line.toFrame;
@@ -913,6 +908,21 @@ unittest {
   frame.line.should.equal(268);
   frame.name.should.equal("_D5trial9discovery4unit17UnitTestDiscovery231__T12addTestCasesVAyaa62_2f686f6d652f626f737a2f776f726b73706163652f64746573742f6c6966656379636c652f747269616c2f6578656375746f722f706172616c6c656c2e64VAyaa23_747269616c2e6578656375746f722e706172616c6c656cS245trial8executor8parallelZ12addTestCasesMFZ9__lambda4FZv");
   frame.address.should.equal("0x872000");
+  frame.index.should.equal(-1);
+  frame.offset.should.equal("");
+}
+
+/// Get an internal function frame info from linux format
+unittest {
+  auto line = `../../../../../fluent-asserts/source/fluentasserts/core/operations/arrayEqual.d:26 nothrow @safe fluentasserts.core.results.IResult[] fluentasserts.core.operations.arrayEqual.arrayEqual(ref fluentasserts.core.evaluation.Evaluation) [0x27a57ce]`;
+  auto frame = line.toFrame;
+
+  frame.invalid.should.equal(false);
+  frame.moduleName.should.equal("");
+  frame.file.should.equal("../../../../../fluent-asserts/source/fluentasserts/core/operations/arrayEqual.d");
+  frame.line.should.equal(26);
+  frame.name.should.equal("nothrow @safe fluentasserts.core.results.IResult[] fluentasserts.core.operations.arrayEqual.arrayEqual(ref fluentasserts.core.evaluation.Evaluation)");
+  frame.address.should.equal("0x27a57ce");
   frame.index.should.equal(-1);
   frame.offset.should.equal("");
 }
