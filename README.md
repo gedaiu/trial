@@ -53,8 +53,8 @@ setup for the test build, you can add a `trial` configuration inside your packag
   "configurations": [ {
       "name": "trial",
       "dependencies": {
-        "trial:lifecycle": "~>0.6.2",
-        "fluent-asserts": "~>0.9.0"
+        "trial:lifecycle": "~>0.7.11",
+        "fluent-asserts": "0.14.0-alpha.11"
       }
     }
   ]

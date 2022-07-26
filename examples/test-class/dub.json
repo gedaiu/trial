@@ -6,20 +6,25 @@
 	"description": "An example of you you can use the test class discovery",
 	"copyright": "Copyright © 2017, Szabo Bogdan",
 	"license": "MIT",
-
 	"configurations": [
 		{
 			"name": "executable"
 		},
-
 		{
 			"name": "trial",
-			"excludedSourceFiles": ["source/app.d"],
-			"sourcePaths": ["source", "tests"],
-			"importPaths": ["source", "tests"],
-
+			"excludedSourceFiles": [
+				"source/app.d"
+			],
+			"sourcePaths": [
+				"source",
+				"tests"
+			],
+			"importPaths": [
+				"source",
+				"tests"
+			],
 			"dependencies": {
-				"fluent-asserts": "0.13.3",
+				"fluent-asserts": "0.14.0-alpha.11",
 				"trial:lifecycle": {
 					"path": "../../"
 				}

@@ -38,9 +38,5 @@ trial-root
 some_image.png
 trial-root-cov
 trial-test-unittest
-examples/spec/dub.selections.json
-examples/test-class/dub.selections.json
-examples/unittest/dub.selections.json
-examples/optional-fluent-asserts/dub.selections.json
 node_modules
 website/web
