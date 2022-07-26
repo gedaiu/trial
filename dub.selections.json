@@ -1,0 +1,19 @@
+{
+	"fileVersion": 1,
+	"versions": {
+		"ddmp": "0.0.1-0.dev.3",
+		"diet-ng": "1.8.1",
+		"dub": "1.27.0",
+		"eventcore": "0.9.20",
+		"fluent-asserts": "0.14.0-alpha.11",
+		"libasync": "0.8.6",
+		"libdparse": "0.18.1",
+		"memutils": "1.0.4",
+		"mir-linux-kernel": "1.0.1",
+		"openssl": "3.2.2",
+		"stdx-allocator": "2.77.5",
+		"taggedalgebraic": "0.11.22",
+		"vibe-core": "1.22.4",
+		"vibe-d": "0.9.5"
+	}
+}
