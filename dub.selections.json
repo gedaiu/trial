@@ -7,7 +7,7 @@
 		"eventcore": "0.9.20",
 		"fluent-asserts": "0.14.0-alpha.11",
 		"libasync": "0.8.6",
-		"libdparse": "0.18.1",
+		"libdparse": "0.20.0",
 		"memutils": "1.0.4",
 		"mir-linux-kernel": "1.0.1",
 		"openssl": "3.2.2",
