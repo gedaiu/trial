@@ -71,7 +71,7 @@ ldc-ubuntu:
   <<: *build_definition
   image: ubuntu:22.04
   script:
-    - ls ldc2-1.30.0-linux-x86_64.tar.xz || https://github.com/ldc-developers/ldc/releases/download/v1.30.0/ldc2-1.30.0-linux-x86_64.tar.xz
+    - ls ldc2-1.30.0-linux-x86_64.tar.xz || wget https://github.com/ldc-developers/ldc/releases/download/v1.30.0/ldc2-1.30.0-linux-x86_64.tar.xz
     - tar -xf ldc2-1.30.0-linux-x86_64.tar.xz
     - rsync -vau ldc2-1.30.0-linux-x86_64/ /usr/local/
     - ldc2 --version
