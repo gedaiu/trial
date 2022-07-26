@@ -65,7 +65,7 @@ dmd-ubuntu:
     - dpkg -i dmd_2.100.0-0_amd64.deb
     - dmd --version
     - dub --version
-    - dub build :runner --build release
+    - DC=dmd dub build :runner --build release
 
 ldc-ubuntu:
   <<: *build_definition
@@ -76,7 +76,7 @@ ldc-ubuntu:
     - rsync -vau ldc2-1.30.0-linux-x86_64/ /usr/local/
     - ldc2 --version
     - dub --version
-    - dub build :runner --build release
+    - DC=ldc2 dub build :runner --build release
 
 dmd-fedora:
   stage: build
