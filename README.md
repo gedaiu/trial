@@ -37,7 +37,6 @@ This library intends to provide a rich set of features that helps you to customi
   - [Attributes](doc/attributes.md)
   - [Attachments](doc/attachments.md)
   - [Plugins](doc/plugins.md)
-  - [Visual Studio Code integration](https://marketplace.visualstudio.com/items?itemName=bosz.visual-trial)
 
 ## Configurable
 
@@ -80,11 +79,3 @@ to run your tests. `lifecycle` provides the functionality like test discovery an
 
 Since DLang does not have a rich assert library, you can use [Fluent Asserts](http://fluentasserts.szabobogdan.com/), a library
 that improves your experience of writing tests.
-
-## Alternatives
-
-  - [Dub](https://code.dlang.org/docs/commandline)
-  - [Unit Threaded](https://code.dlang.org/packages/unit-threaded)
-  - [DUnit](https://code.dlang.org/packages/dunit)
-  - [d-unit](https://code.dlang.org/packages/d-unit)
-  - [Feature Test D](https://code.dlang.org/packages/feature-test-d)
