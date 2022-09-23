@@ -23,7 +23,8 @@
           "optional": true
         },
         "vibe-d:data": "~>0.9.5"
-      }
+      },
+      "versions": ["trial_as_dependency"]
     },
     {
       "name": "unittest",

@@ -2,7 +2,7 @@ module tests.gameoflife.rules;
 
 import gameoflife.rules;
 
-import trial.discovery.spec;
+import trial;
 import fluent.asserts;
 
 private alias suite = Spec!({
