@@ -41,7 +41,7 @@ trial-ldc-1.30.0:
     - tar -xf ldc2-1.30.0-linux-x86_64.tar.xz
     - rsync -vau ldc2-1.30.0-linux-x86_64/ /usr/local/
     - cd ../../
-    - trial --coverage
+    - dub test
   artifacts:
     paths:
       - .trial
@@ -53,20 +53,20 @@ trial-dmd-2.100.0:
   script:
     - wget http://downloads.dlang.org/releases/2.x/2.100.0/dmd_2.100.0-0_amd64.deb
     - dpkg -i dmd_2.100.0-0_amd64.deb
-    - trial --coverage
+    - dub test
 
 examples:
   <<: *test_definition
   script:
     - wget http://downloads.dlang.org/releases/2.x/2.100.0/dmd_2.100.0-0_amd64.deb
     - dpkg -i dmd_2.100.0-0_amd64.deb
-    - trial --coverage
+    - dub test
     - cd examples/spec
-    - trial
+    - dub test
     - cd ../unittest
-    - trial
+    - dub test
     - cd ../test-class
-    - trial
+    - dub test
     - cd ../..
 
 linux-packages:
