@@ -1,8 +1,5 @@
 stages:
-  - build
   - test
-  - pack
-  - test-package
   - web
 
 .test_template: &test_definition
@@ -18,11 +15,10 @@ stages:
     - mv vendor/dub /root/.dub || true
     - apt-get update || true
     - apt-get -o dir::cache::archives="vendor/apt" install -y build-essential libssl-dev libevent-dev libcurl4 gcc wget libc6-dev git libmagickwand-dev rsync xz-utils libz-dev libsqlite3-dev
-    - mv trial /usr/local/bin
   after_script:
     - mv /root/.dub vendor/dub || true
   script:
-    - trial
+    - dub test
   artifacts:
     paths:
       - .trial
@@ -69,38 +65,6 @@ examples:
     - dub test
     - cd ../..
 
-linux-packages:
-  stage: pack
-  only:
-    - tags
-  tags:
-    - docker-trial
-  image: ubuntu:22.04
-  variables:
-    TZ: "Europe/Moscow"
-    DEBIAN_FRONTEND: "noninteractive"
-  script:
-    - apt-get update -y
-    - apt-get install -y ruby ruby-dev rubygems build-essential libevent-dev rpm libssl-dev git
-    - gem install --no-document fpm
-    - fpm --version
-    - ls -lsah
-    - pwd
-    - ./trial --version
-    - VER=`cat runner/trial/version_.d | grep trialVersion | cut -d \" -f 2 | cut -d "-" -f 1`-master
-    - mkdir -p tmp/ubuntu/usr/local/bin
-    - mkdir -p tmp/fedora/usr/local/bin
-    - cp trial tmp/ubuntu/usr/local/bin
-    - cp trial-fedora tmp/fedora/usr/local/bin/trial
-    - cd tmp
-    - fpm -s dir -t deb -n trial -v $VER --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" -d "libssl-dev" ./ubuntu/usr/local/bin/=/usr/local/bin
-    - fpm -s dir -t rpm -n trial -v $VER --license MIT -m szabobogdan3@gmail.com --url "http://trial.szabobogdan.com" --description "The extensible test runner for DLang" --depends "openssl-devel" ./fedora/usr/local/bin/=/usr/local/bin
-    - cd ..
-  artifacts:
-    paths:
-      - tmp/*.rpm
-      - tmp/*.deb
-
 pages:
   stage: web
   only:
@@ -110,7 +74,6 @@ pages:
   tags:
     - docker-trial
   dependencies:
-    - linux-packages
     - trial-dmd-2.100.0
   before_script:
     - dnf update -y
