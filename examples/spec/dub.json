@@ -8,10 +8,7 @@
 	"license": "MIT",
 	"configurations": [
 		{
-			"name": "executable"
-		},
-		{
-			"name": "trial",
+			"name": "unittest",
 			"excludedSourceFiles": [
 				"source/app.d"
 			],
@@ -24,8 +21,8 @@
 				"tests"
 			],
 			"dependencies": {
-				"fluent-asserts": "0.14.0-alpha.11",
-				"trial:lifecycle": {
+				"fluent-asserts": "1.0.0-beta.2",
+				"trial": {
 					"path": "../../"
 				}
 			}

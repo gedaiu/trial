@@ -31,9 +31,6 @@ public import trial.settings;
 public import trial.stackresult;
 public import trial.step;
 public import trial.terminal;
-public import tests.trial.executors.parallel;
-public import tests.trial.executors.process;
-public import tests.trial.interfaces;
 
 import std.stdio;
 import std.meta : Alias;
@@ -79,6 +76,7 @@ shared static this() {
   import core.stdc.stdlib;
   import trial.discovery.unit;
   import trial.discovery.spec;
+  import trial.discovery.testclass;
 
   Runtime.extendedModuleUnitTester = function() {
     string testName;
@@ -100,17 +98,19 @@ shared static this() {
     settings.maxThreads = 1;
 
     auto unittestDiscovery = new UnitTestDiscovery();
-
-    enum allModules = getModules();
-
     auto specTestDiscovery = new SpecTestDiscovery();
+    auto testClassDiscovery = new TestClassDiscovery();
 
     LifeCycleListeners.instance.add(unittestDiscovery);
     LifeCycleListeners.instance.add(specTestDiscovery);
+    LifeCycleListeners.instance.add(testClassDiscovery);
+
+    enum allModules = getModules();
 
     static foreach(m; allModules) {
       unittestDiscovery.addModule!(m.path, m.name);
       specTestDiscovery.addModule!(m.path, m.name);
+      testClassDiscovery.addModule!(m.path, m.name);
     }
 
     setupLifecycle(settings);

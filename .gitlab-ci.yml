@@ -82,7 +82,7 @@ pages:
     - wget http://downloads.dlang.org/releases/2.x/2.100.0/dmd-2.100.0-0.fedora.x86_64.rpm
     - dnf install -y rsync openssl-devel dmd-2.100.0-0.fedora.x86_64.rpm java-1.8.0-openjdk.x86_64
   script:
-    - dub build :lifecycle -b ddox
+    - dub build -b ddox
     - cd website
     - npm install
     - node app.js

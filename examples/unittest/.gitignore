@@ -12,3 +12,4 @@ trial-spec-example-test-*
 *.o
 *.obj
 *.lst
+unitest-example-*
