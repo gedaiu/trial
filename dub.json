@@ -10,106 +10,49 @@
   "dependencies": {},
   "configurations": [
     {
-      "name": "executable"
-    },
-    {
-      "name": "trial",
+      "name": "library",
       "excludedSourceFiles": [
         "source/app.d",
         "runner/app.d"
       ],
       "sourcePaths": [
-        "lifecycle",
-        "tests"
-      ],
-      "stringImportPaths": [
-        "lifecycle/trial"
-      ],
-      "importPaths": [
-        "lifecycle",
-        "tests"
+        "lifecycle"
       ],
       "dependencies": {
-        "fluent-asserts": "*",
-        "libdparse": ">=0.20.0"
+        "dub": "~>1.29.2",
+        "fluent-asserts": "1.0.0-beta.2",
+        "libdparse": {
+          "version": ">=0.20.0",
+          "optional": true
+        },
+        "vibe-d:data": "~>0.9.5"
       }
     },
     {
       "name": "unittest",
+      "targetType": "autodetect",
       "excludedSourceFiles": [
         "source/app.d",
         "runner/app.d"
       ],
+      "lflags": ["-L/opt/homebrew/opt/openssl@3/lib"],
       "sourcePaths": [
-        "lifecycle",
-        "runner",
+        "source",
         "tests"
       ],
-      "stringImportPaths": [
-        "lifecycle/trial"
-      ],
+      "mainSourceFile": "source/trial/runner.d",
       "importPaths": [
-        "lifecycle",
-        "runner",
+        "source",
         "tests"
       ],
       "dependencies": {
-        "dub": "~>1.27.0",
-        "fluent-asserts": "*",
+        "dub": "~>1.29.2",
+        "fluent-asserts": "1.0.0-beta.2",
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true
         },
-        "vibe-d:data": "~>0.9.0"
-      },
-      "subConfigurations": {
-        "dub": "library-nonet"
-      }
-    }
-  ],
-  "subPackages": [
-    {
-      "name": "lifecycle",
-      "targetType": "library",
-      "sourcePaths": [
-        "lifecycle"
-      ],
-      "importPaths": [
-        "lifecycle"
-      ],
-      "dependencies": {
-        "fluent-asserts": {
-          "version": "0.14.0-alpha.11",
-          "optional": true
-        },
-        "libdparse": {
-          "version": ">=0.20.0",
-          "optional": true
-        }
-      }
-    },
-    {
-      "name": "runner",
-      "targetType": "executable",
-      "targetName": "trial",
-      "sourcePaths": [
-        "runner",
-        "lifecycle"
-      ],
-      "importPaths": [
-        "runner",
-        "lifecycle"
-      ],
-      "stringImportPaths": [
-        "views",
-        "lifecycle"
-      ],
-      "dependencies": {
-        "dub": "~>1.27.0",
-        "vibe-d:http": "~>0.9.0",
-        "vibe-d:data": "~>0.9.0",
-        "libdparse": "~>0.20.0",
-        "fluent-asserts": "*"
+        "vibe-d:data": "~>0.9.5"
       },
       "subConfigurations": {
         "dub": "library-nonet"

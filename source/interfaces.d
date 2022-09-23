@@ -19,8 +19,8 @@ import std.exception;
 import std.json;
 import std.algorithm;
 
-version(unittest) {
-  version(Have_fluent_asserts) {
+version (unittest) {
+  version (Have_fluent_asserts) {
     import fluent.asserts;
   }
 }
@@ -30,8 +30,7 @@ alias TestCaseDelegate = void delegate() @system;
 alias TestCaseFunction = void function() @system;
 
 /// A Listener for the main test events
-interface ILifecycleListener
-{
+interface ILifecycleListener {
   /// This method is trigered when before the test start
   void begin(ulong testCount);
 
@@ -47,7 +46,7 @@ interface ILifecycleListener
 
 /// Convert a Throwable to a json string
 string toJsonString(Throwable throwable) {
-  if(throwable is null) {
+  if (throwable is null) {
     return "{}";
   }
 
@@ -65,9 +64,8 @@ string toJsonString(Throwable throwable) {
 /// convert a Throwable to json
 unittest {
   auto exception = new Exception("some message", __FILE__, 58);
-  exception.toJsonString.should.equal(`{"file":"lifecycle/trial/interfaces.d","line":"58","msg":"some message","info":"null","raw":"object.Exception@lifecycle/trial/interfaces.d(58): some message"}`);
+  exception.toJsonString.should.equal(`{"file":"source/interfaces.d","line":"58","msg":"some message","info":"null","raw":"object.Exception@source/interfaces.d(58): some message"}`);
 }
-
 
 /// A listener that provides test cases to be executed
 interface ITestDiscovery {
@@ -86,8 +84,7 @@ A Listener that can run tests. During the test execution can be used only one
 instance of this listance. After all the tests were executed the result of all
 three methods are concatenated and passed to `ILifecycleListener.end(SuiteResult[])`
 */
-interface ITestExecutor
-{
+interface ITestExecutor {
   /// Called before all tests were discovered and they are ready to be executed
   SuiteResult[] beginExecution(ref const(TestCase)[]);
 
@@ -99,8 +96,7 @@ interface ITestExecutor
 }
 
 /// A Listener for the suite events
-interface ISuiteLifecycleListener
-{
+interface ISuiteLifecycleListener {
   /// Called before a suite execution
   void begin(ref SuiteResult);
 
@@ -109,15 +105,13 @@ interface ISuiteLifecycleListener
 }
 
 /// A Listener for handling attachments
-interface IAttachmentListener
-{
+interface IAttachmentListener {
   /// Called when an attachment is ready
   void attach(ref const Attachment);
 }
 
 /// A Listener for the test case events
-interface ITestCaseLifecycleListener
-{
+interface ITestCaseLifecycleListener {
   /// Called before a test execution
   void begin(string suite, ref TestResult);
 
@@ -126,8 +120,7 @@ interface ITestCaseLifecycleListener
 }
 
 /// A Listener for the step events
-interface IStepLifecycleListener
-{
+interface IStepLifecycleListener {
   /// Called before a step begins
   void begin(string suite, string test, ref StepResult);
 
@@ -176,9 +169,10 @@ unittest {
 
 /// create a label list from a json array
 unittest {
-  auto labels = Label.fromJsonArray(`[{ "name": "name1", "value": "value1" }, { "name": "name2", "value": "value2" }]`);
+  auto labels = Label.fromJsonArray(
+    `[{ "name": "name1", "value": "value1" }, { "name": "name2", "value": "value2" }]`);
 
-  labels.should.equal([ Label("name1", "value1"), Label("name2", "value2") ]);
+  labels.should.equal([Label("name1", "value1"), Label("name2", "value2")]);
 }
 
 /// A struct representing an attachment for test steps
@@ -192,7 +186,7 @@ struct Attachment {
   /// The file mime path
   string mime;
 
-  /// The attachement destination. All the attached files will be copied in this folder if 
+  /// The attachement destination. All the attached files will be copied in this folder if
   /// it is not allready inside
   static string destination;
 
@@ -203,7 +197,7 @@ struct Attachment {
 
     auto a = const Attachment(name, fileDestination, mime);
 
-    if(LifeCycleListeners.instance !is null) {
+    if (LifeCycleListeners.instance !is null) {
       LifeCycleListeners.instance.attach(a);
     }
 
@@ -218,7 +212,7 @@ struct Attachment {
 
     auto a = const Attachment("unknown", fileDestination, "text/plain");
 
-    if(LifeCycleListeners.instance !is null) {
+    if (LifeCycleListeners.instance !is null) {
       LifeCycleListeners.instance.attach(a);
     }
 
@@ -266,7 +260,6 @@ struct SourceLocation {
   }
 }
 
-
 /// SourceLocation string representation should be a JSON string
 unittest {
   SourceLocation("file.d", 10).toString.should.equal(`{ "fileName": "file.d", "line": 10 }`);
@@ -277,8 +270,7 @@ private string escapeJson(string value) {
 }
 
 /// A test case that will be executed
-struct TestCase
-{
+struct TestCase {
   /**
   The test case suite name. It can contain `.` which is treated as a
   separator for nested suites
@@ -310,7 +302,7 @@ struct TestCase
     location = testCase.location;
     labels.length = testCase.labels.length;
 
-    foreach(key, val; testCase.labels) {
+    foreach (key, val; testCase.labels) {
       labels[key] = val;
     }
   }
@@ -348,14 +340,17 @@ struct TestCase
 
 /// TestCase string representation should be a JSON string
 unittest {
-  void MockTest() {}
+  void MockTest() {
+  }
 
-  auto testCase = TestCase("some suite", "some name", &MockTest, [ Label("label1", "value1"), Label("label2", "value2") ]);
+  auto testCase = TestCase("some suite", "some name", &MockTest, [
+      Label("label1", "value1"), Label("label2", "value2")
+    ]);
   testCase.location = SourceLocation("file.d", 42);
 
   testCase.toString.should.equal(`{ "suiteName": "some suite", "name": "some name", ` ~
-    `"labels": [ { "name": "label1", "value": "value1" }, { "name": "label2", "value": "value2" } ], ` ~
-    `"location": { "fileName": "file.d", "line": 42 } }`);
+      `"labels": [ { "name": "label1", "value": "value1" }, { "name": "label2", "value": "value2" } ], ` ~
+      `"location": { "fileName": "file.d", "line": 42 } }`);
 }
 
 ///
@@ -372,8 +367,7 @@ TestResult toTestResult(const TestCase testCase) {
 }
 
 /// A suite result
-struct SuiteResult
-{
+struct SuiteResult {
   /**
   The suite name. It can contain `.` which is treated as a
   separator for nested suites
@@ -450,8 +444,8 @@ unittest {
   auto result = SuiteResult("suite name",
     SysTime.fromISOExtString("2000-01-01T00:00:00Z"),
     SysTime.fromISOExtString("2000-01-01T01:00:00Z"),
-    [ new TestResult("test name") ],
-    [ Attachment() ]);
+    [new TestResult("test name")],
+    [Attachment()]);
 
   result.toString.should.equal(
     `{"name":"suite name","begin":"2000-01-01T00:00:00Z","end":"2000-01-01T01:00:00Z","tests":[{"name":"test name","begin":"-29227-04-19T21:11:54.5224192Z","end":"-29227-04-19T21:11:54.5224192Z","steps":[],"attachments":[],"fileName":"","line":"0","status":"created","labels":[],"throwable":{}}],"attachments":[{"name":"","file":"","mime":""}]}`
@@ -459,8 +453,7 @@ unittest {
 }
 
 /// A step result
-class StepResult
-{
+class StepResult {
   /// The step name
   string name;
 
@@ -483,7 +476,7 @@ class StepResult
 
   protected string fields() {
     string result;
-    
+
     result ~= `"name":"` ~ name.escapeJson ~ `",`;
     result ~= `"begin":"` ~ begin.toISOExtString ~ `",`;
     result ~= `"end":"` ~ end.toISOExtString ~ `",`;
@@ -505,20 +498,18 @@ unittest {
   step.name = "step name";
   step.begin = SysTime.fromISOExtString("2000-01-01T00:00:00Z");
   step.end = SysTime.fromISOExtString("2000-01-01T01:00:00Z");
-  step.steps = [ new StepResult() ];
-  step.attachments = [ Attachment() ];
+  step.steps = [new StepResult()];
+  step.attachments = [Attachment()];
 
   step.toString.should.equal(`{"name":"step name","begin":"2000-01-01T00:00:00Z","end":"2000-01-01T01:00:00Z","steps":` ~
-  `[{"name":"","begin":"-29227-04-19T21:11:54.5224192Z","end":"-29227-04-19T21:11:54.5224192Z","steps":[],"attachments":`~
-  `[]}],"attachments":[{"name":"","file":"","mime":""}]}`);
+      `[{"name":"","begin":"-29227-04-19T21:11:54.5224192Z","end":"-29227-04-19T21:11:54.5224192Z","steps":[],"attachments":` ~
+      `[]}],"attachments":[{"name":"","file":"","mime":""}]}`);
 }
 
 /// A test result
-class TestResult : StepResult
-{
+class TestResult : StepResult {
   /// The states that a test can have.
-  enum Status
-  {
+  enum Status {
     ///
     created,
     ///
@@ -556,8 +547,7 @@ class TestResult : StepResult
   Throwable throwable;
 
   /// Convenience constructor that sets the test name
-  this(string name)
-  {
+  this(string name) {
     this.name = name;
     super();
   }
@@ -594,7 +584,7 @@ struct Issue {
 
   /// Returns the labels that set the issue label
   Label[] labels() {
-    return [ Label("issue", name) ];
+    return [Label("issue", name)];
   }
 }
 
@@ -604,7 +594,7 @@ struct Feature {
 
   /// Returns the labels that set the feature label
   Label[] labels() {
-    return [ Label("feature", name) ];
+    return [Label("feature", name)];
   }
 }
 
@@ -614,7 +604,7 @@ struct Story {
 
   /// Returns the labels that set the feature label
   Label[] labels() {
-    return [ Label("story", name) ];
+    return [Label("story", name)];
   }
 }
 
@@ -629,7 +619,7 @@ unittest {
 class PendingTestException : Exception {
 
   ///
-  this(string file = __FILE__, size_t line = __LINE__, Throwable next = null)  {
+  this(string file = __FILE__, size_t line = __LINE__, Throwable next = null) {
     super("You cannot run pending tests", file, line, next);
   }
 }
@@ -638,11 +628,22 @@ class PendingTestException : Exception {
 /// to extend the runner. You can have as many listeners as you want. The only restriction
 /// is for ITestExecutor, which has no sense to have more than one instance for a run
 class LifeCycleListeners {
+  static LifeCycleListeners instance() nothrow {
+    if (LifeCycleListeners._instance is null) {
+      LifeCycleListeners._instance = new LifeCycleListeners;
+    }
 
-  /// The global instange.
-  static LifeCycleListeners instance;
+    return LifeCycleListeners._instance;
+  }
+
+  static void instance(LifeCycleListeners newInstance) nothrow {
+    LifeCycleListeners._instance = newInstance;
+  }
 
   private {
+    /// The global instange.
+    static LifeCycleListeners _instance;
+
     ISuiteLifecycleListener[] suiteListeners;
     ITestCaseLifecycleListener[] testListeners;
     IStepLifecycleListener[] stepListeners;
@@ -655,17 +656,15 @@ class LifeCycleListeners {
     bool started;
   }
 
-  @property {
-    /// Return an unique name for the current running test. If there is no test running it
-    /// will return an empty string
-    string runningTest() const nothrow {
-      return currentTest;
-    }
+  /// Return an unique name for the current running test. If there is no test running it
+  /// will return an empty string
+  string runningTest() const nothrow {
+    return currentTest;
+  }
 
-    /// True if the tests are being executed
-    bool isRunning() {
-      return started;
-    }
+  /// True if the tests are being executed
+  bool isRunning() {
+    return started;
   }
 
   ///
@@ -675,38 +674,38 @@ class LifeCycleListeners {
 
   /// Add a listener to the collection
   void add(T)(T listener) {
-    static if(!is(CommonType!(ISuiteLifecycleListener, T) == void)) {
+    static if (!is(CommonType!(ISuiteLifecycleListener, T) == void)) {
       suiteListeners ~= cast(ISuiteLifecycleListener) listener;
       suiteListeners = suiteListeners.filter!(a => a !is null).array;
     }
 
-    static if(!is(CommonType!(ITestCaseLifecycleListener, T) == void)) {
+    static if (!is(CommonType!(ITestCaseLifecycleListener, T) == void)) {
       testListeners ~= cast(ITestCaseLifecycleListener) listener;
       testListeners = testListeners.filter!(a => a !is null).array;
     }
 
-    static if(!is(CommonType!(IStepLifecycleListener, T) == void)) {
+    static if (!is(CommonType!(IStepLifecycleListener, T) == void)) {
       stepListeners ~= cast(IStepLifecycleListener) listener;
       stepListeners = stepListeners.filter!(a => a !is null).array;
     }
 
-    static if(!is(CommonType!(ILifecycleListener, T) == void)) {
+    static if (!is(CommonType!(ILifecycleListener, T) == void)) {
       lifecycleListeners ~= cast(ILifecycleListener) listener;
       lifecycleListeners = lifecycleListeners.filter!(a => a !is null).array;
     }
 
-    static if(!is(CommonType!(ITestExecutor, T) == void)) {
-      if(cast(ITestExecutor) listener !is null) {
+    static if (!is(CommonType!(ITestExecutor, T) == void)) {
+      if (cast(ITestExecutor) listener !is null) {
         executor = cast(ITestExecutor) listener;
       }
     }
 
-    static if(!is(CommonType!(ITestDiscovery, T) == void)) {
+    static if (!is(CommonType!(ITestDiscovery, T) == void)) {
       testDiscoveryListeners ~= cast(ITestDiscovery) listener;
       testDiscoveryListeners = testDiscoveryListeners.filter!(a => a !is null).array;
     }
 
-    static if(!is(CommonType!(IAttachmentListener, T) == void)) {
+    static if (!is(CommonType!(IAttachmentListener, T) == void)) {
       attachmentListeners ~= cast(IAttachmentListener) listener;
       attachmentListeners = attachmentListeners.filter!(a => a !is null).array;
     }
@@ -769,7 +768,8 @@ class LifeCycleListeners {
   /// Send the execute test to the executor listener
   SuiteResult[] execute(ref const(TestCase) func) {
     started = true;
-    scope(exit) started = false;
+    scope (exit)
+      started = false;
     return executor.execute(func);
   }
 

@@ -251,7 +251,7 @@ class SpecTestDiscovery : ITestDiscovery
               }
             }
           }
-         }
+        }
       }
 
     return testCases;

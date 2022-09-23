@@ -1,11 +1,11 @@
+module trial.discovery.unit;
 /++
-  A module containing the default test discovery logic
+  A module containing parsing code utilities
 
   Copyright: © 2017 Szabo Bogdan
   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
   Authors: Szabo Bogdan
 +/
-module trial.discovery.unit;
 
 import std.string;
 import std.traits;

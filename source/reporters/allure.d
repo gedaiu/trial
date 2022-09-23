@@ -344,7 +344,7 @@ unittest
             <name>Test</name>
             <failure>
                 <message>message</message>
-                <stack-trace>object.Exception@lifecycle/trial/reporters/allure.d(` ~ result.throwable.line.to!string ~ `): message</stack-trace>
+                <stack-trace>object.Exception@source/reporters/allure.d(` ~ result.throwable.line.to!string ~ `): message</stack-trace>
             </failure>
         </test-case>`);
 }

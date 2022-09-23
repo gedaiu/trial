@@ -32,7 +32,7 @@ version(D_Coverage) {
     mkdirRecurse(destination);
 
     dmd_coverSetMerge(false);
-    //dmd_coverSourcePath(thisExePath);
+    dmd_coverSourcePath(thisExePath);
     dmd_coverDestPath(destination);
   }
 }

@@ -193,10 +193,6 @@ class TrialProject {
       runnerSettings.settings.plugins = plugins.split(",").map!(a => a.strip).array;
     }
 
-    if(!hasTrialDependency) {
-      writeTrialFolder(embededLibraryPath);
-    }
-
     auto content = generateTestFile(runnerSettings.settings, this.hasTrial, this.modules, this.externalModules);
 
 
