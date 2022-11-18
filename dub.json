@@ -17,7 +17,7 @@
       "targetType": "sourceLibrary",
       "dependencies": {
         "dub": "~>1.29.2",
-        "fluent-asserts": "1.0.0-beta.2",
+        "fluent-asserts": "~>1.0.0",
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true
@@ -45,7 +45,7 @@
       ],
       "dependencies": {
         "dub": "~>1.29.2",
-        "fluent-asserts": "1.0.0-beta.2",
+        "fluent-asserts": "~>1.0.0",
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true

@@ -5,7 +5,7 @@
 		"diet-ng": "1.8.1",
 		"dub": "1.29.2",
 		"eventcore": "0.9.21",
-		"fluent-asserts": "1.0.0-beta.2",
+		"fluent-asserts": "1.0.0",
 		"libasync": "0.8.6",
 		"libdparse": "0.20.0",
 		"memutils": "1.0.4",
@@ -13,7 +13,7 @@
 		"openssl": "3.2.2",
 		"stdx-allocator": "2.77.5",
 		"taggedalgebraic": "0.11.22",
-		"vibe-core": "1.22.4",
+		"vibe-core": "1.22.5",
 		"vibe-d": "0.9.5"
 	}
 }
