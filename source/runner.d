@@ -504,7 +504,6 @@ void unittestRuntimeSetup(allModules...)() {
   import core.stdc.stdlib;
   import trial.discovery.unit;
   import trial.discovery.spec;
-  import trial.discovery.testclass;
 
   Runtime.extendedModuleUnitTester = function() {
     string testName;
@@ -527,18 +526,15 @@ void unittestRuntimeSetup(allModules...)() {
 
     auto unittestDiscovery = new UnitTestDiscovery();
     auto specTestDiscovery = new SpecTestDiscovery();
-    auto testClassDiscovery = new TestClassDiscovery();
 
     LifeCycleListeners.instance.add(unittestDiscovery);
     LifeCycleListeners.instance.add(specTestDiscovery);
-    LifeCycleListeners.instance.add(testClassDiscovery);
 
     enum allModulesWithPath = getModules!(allModules);
 
     static foreach(m; allModulesWithPath) {
       unittestDiscovery.addModule!(m.path, m.name);
       specTestDiscovery.addModule!(m.path, m.name);
-      testClassDiscovery.addModule!(m.path, m.name);
     }
 
     setupLifecycle(settings);

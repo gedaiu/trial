@@ -5,7 +5,6 @@ public import trial.attributes;
 public import trial.runner;
 public import trial.discovery.code;
 public import trial.discovery.spec;
-public import trial.discovery.testclass;
 public import trial.discovery.unit;
 public import trial.executor.parallel;
 public import trial.executor.process;
