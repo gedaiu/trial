@@ -16,15 +16,16 @@
       ],
       "targetType": "sourceLibrary",
       "dependencies": {
-        "dub": "~>1.29.2",
         "fluent-asserts": "~>1.0.0",
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true
         },
-        "vibe-d:data": "~>0.9.5"
+        "vibe-d:data": "*"
       },
-      "versions": ["trial_as_dependency"]
+      "versions": [
+        "trial_as_dependency"
+      ]
     },
     {
       "name": "unittest",
@@ -33,7 +34,9 @@
         "source/app.d",
         "runner/app.d"
       ],
-      "lflags": ["-L/opt/homebrew/opt/openssl@3/lib"],
+      "lflags": [
+        "-L/opt/homebrew/opt/openssl@3/lib"
+      ],
       "sourcePaths": [
         "source",
         "tests"
@@ -44,16 +47,12 @@
         "tests"
       ],
       "dependencies": {
-        "dub": "~>1.29.2",
         "fluent-asserts": "~>1.0.0",
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true
         },
-        "vibe-d:data": "~>0.9.5"
-      },
-      "subConfigurations": {
-        "dub": "library-nonet"
+        "vibe-d:data": "*"
       }
     }
   ]
