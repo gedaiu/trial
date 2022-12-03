@@ -20,20 +20,12 @@
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true
-        },
-        "vibe-d:data": "*"
-      },
-      "versions": [
-        "trial_as_dependency"
-      ]
+        }
+      }
     },
     {
       "name": "unittest",
       "targetType": "autodetect",
-      "excludedSourceFiles": [
-        "source/app.d",
-        "runner/app.d"
-      ],
       "lflags": [
         "-L/opt/homebrew/opt/openssl@3/lib"
       ],
@@ -41,7 +33,6 @@
         "source",
         "tests"
       ],
-      "mainSourceFile": "source/trial/runner.d",
       "importPaths": [
         "source",
         "tests"
@@ -51,8 +42,7 @@
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true
-        },
-        "vibe-d:data": "*"
+        }
       }
     }
   ]
