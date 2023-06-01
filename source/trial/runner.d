@@ -26,7 +26,6 @@ import trial.executor.single;
 import trial.executor.parallel;
 import trial.executor.process;
 
-
 /// setup the LifeCycle collection
 void setupLifecycle(Settings settings) {
   settings.artifactsLocation = settings.artifactsLocation.asAbsolutePath.array;
@@ -465,9 +464,11 @@ string getModuleFileName(alias m)() {
   string location;
 
   static foreach (member; __traits(allMembers, m)) {
-    static if(__traits(compiles, __traits(getLocation, __traits(getMember, m, member)))) {{
-      location = __traits(getLocation, __traits(getMember, m, member))[0];
-    }}
+    static if (__traits(compiles, __traits(getLocation, __traits(getMember, m, member)))) {
+      {
+        location = __traits(getLocation, __traits(getMember, m, member))[0];
+      }
+    }
   }
 
   return location;
@@ -490,7 +491,7 @@ auto getModules(allModules...)() {
 
     auto path = getModuleFileName!(module_);
 
-    if(path != "") {
+    if (path != "") {
       modules ~= ModuleWithPath(fullyQualifiedName!module_, path);
     }
   }
@@ -511,11 +512,11 @@ void unittestRuntimeSetup(allModules...)() {
     string executor;
     string reporters;
 
-		auto args = Runtime.args;
+    auto args = Runtime.args;
     args.getopt(
-      "testName|t",  &testName,
+      "testName|t", &testName,
       "suiteName|s", &suiteName,
-      "executor|e",  &executor,
+      "executor|e", &executor,
       "reporters|r", &reporters
     );
 
@@ -532,15 +533,19 @@ void unittestRuntimeSetup(allModules...)() {
 
     enum allModulesWithPath = getModules!(allModules);
 
-    static foreach(m; allModulesWithPath) {
+    static foreach (m; allModulesWithPath) {
       unittestDiscovery.addModule!(m.path, m.name);
       specTestDiscovery.addModule!(m.path, m.name);
     }
 
     setupLifecycle(settings);
 
-    runTests(LifeCycleListeners.instance.getTestCases, testName, suiteName);
+    auto results = runTests(LifeCycleListeners.instance.getTestCases, testName, suiteName);
 
-    return UnitTestResult(1, 1, false, false);
+    if (results.isSuccess) {
+      return UnitTestResult.pass;
+    }
+
+    return UnitTestResult.fail;
   };
 }

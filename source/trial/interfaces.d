@@ -64,7 +64,7 @@ string toJsonString(Throwable throwable) {
 /// convert a Throwable to json
 unittest {
   auto exception = new Exception("some message", __FILE__, 58);
-  exception.toJsonString.should.equal(`{"file":"source/interfaces.d","line":"58","msg":"some message","info":"null","raw":"object.Exception@source/interfaces.d(58): some message"}`);
+  exception.toJsonString.should.equal(`{"file":"source/trial/interfaces.d","line":"58","msg":"some message","info":"null","raw":"object.Exception@source/trial/interfaces.d(58): some message"}`);
 }
 
 /// A listener that provides test cases to be executed
