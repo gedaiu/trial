@@ -61,13 +61,13 @@ void before(T)(T setup)
 /// Define a function that will be ran before each test
 void beforeEach(T)(T setup)
 {
-  beforeList ~= { setup(); };
+  beforeList ~= { cast(void) setup(); };
 }
 
 /// Define a function that will be ran after each test
 void afterEach(T)(T setup)
 {
-  afterList ~= { setup(); };
+  afterList ~= { cast(void) setup(); };
 }
 
 /// Define a function that will be ran after all the tests were ran
