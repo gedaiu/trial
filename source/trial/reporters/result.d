@@ -257,34 +257,44 @@ version (Have_fluent_asserts) {
       this.writer = writer;
     }
 
+    void print(Message) nothrow @safe {
+      assert(false, "not implemented");
+    }
+
     void primary(string text) {
-      writer.write(text, ReportWriter.Context._default);
+      try { writer.write(text, ReportWriter.Context._default);
       writer.write("");
+      } catch(Exception e) {}
     }
 
     void info(string text) {
-      writer.write(text, ReportWriter.Context.info);
+      try { writer.write(text, ReportWriter.Context.info);
       writer.write("");
+      } catch(Exception e) {}
     }
 
     void danger(string text) {
-      writer.write(text, ReportWriter.Context.danger);
+      try { writer.write(text, ReportWriter.Context.danger);
       writer.write("");
+      } catch(Exception e) {}
     }
 
     void success(string text) {
-      writer.write(text, ReportWriter.Context.success);
+      try { writer.write(text, ReportWriter.Context.success);
       writer.write("");
+      } catch(Exception e) {}
     }
 
     void dangerReverse(string text) {
-      writer.writeReverse(text, ReportWriter.Context.danger);
+      try { writer.writeReverse(text, ReportWriter.Context.danger);
       writer.write("");
+      } catch(Exception e) {}
     }
 
     void successReverse(string text) {
-      writer.writeReverse(text, ReportWriter.Context.success);
+      try { writer.writeReverse(text, ReportWriter.Context.success);
       writer.write("");
+      } catch(Exception e) {}
     }
   }
 }
