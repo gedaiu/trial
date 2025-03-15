@@ -257,7 +257,7 @@ version (Have_fluent_asserts) {
       this.writer = writer;
     }
 
-    void print(Message) nothrow @safe {
+    void print(Message) nothrow {
       assert(false, "not implemented");
     }
 

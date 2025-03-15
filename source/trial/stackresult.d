@@ -489,6 +489,10 @@ version(unittest) {
   class MockPrinter : ResultPrinter {
     string buffer;
 
+    void print(Message) nothrow @safe {
+      assert(false, "not implemented");
+    }
+
     void primary(string val) {
       buffer ~= val;
     }
