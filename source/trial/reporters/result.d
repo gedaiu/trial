@@ -258,7 +258,9 @@ version (Have_fluent_asserts) {
     }
 
     void print(Message message) nothrow {
-      this.primary(message.text);
+      try {
+          this.primary(message.text);
+      } catch(Exception e) { }
     }
 
     void primary(string text) {
