@@ -7,6 +7,7 @@ module trial.discovery.unit;
   Authors: Szabo Bogdan
 +/
 
+import trial.testNameProvider;
 import std.string;
 import std.traits;
 import std.conv;
@@ -20,93 +21,7 @@ import std.math;
 import trial.interfaces;
 import trial.discovery.code;
 
-static if(__VERSION__ >= 2077) {
-  enum unitTestKey = "__un" ~ "ittest_";
-} else {
-  enum unitTestKey = "__un" ~ "ittestL";
-}
 
-enum CommentType
-{
-  none,
-  begin,
-  end,
-  comment
-}
-
-CommentType commentType(T)(T line)
-{
-  if (line.length < 2)
-  {
-    return CommentType.none;
-  }
-
-  if (line[0 .. 2] == "//")
-  {
-    return CommentType.comment;
-  }
-
-  if (line[0 .. 2] == "/+" || line[0 .. 2] == "/*")
-  {
-    return CommentType.begin;
-  }
-
-  if (line.indexOf("+/") != -1 || line.indexOf("*/") != -1)
-  {
-    return CommentType.end;
-  }
-
-  return CommentType.none;
-}
-
-@("It should group comments")
-unittest
-{
-  string comments = "//line 1
-	// line 2
-
-	//// other line
-
-	/** line 3
-	line 4 ****/
-
-	//// other line
-
-	/++ line 5
-	line 6
-	+++/
-
-	/** line 7
-   *
-   * line 8
-   */";
-
-  auto results = comments.compressComments;
-
-  results.length.should.equal(6);
-  results[0].value.should.equal("line 1 line 2");
-  results[1].value.should.equal("other line");
-  results[2].value.should.equal("line 3 line 4");
-  results[3].value.should.equal("other line");
-  results[4].value.should.equal("line 5 line 6");
-  results[5].value.should.equal("line 7  line 8");
-
-  results[0].line.should.equal(2);
-  results[1].line.should.equal(4);
-  results[2].line.should.equal(7);
-  results[3].line.should.equal(9);
-  results[4].line.should.equal(13);
-}
-
-struct Comment
-{
-  ulong line;
-  string value;
-
-  string toCode() {
-    return `Comment(` ~ line.to!string ~ `, "` ~ value.replace(`\`, `\\`).replace(`"`, `\"`) ~ `")`;
-  }
-}
 
 Comment[] commentGroupToString(T)(T[] group)
 {
@@ -150,196 +65,14 @@ Comment[] commentGroupToString(T)(T[] group)
   return [];
 }
 
-string getComment(const Comment[] comments, const ulong line, const string defaultValue) pure
-{
-  auto r = comments.filter!(a => abs(line - a.line) < 3);
-
-  return r.empty ? defaultValue : r.front.value;
-}
-
-bool connects(T)(T a, T b)
-{
-  auto items = a[0] < b[0] ? [a, b] : [b, a];
-
-  if (items[1][0] - items[0][0] != 1)
-  {
-    return false;
-  }
-
-  if (a[1] == b[1])
-  {
-    return true;
-  }
-
-  if (items[0][1] != CommentType.end && items[1][1] != CommentType.begin)
-  {
-    return true;
-  }
-
-  return false;
-}
-
-@("check comment types")
-unittest
-{
-  "".commentType.should.equal(CommentType.none);
-  "some".commentType.should.equal(CommentType.none);
-  "//some".commentType.should.equal(CommentType.comment);
-  "/+some".commentType.should.equal(CommentType.begin);
-  "/*some".commentType.should.equal(CommentType.begin);
-  "some+/some".commentType.should.equal(CommentType.end);
-  "some*/some".commentType.should.equal(CommentType.end);
-}
-
-Comment[] compressComments(string code) {
-  Comment[] result;
-
-  auto lines = code.splitter("\n").map!(a => a.strip).enumerate(1)
-    .map!(a => Tuple!(int, CommentType, string)(a[0], a[1].commentType, a[1])).filter!(
-        a => a[2] != "").array;
-
-  auto tmp = [lines[0]];
-  auto prev = lines[0];
-
-  foreach (line; lines[1 .. $])
-  {
-    if (tmp.length == 0 || line.connects(tmp[tmp.length - 1]))
-    {
-      tmp ~= line;
-    }
-    else
-    {
-      result ~= tmp.commentGroupToString;
-      tmp = [line];
-    }
-  }
-
-  if (tmp.length > 0)
-  {
-    result ~= tmp.commentGroupToString;
-  }
-
-  return result;
-}
-
-/// Remove comment tokens
-string clearCommentTokens(string text)
-{
-  return text.strip('/').strip('+').strip('*').strip;
-}
-
-/// clearCommentTokens should remove comment tokens
-unittest
-{
-  clearCommentTokens("// text").should.equal("text");
-  clearCommentTokens("///// text").should.equal("text");
-  clearCommentTokens("/+++ text").should.equal("text");
-  clearCommentTokens("/*** text").should.equal("text");
-  clearCommentTokens("/*** text ***/").should.equal("text");
-  clearCommentTokens("/+++ text +++/").should.equal("text");
-}
-
 /// The default test discovery looks for unit test sections and groups them by module
 class UnitTestDiscovery : ITestDiscovery
 {
   TestCase[string][string] testCases;
-  static Comment[][string] comments;
 
   TestCase[] getTestCases()
   {
     return testCases.values.map!(a => a.values).joiner.array;
-  }
-
-  TestCase[] discoverTestCases(string file)
-  {
-    TestCase[] testCases = [];
-
-    version (Have_fluent_asserts)
-      version (Have_libdparse)
-      {
-        import fluentasserts.core.results;
-
-        auto tokens = fileToDTokens(file);
-
-        void noTest()
-        {
-          assert(false, "you can not run this test");
-        }
-
-        auto iterator = TokenIterator(tokens);
-        auto moduleName = iterator.skipUntilType("module").skipOne.readUntilType(";").strip;
-
-        string lastName;
-        DLangAttribute[] attributes;
-
-        foreach (token; iterator)
-        {
-          auto type = str(token.type);
-
-          if (type == "}")
-          {
-            lastName = "";
-            attributes = [];
-          }
-
-          if (type == "@")
-          {
-            attributes ~= iterator.readAttribute;
-          }
-
-          if (type == "comment")
-          {
-            if (lastName != "")
-            {
-              lastName ~= " ";
-            }
-
-            lastName ~= token.text.clearCommentTokens;
-          }
-
-          if (type == "version")
-          {
-            iterator.skipUntilType(")");
-          }
-
-          if (type == "unittest")
-          {
-            auto issues = attributes.filter!(a => a.identifier == "Issue");
-            auto flakynes = attributes.filter!(a => a.identifier == "Flaky");
-            auto stringAttributes = attributes.filter!(a => a.identifier == "");
-
-            Label[] labels = [];
-
-            foreach (issue; issues)
-            {
-              labels ~= Label("issue", issue.value);
-            }
-
-            if (!flakynes.empty)
-            {
-              labels ~= Label("status_details", "flaky");
-            }
-
-            if (!stringAttributes.empty)
-            {
-              lastName = stringAttributes.front.value.strip;
-            }
-
-            if (lastName == "")
-            {
-              lastName = "unnamed test at line " ~ token.line.to!string;
-            }
-
-            auto testCase = TestCase(moduleName, lastName, &noTest, labels);
-
-            testCase.location = SourceLocation(file, token.line);
-
-            testCases ~= testCase;
-          }
-        }
-      }
-
-    return testCases;
   }
 
   void addModule(string file, string moduleName)()
@@ -350,41 +83,6 @@ class UnitTestDiscovery : ITestDiscovery
 
   private
   {
-    string testName(alias test)(ref Comment[] comments)
-    {
-      string defaultName = test.stringof.to!string;
-      string name = defaultName;
-      auto location = __traits(getLocation, test);
-      size_t line = location[1];
-
-      foreach (attr; __traits(getAttributes, test))
-      {
-        static if (is(typeof(attr) == string))
-        {
-          name = attr;
-        }
-      }
-
-      if (name == defaultName && name.indexOf(unitTestKey) == 0)
-      {
-        try
-        {
-          if(line != 0) {
-            name = comments.getComment(line, defaultName);
-          }
-        }
-        catch (Exception e)
-        {
-        }
-      }
-
-      if (name == defaultName || name == "") {
-        name = "unnamed test at line " ~ line.to!string;
-      }
-
-      return name;
-    }
-
     SourceLocation testSourceLocation(alias test)(string fileName)
     {
       auto location = __traits(getLocation, test);
@@ -413,15 +111,9 @@ class UnitTestDiscovery : ITestDiscovery
       static if( !composite[0].stringof.startsWith("package") && std.traits.moduleName!composite != moduleName ) {
         return;
       } else {
-        if((file !in comments || comments[file].length == 0) && file.exists) {
-          comments[file] = file.readText.compressComments;
-        } else {
-          comments[file] = [];
-        }
-
         foreach (test; __traits(getUnitTests, composite))
         {
-          auto testCase = TestCase(moduleName, testName!(test)(comments[file]), {
+          auto testCase = TestCase(moduleName, TestNameProvider.instance.getName!test, {
             test();
           }, testLabels!(test));
 
@@ -619,116 +311,4 @@ unittest
   r.empty.should.equal(false).because("an issue test is in this module");
   r.front.labels.map!(a => a.name).should.equal(["issue", "issue"]);
   r.front.labels.map!(a => a.value).should.equal(["1", "2"]);
-}
-
-/// The discoverTestCases should find the test with issues attributes
-unittest
-{
-  immutable line = __LINE__ - 2;
-  auto testDiscovery = new UnitTestDiscovery;
-
-  auto tests = testDiscovery.discoverTestCases(__FILE__);
-  tests.length.should.be.greaterThan(0);
-
-  auto testFilter = tests.filter!(a => a.name == "It should find this test with issues attributes");
-  testFilter.empty.should.equal(false);
-
-  auto theTest = testFilter.front;
-
-  theTest.labels.map!(a => a.name).should.equal(["issue", "issue"]);
-  theTest.labels.map!(a => a.value).should.equal(["1", "2"]);
-}
-
-/// The discoverTestCases should find the test with the flaky attribute
-unittest
-{
-  immutable line = __LINE__ - 2;
-  auto testDiscovery = new UnitTestDiscovery;
-
-  auto tests = testDiscovery.discoverTestCases(__FILE__);
-  tests.length.should.be.greaterThan(0);
-
-  auto testFilter = tests.filter!(a => a.name == "It should find this flaky test");
-  testFilter.empty.should.equal(false);
-
-  auto theTest = testFilter.front;
-
-  theTest.labels.map!(a => a.name).should.equal(["status_details"]);
-  theTest.labels.map!(a => a.value).should.equal(["flaky"]);
-}
-
-@("", "The discoverTestCases should find the test with the string attribute name")
-unittest
-{
-  immutable line = __LINE__ - 2;
-  auto testDiscovery = new UnitTestDiscovery;
-
-  auto tests = testDiscovery.discoverTestCases(__FILE__);
-  tests.length.should.be.greaterThan(0);
-
-  auto testFilter = tests.filter!(
-      a => a.name == "The discoverTestCases should find the test with the string attribute name");
-  testFilter.empty.should.equal(false);
-
-  testFilter.front.labels.length.should.equal(0);
-}
-
-/// The discoverTestCases
-/// should find this test
-unittest
-{
-  immutable line = __LINE__ - 2;
-  auto testDiscovery = new UnitTestDiscovery;
-
-  auto tests = testDiscovery.discoverTestCases(__FILE__);
-
-  tests.length.should.be.greaterThan(0);
-
-  auto testFilter = tests.filter!(a => a.name == "The discoverTestCases should find this test");
-  testFilter.empty.should.equal(false);
-
-  auto thisTest = testFilter.front;
-
-  thisTest.suiteName.should.equal("trial.discovery.unit");
-  thisTest.location.fileName.should.equal(__FILE__);
-  thisTest.location.line.should.equal(line);
-}
-
-/// discoverTestCases should ignore version(unittest)
-unittest
-{
-  auto testDiscovery = new UnitTestDiscovery;
-
-  auto tests = testDiscovery.discoverTestCases(__FILE__);
-  tests.length.should.be.greaterThan(0);
-
-  auto testFilter = tests.filter!(a => a.name == "This adds asserts to the module");
-  testFilter.empty.should.equal(true);
-}
-
-unittest
-{
-  /// discoverTestCases should set the default test names
-  immutable line = __LINE__ - 3;
-  auto testDiscovery = new UnitTestDiscovery;
-
-  testDiscovery.discoverTestCases(__FILE__).map!(a => a.name)
-      .array.should.contain("unnamed test at line 780");
-}
-
-/// discoverTestCases should find the same tests like testCases
-unittest
-{
-  auto testDiscovery = new UnitTestDiscovery;
-
-  testDiscovery.addModule!(__FILE__, "trial.discovery.unit");
-
-  auto allTests = testDiscovery
-    .getTestCases
-    .sort!((a, b) => a.location.line < b.location.line)
-    .array;
-
-  testDiscovery
-    .discoverTestCases(__FILE__).map!(a => a.toString).join("\n")
-    .should.equal(allTests.map!(a => a.toString).join("\n"));
 }

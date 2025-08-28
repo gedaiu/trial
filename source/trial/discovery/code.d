@@ -24,6 +24,8 @@ version (Have_libdparse)
 /// Get the module name of a DLang source file
 string getModuleName(string fileName)
 {
+  import std.stdio;
+  writeln(fileName);
   if (!exists(fileName))
   {
     return "";

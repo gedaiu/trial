@@ -423,10 +423,10 @@ unittest {
        |  void begin(ulong testCount) {
      23|    lifecycleListeners.each!(a => a.begin(testCount));
        |  }
-lifecycle/trial/runner.d is 74% covered
-`.toCoverageFile(buildPath(getcwd, "lifecycle/trial"));
+source/trial/runner.d is 74% covered
+`.toCoverageFile(getcwd);
 
-  result.path.should.equal("lifecycle/trial/runner.d");
+  result.path.should.equal("source/trial/runner.d");
   result.isInCurrentProject.should.equal(true);
   result.moduleName.should.equal("trial.runner");
   result.coveragePercent.should.equal(74);

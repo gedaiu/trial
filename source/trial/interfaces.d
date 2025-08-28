@@ -73,12 +73,6 @@ interface ITestDiscovery {
   TestCase[] getTestCases();
 }
 
-/// A listener that provides test cases contained in a certain file
-interface ITestDescribe {
-  /// Get the test cases by parsing the source code
-  TestCase[] discoverTestCases(string file);
-}
-
 /**
 A Listener that can run tests. During the test execution can be used only one
 instance of this listance. After all the tests were executed the result of all

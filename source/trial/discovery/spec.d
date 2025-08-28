@@ -216,46 +216,6 @@ class SpecTestDiscovery : ITestDiscovery
       return testCases;
     }
   }
-
-  TestCase[] discoverTestCases(string file)
-  {
-    TestCase[] testCases = [];
-
-    version (Have_fluent_asserts)
-      version (Have_libdparse)
-      {
-        import fluentasserts.core.results;
-
-        auto tokens = fileToDTokens(file);
-
-        auto iterator = TokenIterator(tokens);
-        auto moduleName = iterator.skipUntilType("module").skipOne.readUntilType(";").strip;
-
-        string lastName;
-        DLangAttribute[] attributes;
-
-        foreach (token; iterator)
-        {
-          auto type = str(token.type);
-
-          if(token.text == "Spec") {
-            iterator.skipOne.skipWsAndComments;
-
-            if(str(iterator.currentToken.type) == "!") {
-              iterator.skipOne.skipWsAndComments;
-
-              if(str(iterator.currentToken.type) == "(") {
-                auto block = iterator.readNextBlock;
-
-                testCases ~= getTestCasesFromSpec(file, moduleName, block);
-              }
-            }
-          }
-        }
-      }
-
-    return testCases;
-  }
 }
 
 ///
@@ -385,17 +345,6 @@ unittest
   tests[0].name.should.equal("should return false when the value is not present");
 }
 
-/// discoverTestCases should find the spec suite
-unittest
-{
-  auto specDiscovery = new SpecTestDiscovery;
-  auto tests = specDiscovery.discoverTestCases(__FILE__).filter!(
-      a => a.suiteName == "trial.discovery.spec.Algorithm").array;
-
-  tests.length.should.equal(1).because("the Spec suite defined is in this file");
-  tests[0].name.should.equal("should return false when the value is not present");
-}
-
 /// getTestCases should find the spec suite
 unittest
 {
@@ -492,17 +441,4 @@ unittest
   tests[2].func();
 
   trace.should.equal("test3 after2-bis after1");
-}
-
-/// discoverTestCases should find the same tests like testCases
-unittest
-{
-  auto testDiscovery = new SpecTestDiscovery;
-
-  testDiscovery
-    .discoverTestCases(__FILE__).map!(a => a.toString).join("\n")
-      .should.equal(
-        testDiscovery.getTestCases
-        .filter!(a => a.location.fileName.canFind(__FILE__))
-        .map!(a => a.toString).join("\n"));
 }
