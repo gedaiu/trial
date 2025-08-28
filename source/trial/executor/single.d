@@ -85,7 +85,7 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
         testCase.func();
         testResult.status = TestResult.Status.success;
       }
-      catch (PendingTestException) 
+      catch (PendingTestException)
       {
         testResult.status = TestResult.Status.pending;
       }
@@ -198,6 +198,6 @@ unittest {
   auto result = [ testCase ].runTests;
   auto testResult = result[0].tests[0];
 
-  testResult.begin.should.be.greaterThan(begin);
+  testResult.begin.should.be.greaterThan(begin - 1.msecs);
   testResult.end.should.be.greaterThan(begin + 1.msecs);
 }

@@ -113,7 +113,7 @@ class ConsoleWriter : ReportWriter
   }
 }
 
-import trial.terminal;
+import trial.arsd.terminal;
 
 shared static this()
 {

@@ -29,7 +29,7 @@ public import trial.runner;
 public import trial.settings;
 public import trial.stackresult;
 public import trial.step;
-public import trial.terminal;
+public import trial.arsd.terminal;
 
 version(trial_as_dependency) {} else :
 version(unittest):

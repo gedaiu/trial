@@ -257,8 +257,8 @@ version (Have_fluent_asserts) {
       this.writer = writer;
     }
 
-    void print(Message) nothrow {
-      assert(false, "not implemented");
+    void print(Message message) nothrow {
+      this.primary(message.text);
     }
 
     void primary(string text) {

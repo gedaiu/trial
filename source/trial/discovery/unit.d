@@ -15,6 +15,7 @@ import std.file;
 import std.algorithm;
 import std.range;
 import std.typecons;
+import std.math;
 
 import trial.interfaces;
 import trial.discovery.code;
@@ -151,7 +152,7 @@ Comment[] commentGroupToString(T)(T[] group)
 
 string getComment(const Comment[] comments, const ulong line, const string defaultValue) pure
 {
-  auto r = comments.filter!(a => (line - a.line) < 3);
+  auto r = comments.filter!(a => abs(line - a.line) < 3);
 
   return r.empty ? defaultValue : r.front.value;
 }
@@ -190,8 +191,7 @@ unittest
   "some*/some".commentType.should.equal(CommentType.end);
 }
 
-auto compressComments(string code)
-{
+Comment[] compressComments(string code) {
   Comment[] result;
 
   auto lines = code.splitter("\n").map!(a => a.strip).enumerate(1)
@@ -237,46 +237,6 @@ unittest
   clearCommentTokens("/*** text").should.equal("text");
   clearCommentTokens("/*** text ***/").should.equal("text");
   clearCommentTokens("/+++ text +++/").should.equal("text");
-}
-
-size_t extractLine(string name) {
-  static if(__VERSION__ >= 2077) {
-    auto idx = name.indexOf("_d_");
-
-    if(idx > 0) {
-      idx += 3;
-      auto lastIdx = name.lastIndexOf("_");
-
-      if(idx != -1 && isNumeric(name[idx .. lastIdx])) {
-        return name[idx .. lastIdx].to!size_t;
-      }
-    }
-  } else {
-    enum len = unitTestKey.length;
-
-    if(name.length < len) {
-      return 0;
-    }
-
-    auto postFix = name[len .. $];
-    auto idx = postFix.indexOf("_");
-
-    if(idx != -1 && isNumeric(postFix[0 .. idx])) {
-      return postFix[0 .. idx].to!size_t;
-    }
-  }
-
-  auto pieces = name.split("_")
-    .filter!(a => a != "")
-    .map!(a => a[0] == 'L' ? a[1..$] : a)
-    .filter!(a => a.isNumeric)
-    .map!(a => a.to!size_t).array;
-
-  if(pieces.length > 0) {
-    return pieces[0];
-  }
-
-  return 0;
 }
 
 /// The default test discovery looks for unit test sections and groups them by module
@@ -394,6 +354,8 @@ class UnitTestDiscovery : ITestDiscovery
     {
       string defaultName = test.stringof.to!string;
       string name = defaultName;
+      auto location = __traits(getLocation, test);
+      size_t line = location[1];
 
       foreach (attr; __traits(getAttributes, test))
       {
@@ -402,14 +364,6 @@ class UnitTestDiscovery : ITestDiscovery
           name = attr;
         }
       }
-
-      enum len = unitTestKey.length;
-      size_t line;
-
-      try
-      {
-        line = extractLine(name);
-      } catch(Exception) {}
 
       if (name == defaultName && name.indexOf(unitTestKey) == 0)
       {
@@ -433,21 +387,9 @@ class UnitTestDiscovery : ITestDiscovery
 
     SourceLocation testSourceLocation(alias test)(string fileName)
     {
-      string name = test.stringof.to!string;
+      auto location = __traits(getLocation, test);
 
-      enum len = unitTestKey.length;
-      size_t line;
-
-      try
-      {
-        line = extractLine(name);
-      }
-      catch (Exception e)
-      {
-        return SourceLocation();
-      }
-
-      return SourceLocation(fileName, line);
+      return SourceLocation(location[0], location[1]);
     }
 
     Label[] testLabels(alias test)()
@@ -471,8 +413,10 @@ class UnitTestDiscovery : ITestDiscovery
       static if( !composite[0].stringof.startsWith("package") && std.traits.moduleName!composite != moduleName ) {
         return;
       } else {
-        if(file !in comments) {
+        if((file !in comments || comments[file].length == 0) && file.exists) {
           comments[file] = file.readText.compressComments;
+        } else {
+          comments[file] = [];
         }
 
         foreach (test; __traits(getUnitTests, composite))
@@ -610,21 +554,6 @@ version (unittest)
   version(Have_fluent_asserts) {
     import fluent.asserts;
   }
-}
-
-/// It should extract the line from the default test name
-unittest {
-  extractLine("__unittest_runTestsOnDevices_133_0()").should.equal(133);
-}
-
-/// It should extract the line from the default test name with _d_ in symbol name
-unittest {
-  extractLine("__unittest_runTestsOnDevices_d_133_0()").should.equal(133);
-}
-
-@("It should extract the line from the default test name with _L in symbol name")
-unittest {
-  extractLine("__unittest_L607_C1()").should.equal(607);
 }
 
 /// It should find this test
