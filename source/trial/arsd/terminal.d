@@ -2642,8 +2642,10 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/ms683193%28v=vs.85%29.as
 	}
 	private void updateCursorPosition_impl() {
 		if(!usingDirectEmulator && type != ConsoleOutputType.minimalProcessing)
+
 		if(!stdinIsTerminal || !stdoutIsTerminal)
-			throw new Exception("cannot update cursor position on non-terminal");
+			return;
+
 		auto terminal = &this;
 		version(Win32Console) {
 			if(UseWin32Console) {
@@ -2692,7 +2694,8 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/ms683193%28v=vs.85%29.as
 				int tries = 0;
 				try_again:
 				if(tries > 30)
-					throw new Exception("terminal reply timed out");
+					return;
+
 				auto len = read(terminal.fdIn, buffer.ptr, buffer.length);
 				if(len == -1) {
 					if(errno == EINTR)
@@ -2704,7 +2707,7 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/ms683193%28v=vs.85%29.as
 						goto try_again;
 					}
 				} else if(len == 0) {
-					throw new Exception("Couldn't get cursor position to initialize get line " ~ to!string(len) ~ " " ~ to!string(errno));
+					return;
 				}
 
 				return buffer[0];
