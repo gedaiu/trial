@@ -1527,7 +1527,7 @@ struct Terminal {
 
 	private void goCellular() {
 		if(!usingDirectEmulator && !Terminal.stdoutIsTerminal && type != ConsoleOutputType.minimalProcessing)
-			throw new Exception("Cannot go to cellular mode with redirected output");
+			return;
 
 		if(UseVtSequences) {
 			doTermcap("ti");
@@ -2254,8 +2254,9 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/ms683193%28v=vs.85%29.as
 		if(getSizeOverride)
 			return getSizeOverride();
 
-		if(!usingDirectEmulator && !stdoutIsTerminal && type != ConsoleOutputType.minimalProcessing)
-			throw new Exception("unable to get size of non-terminal");
+		if(!usingDirectEmulator && !stdoutIsTerminal && type != ConsoleOutputType.minimalProcessing) {
+			return [80, 24];
+		}
 		version(Windows) {
 			CONSOLE_SCREEN_BUFFER_INFO info;
 			GetConsoleScreenBufferInfo( hConsole, &info );
