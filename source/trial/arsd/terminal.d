@@ -2693,8 +2693,9 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/ms683193%28v=vs.85%29.as
 				ubyte[1] buffer;
 				int tries = 0;
 				try_again:
-				if(tries > 30)
-					return;
+				if(tries > 30) {
+					return 0;
+				}
 
 				auto len = read(terminal.fdIn, buffer.ptr, buffer.length);
 				if(len == -1) {
@@ -2707,7 +2708,7 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/ms683193%28v=vs.85%29.as
 						goto try_again;
 					}
 				} else if(len == 0) {
-					return;
+					return 0;
 				}
 
 				return buffer[0];
