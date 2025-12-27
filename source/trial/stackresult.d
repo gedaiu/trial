@@ -16,104 +16,14 @@ import std.algorithm;
 
 import core.demangle;
 
-version (Have_fluent_asserts) { } else {
-  auto toTestException(Throwable t)
-  {
-    return t;
-  }
+auto toTestException(Throwable t)
+{
+  return t;
 }
 
 version (Have_fluent_asserts) {
 
   import fluentasserts.core.base;
-  import fluentasserts.core.results;
-
-  ///
-  class TestExceptionWrapper : TestException {
-    private {
-      TestException exception;
-      IResult[] results;
-    }
-
-    ///
-    this(TestException exception, IResult[] results, string fileName, size_t line, Throwable next = null) {
-      this.exception = exception;
-      this.results = results;
-
-      super(results, fileName, line, next);
-
-      this.msg = exception.msg ~ "\n" ~ this.msg;
-    }
-
-    ///
-    override void print(ResultPrinter printer) {
-      exception.print(printer);
-
-      results.each!(a => a.print(printer));
-    }
-
-    ///
-    override string toString() {
-      return exception.toString ~ results.map!(a => a.toString).join("\n").to!string;
-    }
-  }
-
-  /// The message of a wrapped exception should contain the original exception
-  unittest {
-    auto exception = new TestException([ new MessageResult("first message") ], "", 0);
-    auto wrappedException = new TestExceptionWrapper(exception, [ new MessageResult("second message") ], "", 0);
-
-    wrappedException.msg.should.equal("first message\n\nsecond message\n");
-  }
-
-  /// Converts a Throwable to a TestException which improves the failure verbosity
-  TestException toTestException(Throwable t)
-  {
-    auto exception = cast(TestException) t;
-
-    if (exception is null)
-    {
-      IResult[] results = [cast(IResult) new MessageResult(t.classinfo.name ~ ": " ~ t.msg)];
-
-      if (t.file.indexOf("../") == -1)
-      {
-        results ~= cast(IResult) new SourceResult(t.file, t.line);
-      }
-
-      if (t !is null && t.info !is null)
-      {
-        results ~= cast(IResult) new StackResult(t.info);
-      }
-
-      exception = new TestException(results, t.file, t.line, t);
-    } else {
-      exception = new TestExceptionWrapper(exception, [ cast(IResult) new StackResult(t.info) ], t.file, t.line, t);
-    }
-
-    return exception;
-  }
-
-  @("toTestException should convert an Exception from the current project to a TestException with 2 reporters")
-  unittest
-  {
-    auto exception = new Exception("random text");
-    auto testException = exception.toTestException;
-
-    (testException !is null).should.equal(true);
-    testException.toString.should.contain("random text");
-    testException.toString.should.contain("lifecycle/trial/runner.d");
-  }
-
-  @("toTestException should convert an Exception from other project to a TestException with 1 reporter")
-  unittest
-  {
-    auto exception = new Exception("random text", "../file.d");
-    auto testException = exception.toTestException;
-
-    (testException !is null).should.equal(true);
-    testException.toString.should.contain("random text");
-    testException.toString.should.not.contain("lifecycle/trial/runner.d");
-  }
 
   /// A structure that allows you to detect which modules are relevant to display
   struct ExternalValidator
@@ -187,7 +97,7 @@ version (Have_fluent_asserts) {
   }
 
   /// Used to display the stack
-  class StackResult : IResult
+  class StackResult
   {
     static
     {
@@ -218,45 +128,42 @@ version (Have_fluent_asserts) {
       }
     }
 
-    override
+    /// Converts the result to a string
+    override string toString() @safe
     {
-      /// Converts the result to a string
-      string toString() @safe
+      string result = "Stack trace:\n-------------------\n...\n";
+
+      foreach (frame; getFrames)
       {
-        string result = "Stack trace:\n-------------------\n...\n";
-
-        foreach (frame; getFrames)
-        {
-          result ~= frame.toString ~ "\n";
-        }
-
-        return result ~ "...";
+        result ~= frame.toString ~ "\n";
       }
 
-      /// Prints the stack using the default writer
-      void print(ResultPrinter printer)
+      return result ~ "...";
+    }
+
+    /// Prints the stack using the default writer
+    void print(ResultPrinter printer)
+    {
+      int colorIndex = 0;
+      printer.primary("Stack trace:\n-------------------\n...\n");
+
+      auto validator = ExternalValidator(externalModules);
+
+      foreach (frame; getFrames)
       {
-        int colorIndex = 0;
-        printer.primary("Stack trace:\n-------------------\n...\n");
-
-        auto validator = ExternalValidator(externalModules);
-
-        foreach (frame; getFrames)
+        if (validator.isExternal(frame.name))
         {
-          if (validator.isExternal(frame.name))
-          {
-            printer.primary(frame.toString);
-          }
-          else
-          {
-            frame.print(printer);
-          }
-
-          printer.primary("\n");
+          printer.primary(frame.toString);
+        }
+        else
+        {
+          frame.print(printer);
         }
 
-        printer.primary("...");
+        printer.primary("\n");
       }
+
+      printer.primary("...");
     }
   }
 
@@ -515,6 +422,10 @@ version(unittest) {
 
     void successReverse(string val) {
       buffer ~= "[successReverse:" ~ val ~ "]";
+    }
+
+    void newLine() {
+      buffer ~= "\n";
     }
   }
 }

@@ -21,7 +21,6 @@ import trial.reporters.writer;
 version (Have_fluent_asserts)
 {
   import fluentasserts.core.base;
-  import fluentasserts.core.results;
 }
 
 /// A structure containing the glyphs used for the result reporter
@@ -224,23 +223,7 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
         writer.writeln("");
         writer.writeln(i.to!string ~ ") " ~ failedTestNames[i] ~ ":", ReportWriter.Context.danger);
 
-        version (Have_fluent_asserts)
-        {
-          TestException e = cast(TestException) t;
-
-          if (e is null)
-          {
-            writer.writeln(t.to!string);
-          }
-          else
-          {
-            e.print(new TrialResultPrinter(defaultWriter));
-          }
-        }
-        else
-        {
-          writer.writeln(t.to!string);
-        }
+        writer.writeln(t.to!string);
 
         writer.writeln("");
       }
@@ -259,7 +242,7 @@ version (Have_fluent_asserts) {
 
     void print(Message message) nothrow {
       try {
-          this.primary(message.text);
+          this.primary(message.text[].idup);
       } catch(Exception e) { }
     }
 
@@ -296,6 +279,11 @@ version (Have_fluent_asserts) {
     void successReverse(string text) {
       try { writer.writeReverse(text, ReportWriter.Context.success);
       writer.write("");
+      } catch(Exception e) {}
+    }
+
+    void newLine() {
+      try { writer.writeln("");
       } catch(Exception e) {}
     }
   }

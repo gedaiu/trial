@@ -16,7 +16,6 @@ import std.algorithm;
 
 version(Have_fluent_asserts) {
   import fluentasserts.core.base;
-  import fluentasserts.core.results;
 }
 
 import trial.interfaces;
@@ -172,33 +171,3 @@ unittest
   writer.buffer.should.equal("not ok - some suite.other's test\n");
 }
 
-/// it should print the results of a TestException
-unittest {
-  IResult[] results = [
-    cast(IResult) new MessageResult("message"),
-    cast(IResult) new ExtraMissingResult("a", "b") ];
-
-  auto exception = new TestException(results, "unknown", 0);
-
-  auto writer = new BufferedWriter;
-  auto reporter = new TapReporter(writer);
-
-  auto test = new TestResult("other's test");
-  test.status = TestResult.Status.failure;
-  test.throwable = exception;
-
-  reporter.end("some suite", test);
-
-  writer.buffer.should.equal("not ok - some suite.other's test\n" ~
-  "# message\n" ~
-  "# \n" ~
-  "#     Extra:a\n" ~
-  "#   Missing:b\n" ~
-  "# \n" ~
-  "  ---\n" ~
-  "  message: 'message'\n" ~
-  "  severity: failure\n" ~
-  "  location:\n" ~
-  "    fileName: 'unknown'\n" ~
-  "    line: 0\n\n");
-}

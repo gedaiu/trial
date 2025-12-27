@@ -17,7 +17,6 @@ import std.exception;
 
 version(Have_fluent_asserts) {
   import fluentasserts.core.base;
-  import fluentasserts.core.results;
 }
 
 import trial.interfaces;
@@ -186,33 +185,6 @@ unittest
   reporter.end("some suite", test);
 
   writer.buffer.should.equal("status:failure\nEND TEST;\n");
-}
-
-/// it should print the results of a TestException
-unittest {
-  IResult[] results = [
-    cast(IResult) new MessageResult("message"),
-    cast(IResult) new ExtraMissingResult("a", "b") ];
-
-  auto exception = new TestException(results, "unknown", 0);
-
-  auto writer = new BufferedWriter;
-  auto reporter = new VisualTrialReporter(writer);
-
-  auto test = new TestResult("other's test");
-  test.status = TestResult.Status.failure;
-  test.throwable = exception;
-
-  reporter.end("some suite", test);
-
-  writer.buffer.should.equal("status:failure\n" ~
-         "errorFile:unknown\n" ~
-         "errorLine:0\n" ~
-         "message:message\n" ~
-         "error:fluentasserts.core.base.TestException@unknown(0): message\n\n" ~
-         "    Extra:a\n" ~
-         "  Missing:b\n\n" ~
-         "END TEST;\n");
 }
 
 /// Parse the output from the visual trial reporter
