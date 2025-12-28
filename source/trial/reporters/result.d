@@ -18,11 +18,6 @@ import std.datetime;
 import trial.interfaces;
 import trial.reporters.writer;
 
-version (Have_fluent_asserts)
-{
-  import fluentasserts.core.base;
-}
-
 /// A structure containing the glyphs used for the result reporter
 struct TestResultGlyphs {
   version(Windows) {
@@ -227,64 +222,6 @@ class ResultReporter : ILifecycleListener, ITestCaseLifecycleListener,
 
         writer.writeln("");
       }
-    }
-  }
-}
-
-version (Have_fluent_asserts) {
-  class TrialResultPrinter : ResultPrinter {
-    @trusted:
-    ReportWriter writer;
-
-    this(ReportWriter writer) {
-      this.writer = writer;
-    }
-
-    void print(Message message) nothrow {
-      try {
-          this.primary(message.text[].idup);
-      } catch(Exception e) { }
-    }
-
-    void primary(string text) {
-      try { writer.write(text, ReportWriter.Context._default);
-      writer.write("");
-      } catch(Exception e) {}
-    }
-
-    void info(string text) {
-      try { writer.write(text, ReportWriter.Context.info);
-      writer.write("");
-      } catch(Exception e) {}
-    }
-
-    void danger(string text) {
-      try { writer.write(text, ReportWriter.Context.danger);
-      writer.write("");
-      } catch(Exception e) {}
-    }
-
-    void success(string text) {
-      try { writer.write(text, ReportWriter.Context.success);
-      writer.write("");
-      } catch(Exception e) {}
-    }
-
-    void dangerReverse(string text) {
-      try { writer.writeReverse(text, ReportWriter.Context.danger);
-      writer.write("");
-      } catch(Exception e) {}
-    }
-
-    void successReverse(string text) {
-      try { writer.writeReverse(text, ReportWriter.Context.success);
-      writer.write("");
-      } catch(Exception e) {}
-    }
-
-    void newLine() {
-      try { writer.writeln("");
-      } catch(Exception e) {}
     }
   }
 }

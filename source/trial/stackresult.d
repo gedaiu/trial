@@ -16,224 +16,60 @@ import std.algorithm;
 
 import core.demangle;
 
+version (unittest) {
+  version (Have_fluent_asserts) {
+    import fluent.asserts;
+  }
+}
+
 auto toTestException(Throwable t)
 {
   return t;
 }
 
-version (Have_fluent_asserts) {
-
-  import fluentasserts.core.base;
-
-  /// A structure that allows you to detect which modules are relevant to display
-  struct ExternalValidator
+/// Used to display the stack
+class StackResult
+{
+  static
   {
-
-    /// The list of external modules like the standard library or dub dependencies
+    ///
     string[] externalModules;
+  }
 
-    /// Check if the provided name comes from an external dependency
-    bool isExternal(const string name) @safe
+  ///
+  Frame[] frames;
+
+  ///
+  this(Throwable.TraceInfo t)
+  {
+    foreach (line; t)
     {
-      auto reversed = name.dup;
-      reverse(reversed);
-
-      string substring = name;
-      int sum = 0;
-      int index = 0;
-      foreach (ch; reversed)
-      {
-        if (ch == ')')
-        {
-          sum++;
-        }
-
-        if (ch == '(')
-        {
-          sum--;
-        }
-
-        if (sum == 0)
-        {
-          break;
-        }
-        index++;
-      }
-
-      auto tmpSubstring = reversed[index .. $];
-      reverse(tmpSubstring);
-      substring = tmpSubstring.to!string;
-
-      auto wordEnd = substring.lastIndexOf(' ') + 1;
-      auto chainEnd = substring.lastIndexOf(").") + 1;
-
-      if (chainEnd > wordEnd)
-      {
-        return isExternal(name[0 .. chainEnd]);
-      }
-
-      auto functionName = substring[wordEnd .. $];
-
-      return !externalModules.filter!(a => functionName.indexOf(a) == 0).empty;
+      auto frame = line.to!string.toFrame;
+      frame.name = demangle(frame.name).to!string;
+      frames ~= frame;
     }
   }
 
-  @("It should detect external functions")
-  unittest
+  private
   {
-    auto validator = ExternalValidator(["selenium.api", "selenium.session"]);
-
-    validator.isExternal("selenium.api.SeleniumApiConnector selenium.api.SeleniumApiConnector.__ctor()")
-      .should.equal(true);
-
-    validator.isExternal("void selenium.api.SeleniumApiConnector.__ctor()").should.equal(true);
-
-    validator.isExternal(
-        "pure @safe bool selenium.api.enforce!(Exception, bool).enforce(bool, lazy const(char)[], immutable(char)[], ulong)")
-      .should.equal(true);
-
-    validator.isExternal("immutable(immutable(selenium.session.SeleniumSession) function(immutable(char)[], selenium.api.Capabilities, selenium.api.Capabilities, selenium.api.Capabilities)) selenium.session.SeleniumSession.__ctor")
-      .should.equal(true);
-  }
-
-  /// Used to display the stack
-  class StackResult
-  {
-    static
+    auto getFrames()
     {
-      ///
-      string[] externalModules;
-    }
-
-    ///
-    Frame[] frames;
-
-    ///
-    this(Throwable.TraceInfo t)
-    {
-      foreach (line; t)
-      {
-        auto frame = line.to!string.toFrame;
-        frame.name = demangle(frame.name).to!string;
-        frames ~= frame;
-      }
-    }
-
-    private
-    {
-      auto getFrames()
-      {
-        return frames.until!(a => a.name.indexOf("generated") != -1)
-          .until!(a => a.name.indexOf("D5trial") != -1);
-      }
-    }
-
-    /// Converts the result to a string
-    override string toString() @safe
-    {
-      string result = "Stack trace:\n-------------------\n...\n";
-
-      foreach (frame; getFrames)
-      {
-        result ~= frame.toString ~ "\n";
-      }
-
-      return result ~ "...";
-    }
-
-    /// Prints the stack using the default writer
-    void print(ResultPrinter printer)
-    {
-      int colorIndex = 0;
-      printer.primary("Stack trace:\n-------------------\n...\n");
-
-      auto validator = ExternalValidator(externalModules);
-
-      foreach (frame; getFrames)
-      {
-        if (validator.isExternal(frame.name))
-        {
-          printer.primary(frame.toString);
-        }
-        else
-        {
-          frame.print(printer);
-        }
-
-        printer.primary("\n");
-      }
-
-      printer.primary("...");
+      return frames.until!(a => a.name.indexOf("generated") != -1)
+        .until!(a => a.name.indexOf("D5trial") != -1);
     }
   }
 
-  /// The stack result should display the stack in a readable form
-  unittest
+  /// Converts the result to a string
+  override string toString() @safe
   {
-    Throwable exception;
+    string result = "Stack trace:\n-------------------\n...\n";
 
-    try
+    foreach (frame; getFrames)
     {
-      assert(false, "random message");
-    }
-    catch (Throwable t)
-    {
-      exception = t;
+      result ~= frame.toString ~ "\n";
     }
 
-    auto result = new StackResult(exception.info).toString;
-
-    result.should.startWith("Stack trace:\n-------------------\n...");
-    result.should.endWith("\n...");
-  }
-} else {
-
-  /// Used to display the stack
-  class StackResult
-  {
-    static
-    {
-      ///
-      string[] externalModules;
-    }
-
-    ///
-    Frame[] frames;
-
-    ///
-    this(Throwable.TraceInfo t) {
-      foreach (line; t)
-      {
-        auto frame = line.to!string.toFrame;
-        frame.name = demangle(frame.name).to!string;
-        frames ~= frame;
-      }
-    }
-
-    private
-    {
-      auto getFrames()
-      {
-        return frames.until!(a => a.name.indexOf("generated") != -1)
-          .until!(a => a.name.indexOf("D5trial") != -1);
-      }
-    }
-
-    override
-    {
-      /// Converts the result to a string
-      string toString() @safe
-      {
-        string result = "Stack trace:\n-------------------\n...\n";
-
-        foreach (frame; getFrames)
-        {
-          result ~= frame.toString ~ "\n";
-        }
-
-        return result ~ "...";
-      }
-    }
+    return result ~ "...";
   }
 }
 
@@ -301,46 +137,6 @@ struct Frame
 
     return result;
   }
-
-  version(Have_fluent_asserts) {
-    void print(ResultPrinter printer) @safe
-    {
-      if(raw != "") {
-        printer.primary(raw);
-
-        return;
-      }
-
-      if(index >= 0) {
-        printer.info(leftJustifier(index.to!string, 4).to!string);
-      }
-
-      printer.primary(address ~ " ");
-      printer.info(name == "" ? "????" : name);
-
-      if(moduleName != "") {
-        printer.primary(" at ");
-        printer.info(moduleName);
-      }
-
-      if(offset != "") {
-        printer.primary(" + ");
-        printer.info(offset);
-      }
-
-      if(file != "") {
-        printer.primary(" (");
-        printer.info(file);
-
-        if(line > 0) {
-          printer.primary(":");
-          printer.info(line.to!string);
-        }
-
-        printer.primary(")");
-      }
-    }
-  }
 }
 
 /// The frame should convert a frame to string
@@ -388,111 +184,6 @@ unittest
 {
   Frame(-1, "", "0xffffff", "", "", "", 10).toString.should.equal(
     `0xffffff ????`
-  );
-}
-
-version(unittest) {
-  version(Have_fluent_asserts):
-  class MockPrinter : ResultPrinter {
-    string buffer;
-
-    void print(Message) nothrow @safe {
-      assert(false, "not implemented");
-    }
-
-    void primary(string val) {
-      buffer ~= val;
-    }
-
-    void info(string val) {
-      buffer ~= "[info:" ~ val ~ "]";
-    }
-
-    void danger(string val) {
-      buffer ~= "[danger:" ~ val ~ "]";
-    }
-
-    void success(string val) {
-      buffer ~= "[success:" ~ val ~ "]";
-    }
-
-    void dangerReverse(string val) {
-      buffer ~= "[dangerReverse:" ~ val ~ "]";
-    }
-
-    void successReverse(string val) {
-      buffer ~= "[successReverse:" ~ val ~ "]";
-    }
-
-    void newLine() {
-      buffer ~= "\n";
-    }
-  }
-}
-
-/// The frame should print all fields
-unittest
-{
-  auto printer = new MockPrinter;
-  Frame(10, "some.module", "0xffffff", "name", "offset", "file.d", 120).print(printer);
-
-  printer.buffer.should.equal(
-    `[info:10  ]0xffffff [info:name] at [info:some.module] + [info:offset] ([info:file.d]:[info:120])`
-  );
-}
-
-/// The frame should not print an index < 0 or a line < 0
-unittest
-{
-  auto printer = new MockPrinter;
-  Frame(-1, "some.module", "0xffffff", "name", "offset", "file.d", -1).print(printer);
-
-  printer.buffer.should.equal(
-    `0xffffff [info:name] at [info:some.module] + [info:offset] ([info:file.d])`
-  );
-}
-
-/// The frame should not print the file if it's missing
-unittest
-{
-  auto printer = new MockPrinter;
-  Frame(-1, "some.module", "0xffffff", "name", "offset", "", 10).print(printer);
-
-  printer.buffer.should.equal(
-    `0xffffff [info:name] at [info:some.module] + [info:offset]`
-  );
-}
-
-/// The frame should not print the module if it's missing
-unittest
-{
-  auto printer = new MockPrinter;
-  Frame(-1, "", "0xffffff", "name", "offset", "", 10).print(printer);
-
-  printer.buffer.should.equal(
-    `0xffffff [info:name] + [info:offset]`
-  );
-}
-
-/// The frame should not print the offset if it's missing
-unittest
-{
-  auto printer = new MockPrinter;
-  Frame(-1, "", "0xffffff", "name", "", "", 10).print(printer);
-
-  printer.buffer.should.equal(
-    `0xffffff [info:name]`
-  );
-}
-
-/// The frame should print ???? when the name is missing
-unittest
-{
-  auto printer = new MockPrinter;
-  Frame(-1, "", "0xffffff", "", "", "", 10).print(printer);
-
-  printer.buffer.should.equal(
-    `0xffffff [info:????]`
   );
 }
 
