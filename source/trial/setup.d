@@ -1,6 +1,6 @@
 module trial.setup;
 
-version(trial_as_dependency):
+version(DisableTrialAutoSetup) {} else:
 version(unittest):
 
 import trial.runner;
