@@ -21,6 +21,11 @@ import std.range;
 import trial.interfaces;
 import trial.reporters.writer;
 
+private string sanitizeFilename(string name) {
+  import std.regex : regex, replaceAll;
+  return name.replaceAll(regex(`[^\w.\-]`), "_");
+}
+
 private string escapeXUnit(string data) {
   string escapedData = data.dup;
 
@@ -63,7 +68,7 @@ class XUnitReporter : ILifecycleListener
       string uuid = randomUUID.toString;
       string xml = `<?xml version="1.0" encoding="UTF-8"?>` ~ "\n"~ `<testsuites>` ~ "\n" ~ XUnitSuiteXml(item, uuid).toString ~ "\n</testsuites>\n";
 
-      std.file.write(buildPath(destination, item.name ~ ".xml"), xml);
+      std.file.write(buildPath(destination, sanitizeFilename(item.name) ~ ".xml"), xml);
     }
   }
 }
