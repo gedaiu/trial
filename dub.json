@@ -4,7 +4,7 @@
     "Szabo Bogdan"
   ],
   "description": "The extensible test runner for DLang",
-  "copyright": "Copyright © 2022, Szabo Bogdan",
+  "copyright": "Copyright © 2026, Szabo Bogdan",
   "license": "MIT",
   "homepage": "http://trial.szabobogdan.com/",
   "dependencies": {},
@@ -16,7 +16,7 @@
       ],
       "targetType": "sourceLibrary",
       "dependencies": {
-        "fluent-asserts": "~>2.0.0-beta.2",
+        "fluent-asserts": "~>2.0.1",
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true
@@ -38,7 +38,7 @@
         "tests"
       ],
       "dependencies": {
-        "fluent-asserts": "~>2.0.0-beta.2",
+        "fluent-asserts": "~>2.0.1",
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true
