@@ -180,7 +180,12 @@ private void testThreadSetup(string testName) {
 /// The parallel executors runs tests in a sepparate thread
 class ParallelExecutor : ITestExecutor {
   struct SuiteStats {
-    SuiteResult result;
+    // SuiteResult disables default construction to force a suite name, which
+    // would leave SuiteStats non default constructible. Since dmd 2.112 the
+    // associative array rewrite instantiates `_aaValues` for every value type
+    // and that requires one, so `suiteStats.values` stopped compiling. Naming
+    // `.init` here keeps SuiteResult's invariant for every other caller.
+    SuiteResult result = SuiteResult.init;
 
     ulong testsFinished;
     bool isDone;
