@@ -375,7 +375,7 @@ class ParallelExecutor : ITestExecutor {
         endTestResult(endKey, failure);
       }
 
-      foreach(stat; suiteStats.values) {
+      foreach(ref stat; suiteStats) {
         if(!stat.isDone && stat.result.tests.length == stat.testsFinished) {
           endSuiteResult(stat.result.name);
         }
@@ -435,7 +435,7 @@ class ParallelExecutor : ITestExecutor {
       pool = null;
     }
 
-    foreach(stat; suiteStats.values) {
+    foreach(ref stat; suiteStats) {
       if(!stat.isDone) {
         endSuiteResult(stat.result.name);
       }
