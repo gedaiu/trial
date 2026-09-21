@@ -82,7 +82,7 @@ class StatsReporter : ILifecycleListener, ITestCaseLifecycleListener,
     auto lastItem(string key)
     {
       enforce(path[key].length > 0, "There is no defined path");
-      return path[key][path.length - 1];
+      return path[key][$ - 1];
     }
   }
 
@@ -259,6 +259,23 @@ unittest
     .array.should.equal([TestResult.Status.unknown, TestResult.Status.unknown]);
   storage.values.map!(a => a.begin).array.should.equal([step.begin, step.begin]);
   storage.values.map!(a => a.end > a.begin).array.should.equal([true, true]);
+}
+
+@("it stores suite.test1.step and suite.test2.step when two tests have one step each")
+unittest
+{
+  auto storage = new StatStorage;
+  auto stats = new StatsReporter(storage, "trial-stats.csv");
+
+  auto step = new StepResult;
+  step.name = "step";
+
+  stats.begin("suite", "test1", step);
+  stats.end("suite", "test1", step);
+  stats.begin("suite", "test2", step);
+  stats.end("suite", "test2", step);
+
+  storage.values.map!(a => a.name).array.should.equal(["suite.test1.step", "suite.test2.step"]);
 }
 
 string toCsv(const(StatStorage) storage)

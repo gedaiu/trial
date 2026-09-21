@@ -26,7 +26,7 @@ trial itself, are not part of your test run.
 
 This is the default test discovery. It will search inside your modules for `unittest` blocks. You can add custom names
 to your tests by adding a comment before the `unittest` keyword or you annotate
-the test with a string [UDA](http://dlang.org/spec/attribute.html#uda) that string will be used as the test name.
+the test with a string [UDA](https://dlang.org/spec/attribute.html#uda) that string will be used as the test name.
 
 [Project example](https://gitlab.com/szabobogdan3/trial/-/tree/master/examples/unittest)
 

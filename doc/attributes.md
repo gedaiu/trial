@@ -13,7 +13,7 @@ Here are informations about the built in attributes
   - [Hacking](#hacking)
 
 ## About
-You can use [User Defined Attributes](http://dlang.org/spec/attribute.html#uda) to add more
+You can use [User Defined Attributes](https://dlang.org/spec/attribute.html#uda) to add more
 informations to your test result. Right now you can only modify the test labels but in the
 future, more functionality will be added. Besides the provided attributes, any string attribute, will be used as test name.
 

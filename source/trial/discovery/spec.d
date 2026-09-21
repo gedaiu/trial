@@ -283,10 +283,13 @@ unittest
 
 version (unittest)
 {
-  version(Have_fluent_asserts):
+  version (Have_fluent_asserts) import fluent.asserts;
+}
 
-  import fluent.asserts;
+version (TrialSelfTest):
 
+version (unittest)
+{
   private static string trace;
   private __gshared bool failOnPurpose;
 

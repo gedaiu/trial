@@ -26,6 +26,9 @@
     {
       "name": "unittest",
       "targetType": "autodetect",
+      "versions": [
+        "TrialSelfTest"
+      ],
       "lflags": [
         "-L/opt/homebrew/opt/openssl@3/lib"
       ],

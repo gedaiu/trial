@@ -15,16 +15,8 @@
 			"excludedSourceFiles": [
 				"source/app.d"
 			],
-			"sourcePaths": [
-				"source",
-				"tests"
-			],
-			"importPaths": [
-				"source",
-				"tests"
-			],
 			"dependencies": {
-				"fluent-asserts": "1.0.0-beta.2",
+				"fluent-asserts": "~>2.0.1",
 				"trial": {
 					"path": "../../"
 				}

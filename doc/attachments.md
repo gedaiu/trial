@@ -46,7 +46,7 @@ unittest {
 If you want to capture the attachments, you need to implement the [IAttachmentListener](http://trial.szabobogdan.com/api/trial/interfaces/IAttachmentListener.html)
 and add your custom handler.
 
-Note that if you want to implement a custom [executor](http://trial.szabobogdan.com/doc/executors.html), in order to
+Note that if you want to implement a custom [executor](executors.md), in order to
 have the attachments linked to the current test or step, you must implement this interface.
 
 ```d
