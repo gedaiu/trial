@@ -3,7 +3,6 @@
 	"versions": {
 		"ddmp": "0.0.1-0.dev.3",
 		"diet-ng": "1.8.1",
-		"dub": "1.29.2",
 		"either": "1.1.3",
 		"eventcore": "0.9.21",
 		"fluent-asserts": "2.1.0",
