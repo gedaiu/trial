@@ -17,6 +17,8 @@ You can use [User Defined Attributes](http://dlang.org/spec/attribute.html#uda) 
 informations to your test result. Right now you can only modify the test labels but in the
 future, more functionality will be added. Besides the provided attributes, any string attribute, will be used as test name.
 
+The attributes are defined in `trial.interfaces`, so you need to import that module, or `trial`, to use them.
+
 ## Flaky
 In a real life not all of your tests are stable and always green or always red. A test might start to "blink" i.e. it fails
 from time-to-time without any obvious reason. You could disable such a test, that is a trivial solution. However what if

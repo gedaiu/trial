@@ -32,11 +32,11 @@ unittest {
 It is also possible to add an attachment using the LifecycleListener:
 
 ```d
-import trial.runner;
+import trial.interfaces;
 
 /// Alternative attachment
 unittest {
-    auto a = const Attachment(name, path, name);
+    auto a = const Attachment("my awesome screenshot", "screenshot.png", "image/png");
     LifeCycleListeners.instance.attach(a);
 }
 ```
