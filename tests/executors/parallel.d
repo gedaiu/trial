@@ -10,11 +10,16 @@ import std.conv;
 
 import fluent.asserts;
 import trial.step;
+import trial.interfaces : PendingTestException;
 
 __gshared bool executed;
 
 void failMock() @system {
   assert(false);
+}
+
+void pendingMock() @system {
+  throw new PendingTestException();
 }
 
 void stepMock1() @system {
@@ -87,6 +92,21 @@ unittest
   result[0].tests.length.should.equal(1);
   result[0].tests[0].status.should.equal(TestResult.Status.failure);
   (result[0].tests[0].throwable !is null).should.equal(true);
+}
+
+@("A parallel executor reports a pending test as pending")
+unittest
+{
+  TestCase[] tests = [ TestCase("suite1", "test1", &pendingMock)];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new ParallelExecutor);
+
+  auto result = tests.runTests;
+
+  result[0].tests[0].status.should.equal(TestResult.Status.pending);
 }
 
 @("it should call update() many times")
