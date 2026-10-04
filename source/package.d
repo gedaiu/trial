@@ -10,6 +10,7 @@ public import trial.executor.parallel;
 public import trial.executor.process;
 public import trial.executor.single;
 public import trial.interfaces;
+public import trial.reporters.agent;
 public import trial.reporters.allure;
 public import trial.reporters.dotmatrix;
 public import trial.reporters.html;

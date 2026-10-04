@@ -84,6 +84,7 @@ void addReporter(string name, Settings settings) {
   import trial.reporters.xunit;
   import trial.reporters.tap;
   import trial.reporters.visualtrial;
+  import trial.reporters.agent;
 
   switch (name) {
   case "spec":
@@ -146,9 +147,28 @@ void addReporter(string name, Settings settings) {
     LifeCycleListeners.instance.add(new VisualTrialReporter);
     break;
 
+  case "agent":
+    LifeCycleListeners.instance.add(new AgentReporter);
+    break;
+
   default:
     writeln("There is no `" ~ name ~ "` reporter");
   }
+}
+
+/// The reporters that print for a human reading a terminal
+immutable consoleReporters = [
+  "spec", "spec-progress", "spec-steps", "dot-matrix", "landing", "list", "progress", "result"
+];
+
+/// Returns the reporters with the console ones replaced by the agent reporter
+string[] withAgentReporter(string[] reporters) {
+  return reporters.filter!(a => !consoleReporters.canFind(a)).array ~ "agent";
+}
+
+/// withAgentReporter returns ["stats", "xunit", "agent"] for ["spec", "result", "stats", "xunit"]
+unittest {
+  ["spec", "result", "stats", "xunit"].withAgentReporter.should.equal(["stats", "xunit", "agent"]);
 }
 
 /// Returns an associative array of the detected tests,
@@ -310,6 +330,40 @@ unittest {
   result.keys.should.containOnly(["a.b", "a.c"]);
   result["a.b"].length.should.equal(1);
   result["a.c"].length.should.equal(1);
+}
+
+/// Returns the tests whose suite name followed by the test name contains the filter
+const(TestCase)[] filterByFullName(const(TestCase)[] tests, string filter) {
+  return tests.filter!(a => (a.suiteName ~ " " ~ a.name).indexOf(filter) != -1).array;
+}
+
+/// filterByFullName returns only "a.b some test" when the filter is "a.b some"
+unittest {
+  void TestMock() @system {
+  }
+
+  auto tests = [
+    TestCase("a.b", "some test", &TestMock),
+    TestCase("a.c", "some test", &TestMock),
+    TestCase("a.b", "other test", &TestMock)
+  ];
+
+  auto result = tests.filterByFullName("a.b some");
+
+  result.map!(a => a.suiteName ~ " " ~ a.name).array.should.equal(["a.b some test"]);
+}
+
+/// filterByFullName returns all 2 tests when the filter is empty
+unittest {
+  void TestMock() @system {
+  }
+
+  auto tests = [
+    TestCase("a.b", "some test", &TestMock),
+    TestCase("a.c", "other test", &TestMock)
+  ];
+
+  tests.filterByFullName("").length.should.equal(2);
 }
 
 /// Runs the tests and returns the results
@@ -505,10 +559,13 @@ void unittestRuntimeSetup(allModules...)() {
   import core.stdc.stdlib;
   import trial.discovery.unit;
   import trial.discovery.spec;
+  import trial.reporters.agent : isAgentHarness;
+  import std.process : environment;
 
   Runtime.extendedModuleUnitTester = function() {
     string testName;
     string suiteName;
+    string fullName;
     string executor;
     string reporters;
 
@@ -516,6 +573,7 @@ void unittestRuntimeSetup(allModules...)() {
     args.getopt(
       "testName|t", &testName,
       "suiteName|s", &suiteName,
+      "filter|f", &fullName,
       "executor|e", &executor,
       "reporters|r", &reporters
     );
@@ -524,6 +582,10 @@ void unittestRuntimeSetup(allModules...)() {
     settings.reporters = ["spec", "result", "stats", "html", "allure", "xunit"];
     settings.artifactsLocation = ".trial";
     settings.maxThreads = 1;
+
+    if (environment.toAA.isAgentHarness) {
+      settings.reporters = settings.reporters.withAgentReporter;
+    }
 
     auto unittestDiscovery = new UnitTestDiscovery();
     auto specTestDiscovery = new SpecTestDiscovery();
@@ -540,7 +602,8 @@ void unittestRuntimeSetup(allModules...)() {
 
     setupLifecycle(settings);
 
-    auto results = runTests(LifeCycleListeners.instance.getTestCases, testName, suiteName);
+    auto tests = LifeCycleListeners.instance.getTestCases.filterByFullName(fullName);
+    auto results = runTests(tests, testName, suiteName);
 
     if (results.isSuccess) {
       return UnitTestResult.pass;
