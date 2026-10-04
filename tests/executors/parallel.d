@@ -18,6 +18,9 @@ void failMock() @system {
   assert(false);
 }
 
+void passMock() @system {
+}
+
 void pendingMock() @system {
   throw new PendingTestException();
 }
@@ -279,4 +282,46 @@ unittest
   tests.runTests;
 
   threadIds.sort.uniq.array.length.should.equal(1);
+}
+
+@("A parallel executor runs two tests with the same name in one suite")
+unittest
+{
+  import std.algorithm : map, sort;
+  import std.array : array;
+
+  TestCase[] tests = [
+    TestCase("suite4", "same name", &passMock),
+    TestCase("suite4", "same name", &failMock) ];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new ParallelExecutor);
+
+  auto result = tests.runTests;
+
+  result[0].tests.map!(a => a.status).array.sort.array
+    .should.equal([TestResult.Status.failure, TestResult.Status.success]);
+}
+
+@("A parallel executor runs two tests with the same name in one suite that both use steps")
+unittest
+{
+  import std.algorithm : map, sort;
+  import std.array : array;
+
+  TestCase[] tests = [
+    TestCase("suite5", "same name", &stepMock1),
+    TestCase("suite5", "same name", &stepMock2) ];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new ParallelExecutor);
+
+  auto result = tests.runTests;
+
+  result[0].tests.map!(a => a.status).array.sort.array
+    .should.equal([TestResult.Status.success, TestResult.Status.success]);
 }

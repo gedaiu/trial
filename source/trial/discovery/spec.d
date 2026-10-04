@@ -15,12 +15,19 @@ import std.string;
 
 import trial.interfaces;
 import trial.discovery.code;
+import core.sync.mutex : Mutex;
 
 alias SetupFunction = void delegate() @system;
 
 private string[] suitePath;
-private ulong[string] testsPerSuite;
-private TestCase[] testCases;
+private __gshared ulong[string] testsPerSuite;
+private __gshared Mutex suiteCounterLock;
+
+shared static this()
+{
+  suiteCounterLock = new Mutex;
+}
+private __gshared TestCase[] testCases;
 private SetupFunction[] beforeList;
 private SetupFunction[] afterList;
 
@@ -78,17 +85,23 @@ void after(T)(T setup)
   bool wasRun;
 
   afterList ~= {
-    if (wasRun)
+    bool isLastTest;
+
+    synchronized (suiteCounterLock)
     {
-      return;
+      if (wasRun)
+      {
+        return;
+      }
+
+      executedTests++;
+      isLastTest = testsPerSuite[suiteName] < executedTests;
+      wasRun = isLastTest;
     }
 
-    executedTests++;
-
-    if (testsPerSuite[suiteName] < executedTests)
+    if (isLastTest)
     {
       setup();
-      wasRun = true;
     }
   };
 }
@@ -103,7 +116,10 @@ private void updateTestCounter(string[] path, long value)
     tmp ~= glue ~ key;
     glue = ".";
 
-    testsPerSuite[tmp] += value;
+    synchronized (suiteCounterLock)
+    {
+      testsPerSuite[tmp] += value;
+    }
   }
 }
 
@@ -123,13 +139,15 @@ void it(T)(string name, T test, string file = __FILE__, size_t line = __LINE__)
         a();
       }
 
-      test();
+      scope(exit) {
+        updateTestCounter(path, -1);
 
-      updateTestCounter(path, -1);
-
-      foreach_reverse(a; after) {
-        a();
+        foreach_reverse(a; after) {
+          a();
+        }
       }
+
+      test();
     }));
 
   testCase.location = SourceLocation(file, line);
@@ -270,6 +288,7 @@ version (unittest)
   import fluent.asserts;
 
   private static string trace;
+  private __gshared bool failOnPurpose;
 
   /// A SpecTestDiscovery that has this module added
   SpecTestDiscovery thisModuleSpecDiscovery()
@@ -347,6 +366,12 @@ version (unittest)
       });
     });
 
+    describe("After all on another thread", {
+      after({ trace ~= " after"; });
+
+      it("should run the hooks", { trace ~= "test"; });
+    });
+
     describe("After each", {
       afterEach({ trace ~= " after1"; });
 
@@ -362,6 +387,18 @@ version (unittest)
         afterEach({ trace ~= " after2-bis"; });
 
         it("should run the hooks", { trace ~= "test3"; });
+      });
+    });
+
+    describe("Failing test cleanup", {
+      afterEach({ trace ~= " cleanup"; });
+
+      it("runs the cleanup", {
+        trace ~= "test";
+
+        if (failOnPurpose) {
+          throw new Exception("failed on purpose");
+        }
       });
     });
   });
@@ -427,6 +464,26 @@ unittest
   trace.should.equal("test3 after2-bis");
 }
 
+/// after all hooks run when the suite tests run on another thread
+unittest
+{
+  import core.thread : Thread;
+
+  auto tests = thisModuleSpecDiscovery.getTestCases.filter!(
+      a => a.suiteName == "trial.discovery.spec.After all on another thread").array;
+  string workerTrace;
+
+  auto worker = new Thread({
+    trace = "";
+    tests[0].func();
+    workerTrace = trace;
+  });
+  worker.start();
+  worker.join();
+
+  workerTrace.should.equal("test after");
+}
+
 /// It should execute the spec before hooks
 unittest
 {
@@ -465,6 +522,20 @@ unittest
   trace.should.equal("test3 after2-bis after1");
 }
 
+/// afterEach hooks run when the spec test throws
+unittest
+{
+  auto tests = thisModuleSpecDiscovery.getTestCases.filter!(
+      a => a.suiteName == "trial.discovery.spec.Failing test cleanup").array;
+
+  trace = "";
+  failOnPurpose = true;
+  scope(exit) failOnPurpose = false;
+
+  ({ tests[0].func(); }).should.throwException!Exception.withMessage("failed on purpose");
+  trace.should.equal("test cleanup");
+}
+
 /// getTestCases returns no spec tests when no module was added
 unittest
 {
@@ -473,4 +544,21 @@ unittest
       a => a.suiteName.startsWith("trial.discovery.spec")).array;
 
   tests.length.should.equal(0);
+}
+
+/// getTestCases returns the same spec tests on another thread
+unittest
+{
+  import core.thread : Thread;
+
+  auto specDiscovery = thisModuleSpecDiscovery;
+  auto mainCount = specDiscovery.getTestCases.length;
+  size_t otherCount;
+
+  auto worker = new Thread({ otherCount = specDiscovery.getTestCases.length; });
+  worker.start();
+  worker.join();
+
+  mainCount.should.be.greaterThan(0);
+  otherCount.should.equal(mainCount);
 }

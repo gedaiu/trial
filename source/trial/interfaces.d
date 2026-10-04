@@ -182,7 +182,7 @@ struct Attachment {
 
   /// The attachement destination. All the attached files will be copied in this folder if
   /// it is not allready inside
-  static string destination;
+  __gshared static string destination;
 
   /// Add a file to the current test or step
   static Attachment fromFile(const string name, const string path, const string mime) {
@@ -607,6 +607,23 @@ unittest {
   auto attachment = Attachment.fromFile("readme file", "README.md", "text/plain");
 
   attachment.file.exists.should.equal(true);
+}
+
+/// Attachment.destination set on one thread is the same on another thread
+unittest {
+  import core.thread : Thread;
+
+  auto previousDestination = Attachment.destination;
+  scope(exit) Attachment.destination = previousDestination;
+
+  Attachment.destination = "artifacts-dir";
+
+  string workerDestination;
+  auto worker = new Thread({ workerDestination = Attachment.destination; });
+  worker.start();
+  worker.join();
+
+  workerDestination.should.equal("artifacts-dir");
 }
 
 /// An exception that should be thrown by the pending test cases

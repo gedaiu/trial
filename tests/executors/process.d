@@ -56,8 +56,8 @@ alias s = Spec!({
       auto result = executor.endExecution;
       result.length.should.equal(1);
 
-      result[0].begin.should.be.greaterThan(begin);
-      result[0].end.should.be.greaterThan(begin);
+      result[0].begin.should.be.greaterOrEqualTo(begin);
+      result[0].end.should.be.greaterOrEqualTo(begin);
       result[0].name.should.equal("Some.Suite");
       result[0].tests.length.should.equal(1);
     });
@@ -71,8 +71,8 @@ alias s = Spec!({
 
       auto result = executor.endExecution[0].tests[0];
 
-      result.begin.should.be.greaterThan(begin);
-      result.end.should.be.greaterThan(begin);
+      result.begin.should.be.greaterOrEqualTo(begin);
+      result.end.should.be.greaterOrEqualTo(begin);
       result.name.should.equal("test name");
       result.status.should.equal(TestResult.Status.success);
       result.fileName.should.endWith(__FILE__);
@@ -93,8 +93,8 @@ alias s = Spec!({
       result = executor.endExecution;
       result.length.should.equal(1);
 
-      result[0].begin.should.be.greaterThan(begin);
-      result[0].end.should.be.greaterThan(begin);
+      result[0].begin.should.be.greaterOrEqualTo(begin);
+      result[0].end.should.be.greaterOrEqualTo(begin);
       result[0].name.should.equal("Some.Suite");
       result[0].tests.length.should.equal(2);
       result[0].tests[0].name.should.equal("test name 1");

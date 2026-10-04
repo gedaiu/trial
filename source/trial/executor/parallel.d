@@ -221,9 +221,9 @@ unittest {
   ThreadLifeCycleListener.currentTest.should.equal("");
 }
 
-/// The result of the test with the given name inside a suite
+/// The first result with the given name inside a suite that has not started yet
 TestResult testNamed(ref SuiteResult suite, string name) {
-  return suite.tests.filter!(a => a.name == name).front;
+  return suite.tests.filter!(a => a.name == name && a.status == TestResult.Status.created).front;
 }
 
 /// testNamed returns the suite test with the matching name
@@ -267,6 +267,7 @@ class ParallelExecutor : ITestExecutor {
 
     SuiteStats[string] suiteStats;
     TestCase[string] testCases;
+    TestResult[string] testResults;
 
     StepResult[][string] stepStack;
 
@@ -293,6 +294,7 @@ class ParallelExecutor : ITestExecutor {
       }
 
       auto testResult = suiteStats[testCase.suiteName].result.testNamed(testCase.name);
+      testResults[key] = testResult;
 
       testResult.begin = time;
       testResult.end = time;
@@ -305,7 +307,7 @@ class ParallelExecutor : ITestExecutor {
     void endTestResult(string key, Throwable t) {
       auto testCase = testCases[key];
 
-      auto testResult = suiteStats[testCase.suiteName].result.testNamed(testCase.name);
+      auto testResult = testResults[key];
 
       testResult.end = Clock.currTime;
       testResult.status = t.toStatus;
@@ -394,7 +396,9 @@ class ParallelExecutor : ITestExecutor {
   }
 
   SuiteResult[] execute(ref const(TestCase) testCase) {
-    auto key = testCase.suiteName ~ "|" ~ testCase.name;
+    import std.conv : to;
+
+    auto key = testCount.to!string ~ "|" ~ testCase.suiteName ~ "|" ~ testCase.name;
     testCases[key] = TestCase(testCase);
 
     testCount++;

@@ -589,37 +589,43 @@ void unittestRuntimeSetup(allModules...)() {
 
   Runtime.extendedModuleUnitTester = function() {
     RunArguments arguments;
+    const(TestCase)[] tests;
 
-    arraySep = ",";
-    auto args = Runtime.args;
-    args.getopt(
-      "testName|t", &arguments.testName,
-      "suiteName|s", &arguments.suiteName,
-      "filter|f", &arguments.fullName,
-      "at", &arguments.at,
-      "executor|e", &arguments.executor,
-      "reporters|r", &arguments.reporters
-    );
+    try {
+      arraySep = ",";
+      auto args = Runtime.args;
+      args.getopt(
+        "testName|t", &arguments.testName,
+        "suiteName|s", &arguments.suiteName,
+        "filter|f", &arguments.fullName,
+        "at", &arguments.at,
+        "executor|e", &arguments.executor,
+        "reporters|r", &arguments.reporters
+      );
 
-    auto fileSettings = "trial.json".exists ? "trial.json".readText.toSettings : Settings();
-    auto settings = fileSettings.withArguments(arguments, environment.toAA.isAgentHarness);
+      auto fileSettings = "trial.json".exists ? "trial.json".readText.toSettings : Settings();
+      auto settings = fileSettings.withArguments(arguments, environment.toAA.isAgentHarness);
 
-    auto unittestDiscovery = new UnitTestDiscovery();
-    auto specTestDiscovery = new SpecTestDiscovery();
+      auto unittestDiscovery = new UnitTestDiscovery();
+      auto specTestDiscovery = new SpecTestDiscovery();
 
-    LifeCycleListeners.instance.add(unittestDiscovery);
-    LifeCycleListeners.instance.add(specTestDiscovery);
+      LifeCycleListeners.instance.add(unittestDiscovery);
+      LifeCycleListeners.instance.add(specTestDiscovery);
 
-    enum allModulesWithPath = getModules!(allModules);
+      enum allModulesWithPath = getModules!(allModules);
 
-    static foreach (m; allModulesWithPath) {
-      unittestDiscovery.addModule!(m.path, m.name);
-      specTestDiscovery.addModule!(m.path, m.name);
+      static foreach (m; allModulesWithPath) {
+        unittestDiscovery.addModule!(m.path, m.name);
+        specTestDiscovery.addModule!(m.path, m.name);
+      }
+
+      setupLifecycle(settings);
+      tests = LifeCycleListeners.instance.getTestCases.selectTests(arguments);
+    } catch (Exception error) {
+      stderr.writeln(error.msg);
+      return UnitTestResult.fail;
     }
 
-    setupLifecycle(settings);
-
-    auto tests = LifeCycleListeners.instance.getTestCases.selectTests(arguments);
     auto filters = arguments.usedFilters;
 
     if (tests.length == 0 && filters.length > 0) {

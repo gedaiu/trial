@@ -365,27 +365,18 @@ unittest {
 
 /// Check if a file is in the current path
 bool isPackagePath(string fullPath, string packagePath) {
-  if(fullPath.indexOf("/.trial/") != -1) {
+  auto normalizedPath = fullPath.replace("\\", "/");
+  auto normalizedPackage = packagePath.replace("\\", "/");
+
+  if(!normalizedPath.startsWith(normalizedPackage)) {
     return false;
   }
 
-  if(fullPath.indexOf("trial_") != -1) {
-    return false;
-  }
+  auto relativePath = "/" ~ normalizedPath[normalizedPackage.length .. $];
 
-  if(fullPath.indexOf("submodules") != -1) {
-    return false;
-  }
-
-  if(fullPath.indexOf(packagePath) == 0) {
-    return true;
-  }
-
-  if(fullPath.replace("\\", "/").indexOf(packagePath) == 0) {
-    return true;
-  }
-
-  return false;
+  return relativePath.indexOf("/.trial/") == -1
+    && relativePath.indexOf("trial_") == -1
+    && relativePath.indexOf("submodules") == -1;
 }
 
 /// Check project paths
@@ -395,6 +386,20 @@ unittest {
   "/Users/trial/runner.d".isPackagePath("/Users/trial/").should.equal(true);
   "/Users/trial/.trial/runner.d".isPackagePath("/Users/trial/").should.equal(false);
   "C:\\Users\\trial\\runner.d".isPackagePath("C:/Users/trial/").should.equal(true);
+}
+
+/// isPackagePath returns true for a project file when the project is inside a submodules folder
+unittest {
+  "/work/app/submodules/trial/source/trial/runner.d"
+    .isPackagePath("/work/app/submodules/trial/")
+    .should.equal(true);
+}
+
+/// isPackagePath returns false for a vendored submodule file inside a project that is inside a submodules folder
+unittest {
+  "/work/app/submodules/trial/submodules/dep/source/dep.d"
+    .isPackagePath("/work/app/submodules/trial/")
+    .should.equal(false);
 }
 
 /// Converts a .lst file content to a CoveredFile structure
