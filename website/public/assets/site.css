@@ -377,8 +377,10 @@ pre code {
   white-space: nowrap;
 }
 
-.prose img[alt=asciicast] {
-  max-width: 100%;
+.prose img {
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
 }
 
 .doc-cards {

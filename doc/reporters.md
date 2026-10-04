@@ -2,8 +2,7 @@
 
 [up](../README.md)
 
-
-Here are informations about the supported reporters and how you can create your own.
+Here is what each reporter prints, and how you can create your own.
 
 ## Summary
 
@@ -20,166 +19,312 @@ Here are informations about the supported reporters and how you can create your 
   - [Allure](#allure)
   - [XUnit](#xunit)
   - [Stats](#stats)
-  - [Spec Progress](#spec-progress)
+  - [Spec progress](#spec-progress)
   - [Agent](#agent)
   - [Extending](#extending)
 
 ## About
 
-The Trial reporters are used to get informations about your tests result. The library comes with a vast
-collection of reporters, and if none of these suits your needs you can easily add your own.
+A reporter presents the result of a test run. Most of the time the reader is a person, but it can be an IDE or a CI
+server too. Trial comes with console reporters, which print while the tests run, and file reporters, which write to the
+`artifactsLocation` folder (`.trial` by default).
 
-A `Reporter` is a class that presents some information to the user about a test run. Most of the time the user is
-a person, but it can be an `IDE` or a `CI` too. Because this is an important part of a test run library, you shuld
-be able to easily extend or create your custom reporters.
-
-In order to use the embedded reporters, you have to add them to the `reporters` list inside your `trial.json` file.
-Here is an example.
+Choose the reporters in the `reporters` list of your `trial.json`:
 
 ```json
-...
-
-reporters": [
-    "list",
-    "result",
-    "stats",
-    "html"
-],
-
-...
+{
+  "reporters": ["spec", "result", "stats", "html"]
+}
 ```
 
-You can also replace the list for one run with `-r`, for example `dub test -- -r spec,result`. See [Command line](command-line.md).
+You can also replace the list for one run with `-r`, for example `dub test -- -r spec,result`. See
+[Command line](command-line.md).
+
+All the samples below come from the same run: a `shop.cart` module with one `unittest` block and a `Cart` spec suite.
+The "adds the item prices" test has two [steps](steps.md), and "applies a 10% discount" fails:
+
+```d
+private alias suite = Spec!({
+  describe("Cart", {
+    it("is empty when created", { ... });
+
+    describe("total", {
+      it("adds the item prices", {
+        Cart cart;
+        {
+          auto step = Step("add two items");
+          cart.add(10);
+          cart.add(15);
+        }
+        {
+          auto step = Step("check the total");
+          cart.total.should.equal(25);
+        }
+      });
+
+      it("applies a 10% discount", {
+        Cart cart;
+        cart.add(50);
+        cart.totalWithDiscount(10).should.equal(40);
+      });
+    });
+  });
+});
+
+/// add keeps the items in order
+unittest { ... }
+```
 
 ## Spec
 
-This is the default reporter. The "spec" reporter outputs a hierarchical view nested just as the test cases are.
+This is the default reporter. It prints the tests nested the same way as the modules and suites. Failed tests get a
+number that matches the details printed by the [result](#result) reporter.
 
-To use it, add `spec` to the reporters list inisde `trial.json`.
+Use `spec`.
 
-[![asciicast](https://asciinema.org/a/9z1tolgn7x55v41i3mm3wlkum.png)](https://asciinema.org/a/9z1tolgn7x55v41i3mm3wlkum)
+```text
+  shop
+    cart
+      ✓ add keeps the items in order
+
+      Cart
+        ✓ is empty when created
+
+        total
+          ✓ adds the item prices
+          0) applies a 10% discount
+```
 
 ## Spec steps
 
-A flavour of the "spec" reporter that show the tests and the steps of your tests.
+A flavour of the spec reporter that also prints the [steps](steps.md) of each test.
 
-To use it, add `spec-steps` to the reporters list inisde `trial.json`.
+Use `spec-steps`.
 
-[![asciicast](https://asciinema.org/a/122462.png)](https://asciinema.org/a/122462)
+```text
+  shop
+    cart
+      ┌ add keeps the items in order
+      └ ✓ Success
+
+      Cart
+        ┌ is empty when created
+        └ ✓ Success
+
+        total
+          ┌ adds the item prices
+          │   add two items
+          │   check the total
+          └ ✓ Success
+          ┌ applies a 10% discount
+          └ 0) Failure
+```
 
 ## Dot Matrix
 
-The dot matrix reporter is simply a series of characters which represent test cases. Failures highlight in red exclamation marks (!). Good if you prefer minimal output.
+One character for each test: a `.` when it passes and a red `!` when it fails. Good if you prefer minimal output.
 
-To use it, add `dot-matrix` to the reporters list inisde `trial.json`.
+Use `dot-matrix`.
 
-[![asciicast](https://asciinema.org/a/122458.png)](https://asciinema.org/a/122458)
+```text
+...!
+```
 
 ## Landing
 
-The Landing Strip (landing) reporter is a gimmicky test reporter simulating a plane landing unicode ftw
+A gimmick: a plane lands on a runway while the tests run. The plane turns red when a test fails.
 
-To use it, add `landing` to the reporters list inisde `trial.json`.
+Use `landing`. When the run ends, the runway looks like this:
 
-[![asciicast](https://asciinema.org/a/122459.png)](https://asciinema.org/a/122459)
+```text
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅✈
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 ## List
 
-The list reporter outputs a simple specifications list as test cases pass or fail.
+A flat list with the full name of every test, printed as each one passes or fails.
 
-To use it, add `list` to the reporters list inisde `trial.json`.
+Use `list`.
 
-[![asciicast](https://asciinema.org/a/b4u0o9vba18dquzdgwif7anl5.png)](https://asciinema.org/a/b4u0o9vba18dquzdgwif7anl5)
+```text
+  ✓ shop.cart add keeps the items in order
+  ✓ shop.cart.Cart is empty when created
+  ✓ shop.cart.Cart.total adds the item prices
+  0) shop.cart.Cart.total applies a 10% discount
+```
 
 ## Progress
 
-The progress reporter implements a simple progress-bar
+A progress bar with the number of finished tests. It turns red when a test fails.
 
-To use it, add `progress` to the reporters list inisde `trial.json`.
+Use `progress`. When the run ends, it shows:
 
-[![asciicast](https://asciinema.org/a/122460.png)](https://asciinema.org/a/122460)
+```text
+4/4 ▓▓▓▓
+```
 
 ## Result
 
-The Result reporter will print an overview of your test run. This is added by default to your reporters list and it's
-mandatory to use if you want to see the details of the failed tests.
+Prints the details of every failed test, then a summary of the run. It is part of the default list, and you need it
+to see why a test failed.
 
-To use it, add `result` to the reporters list inisde `trial.json`.
+Use `result`.
 
-[![asciicast](https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw.png)](https://asciinema.org/a/12x1mkxfmsj1j0f7qqwarkiyw)
+```text
+0) shop.cart.Cart.total applies a 10% discount:
+fluentasserts.core.base.TestException@source/shop/cart.d(53): FAIL: 45 should equal 40. | actual=45 expected=40 | source/shop/cart.d:53
+
+----------------
+source/shop/cart.d:53 void shop.cart.__lambda_L28_C31().__lambda_L29_C22().__lambda_L34_C25().__lambda_L50_C38() [0x551db6]
+...
+
+Executed 4 (1 failed) tests in 3 suites in 7 ms, 978 μs, and 9 hnsecs.
+```
 
 ## TAP
 
-The TAP reporter emits lines for a [Test-Anything-Protocol](https://en.wikipedia.org/wiki/Test_Anything_Protocol) consumer.
+Prints the results for a [Test Anything Protocol](https://en.wikipedia.org/wiki/Test_Anything_Protocol) consumer.
 
-[![asciicast](https://asciinema.org/a/135734.png)](https://asciinema.org/a/135734)
+Use `tap`.
+
+```text
+TAP version 13
+1..4
+ok - shop.cart.add keeps the items in order
+ok - shop.cart.Cart.is empty when created
+ok - shop.cart.Cart.total.adds the item prices
+not ok - shop.cart.Cart.total.applies a 10% discount
+# FAIL: 45 should equal 40. | actual=45 expected=40 | source/shop/cart.d:53
+#
+  ---
+  message: 'FAIL: 45 should equal 40. | actual=45 expected=40 | source/shop/cart.d:53'
+  severity: failure
+  location:
+    fileName: 'source/shop/cart.d'
+    line: 53
+```
 
 ## HTML
 
-The HTML reporter outputs a hierarchical HTML body representation of your tests. Just publish it on a webserver
-and you will have a nice report for your build.
+Writes `result.html`, a page with the duration, the number of passed and failed tests, and every suite with its tests
+and steps. The "Failed" button hides the tests that passed, and "details" opens the failure. Publish it with your CI
+artifacts to have a report for each build.
 
-To use it, add `html` to the reporters list inisde `trial.json`.
+Use `html`.
 
-[example](http://trial.szabobogdan.com/artifacts/result.html)
+![The HTML report of the sample run](images/html-reporter.png)
 
 ## Allure
 
-The Allure reporter outputs the test results in an xml file that can be used to
-generate nice [Allure](https://docs.qameta.io/allure/2.0/) reports.
+Writes one xml file per suite to the `allure` folder, in the format that the [Allure](https://allurereport.org/)
+command line turns into an html report. Steps are kept as Allure steps.
 
-To convert the xml files to html, you can use inside your project, the allure commandline:
+Use `allure`. Part of the file for the `shop.cart.Cart.total` suite:
 
-```bash
-allure generate -o allure-html allure
+```xml
+<ns2:test-suite start="1791110623829" stop="1791110623829" version="1.5.2" xmlns:ns2="urn:model.allure.qatools.yandex.ru">
+    <name>shop.cart.Cart.total</name>
+    <title>shop.cart.Cart.total</title>
+    <test-cases>
+        <test-case start="1791110623829" stop="1791110623829" status="passed">
+            <name>adds the item prices</name>
+            <steps>
+                <step start="1791110623829" stop="1791110623829" status="passed">
+                  <name>add two items</name>
+                </step>
+                <step start="1791110623829" stop="1791110623829" status="passed">
+                  <name>check the total</name>
+                </step>
+            </steps>
+        </test-case>
+        <test-case start="1791110623829" stop="1791110623829" status="failed">
+            <name>applies a 10% discount</name>
+            <failure>
+                <message>FAIL: 45 should equal 40. | actual=45 expected=40 | source/shop/cart.d:53</message>
+                ...
 ```
 
-In this case, the xml files are located in `allure` folder
+To turn the files into an html report:
 
-To use it, add `allure` to the reporters list inisde `trial.json`.
-
-[example](http://trial.szabobogdan.com/artifacts/allure/)
+```bash
+allure generate -o allure-html .trial/allure
+```
 
 ## XUnit
 
-The `xunit` outputs the results using xml JUnit format.
+Writes one JUnit xml file per suite to the `xunit` folder. Most CI servers read this format; in GitLab add
+`.trial/xunit/*.xml` to `artifacts:reports:junit`.
 
-To use it, add `xunit` to the reporters list inisde `trial.json`.
+Use `xunit`. The file for the `shop.cart.Cart.total` suite:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="shop.cart.Cart.total" errors="0" skipped="0" tests="2" failures="1" time="0" timestamp="2026-10-04T12:43:43.8297456">
+      <testcase name="adds the item prices">
+      </testcase>
+      <testcase name="applies a 10% discount">
+      <failure message="FAIL: 45 should equal 40. | actual=45 expected=40 | source/shop/cart.d:53">fluentasserts.core.base.TestException@source/shop/cart.d(53): ...</failure>
+      </testcase>
+  </testsuite>
+</testsuites>
+```
 
 ## Stats
 
-The stats reporter creates a csv file with the duration and the result of all your steps and tests. It's usefull to use it with other reporters, like spec progress.
+Writes `stats.csv` with the start time, end time and status of every suite, test and step, and the file and line of
+each test. The [spec progress](#spec-progress) reporter reads it on the next run to estimate how long the tests take.
 
-To use it, add `stats` to the reporters list inisde `trial.json`.
+Use `stats`.
 
-[example](http://trial.szabobogdan.com/artifacts/stats.csv)
+```text
+shop.cart.add keeps the items in order,2026-10-04T12:43:43.8297084,2026-10-04T12:43:43.8297097,success,source/shop/cart.d,61
+shop.cart,2026-10-04T12:43:43.8297061,2026-10-04T12:43:43.8297112,unknown,,0
+shop.cart.Cart.is empty when created,2026-10-04T12:43:43.8297117,2026-10-04T12:43:43.8297446,success,source/shop/cart.d,30
+shop.cart.Cart,2026-10-04T12:43:43.8297115,2026-10-04T12:43:43.8297455,unknown,,0
+shop.cart.Cart.total.adds the item prices.add two items,2026-10-04T12:43:43.8297462,2026-10-04T12:43:43.82975,unknown,,0
+shop.cart.Cart.total.adds the item prices.check the total,2026-10-04T12:43:43.8297505,2026-10-04T12:43:43.8297578,unknown,,0
+shop.cart.Cart.total.adds the item prices,2026-10-04T12:43:43.8297458,2026-10-04T12:43:43.8297586,success,source/shop/cart.d,35
+shop.cart.Cart.total.applies a 10% discount,2026-10-04T12:43:43.8297594,2026-10-04T12:43:43.8298288,failure,source/shop/cart.d,50
+shop.cart.Cart.total,2026-10-04T12:43:43.8297456,2026-10-04T12:43:43.8298293,unknown,,0
+```
 
 ## Spec progress
 
-This is an experimental reporter that extends the Spec reporter. It will display the current running time and the remaining time until the tests are finished. It's recomanded to use it with the parallel executor, when you have tests that take a lot
-of time, like ui tests written with `selenium` or `appium`.
+An experimental reporter that extends the spec reporter with the running time of the current suite and test, and the
+time left until the run ends. It is meant for slow tests, like UI tests written with `selenium` or `appium`, together
+with the [parallel executor](executors.md) and the [stats](#stats) reporter.
 
-To use it, add `spec-progress` to the reporters list inisde `trial.json`.
+Use `spec-progress`. Part of the output:
+
+```text
+*[0s]shop.cart.Cart.total *[0s]adds the item prices
+
+        total
+          ✓ adds the item prices
+```
 
 ## Agent
 
 A plain text reporter for AI coding agents. It prints nothing for the tests that pass. For each failed test it prints the
 test name, where the test and the failure are, the failure message, and the `-f` filter that runs that test again. The
-run ends with one summary line:
+run ends with one summary line.
 
+Use `agent`.
+
+```text
+FAIL shop.cart.Cart.total applies a 10% discount
+  test: source/shop/cart.d:50
+  at: source/shop/cart.d:53
+  FAIL: 45 should equal 40. | actual=45 expected=40 | source/shop/cart.d:53
+  rerun: -f "=shop.cart.Cart.total applies a 10% discount"
+
+RESULT failed=1 passed=3 pending=0 skipped=0
 ```
-FAIL my.module returns 404 when the map is private
-  test: source/my/module.d:30
-  at: source/my/module.d:42
-  Expected: 404
-  Actual: 200
-  rerun: -f "my.module returns 404 when the map is private"
 
-RESULT failed=1 passed=216 pending=0 skipped=0
-```
-
-It is enabled automatically when an agent runs the tests. See [Agent mode](command-line.md#agent-mode). You can also use it
-directly with `-r agent`.
+It is enabled automatically when an agent runs the tests. See [Agent mode](command-line.md#agent-mode).
 
 ## Extending
 

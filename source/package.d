@@ -33,15 +33,3 @@ public import trial.settings;
 public import trial.stackresult;
 public import trial.step;
 public import trial.arsd.terminal;
-
-// version(DisableTrialAutoSetup) {} else:
-version(unittest):
-
-static if(!__traits(compiles, () {static import dub_test_root;})) {
-	static assert(false, "Couldn't find 'dub_test_root'. Make sure you are running tests with `dub test`");
-}
-
-shared static this() {
-  import dub_test_root;
-  unittestRuntimeSetup!(dub_test_root.allModules);
-}
