@@ -50,6 +50,15 @@ void stepFunction(int i) {
   Step("Step " ~ i.to!string);
 }
 
+void nestedParallelRunMock() @system {
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new ParallelExecutor);
+
+  [ TestCase("inner", "test", &stepMock1) ].runTests;
+}
+
 @("A parallel executor should get the result of a success test")
 unittest
 {
@@ -221,4 +230,18 @@ unittest
   executed.should.equal(true);
 
   steps.should.contain(["begin suite1", "suite1.testBegin test1", "begin suite2", "suite2.testBegin test2", "suite1.test1.stepBegin some step", "suite1.test1.stepEnd some step", "suite2.test2.stepBegin some step", "suite2.test2.stepEnd some step", "suite1.testEnd test1", "suite2.testEnd test2", "end suite2", "end suite1"]);
+}
+@("A parallel executor completes a test that runs its own parallel executor")
+unittest
+{
+  TestCase[] tests = [ TestCase("outer", "test", &nestedParallelRunMock) ];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new ParallelExecutor);
+
+  auto result = tests.runTests;
+
+  result[0].tests[0].status.should.equal(TestResult.Status.success);
 }

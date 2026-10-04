@@ -24,14 +24,15 @@ version(unittest) {
 /// the main thread
 class ThreadLifeCycleListener : LifeCycleListeners {
   static string currentTest;
+  static shared(ThreadProxy) currentProxy;
 
   override {
     void begin(string suite, string test, ref StepResult step) {
-      ThreadProxy.instance.beginStep(currentTest, step.name, step.begin);
+      currentProxy.beginStep(currentTest, step.name, step.begin);
     }
 
     void end(string suite, string test, ref StepResult step) {
-      ThreadProxy.instance.endStep(currentTest, step.name, step.end);
+      currentProxy.endStep(currentTest, step.name, step.end);
     }
 
     void end(string, ref TestResult test) {
@@ -78,7 +79,7 @@ class ThreadLifeCycleListener : LifeCycleListeners {
 
 static ~this() {
   if(ThreadLifeCycleListener.currentTest != "") {
-    ThreadProxy.instance.end(ThreadLifeCycleListener.currentTest);
+    ThreadLifeCycleListener.currentProxy.end(ThreadLifeCycleListener.currentTest);
   }
 }
 
@@ -98,8 +99,6 @@ private {
   }
 
   synchronized class ThreadProxy {
-    private shared static ThreadProxy _instance = new shared ThreadProxy;
-
     shared {
       private {
         string[] beginTests;
@@ -107,12 +106,6 @@ private {
         StepAction[] steps;
         Throwable[string] failures;
         ulong testCount;
-      }
-
-      static {
-        shared(ThreadProxy) instance() {
-          return _instance;
-        }
       }
 
       void reset() {
@@ -171,10 +164,11 @@ private {
   }
 }
 
-private void testThreadSetup(string testName) {
+private void testThreadSetup(string testName, shared(ThreadProxy) proxy) {
   ThreadLifeCycleListener.currentTest = testName;
+  ThreadLifeCycleListener.currentProxy = proxy;
   LifeCycleListeners.instance = new ThreadLifeCycleListener;
-  ThreadProxy.instance.begin(testName);
+  proxy.begin(testName);
 }
 
 /// The parallel executors runs tests in a sepparate thread
@@ -192,6 +186,7 @@ class ParallelExecutor : ITestExecutor {
   }
 
   this(uint maxTestCount = 0) {
+    this.proxy = new shared ThreadProxy;
     this.maxTestCount = maxTestCount;
 
     if(this.maxTestCount <= 0) {
@@ -201,6 +196,7 @@ class ParallelExecutor : ITestExecutor {
   }
 
   private {
+    shared ThreadProxy proxy;
     ulong testCount;
     uint maxTestCount;
     string currentSuite = "";
@@ -293,7 +289,7 @@ class ParallelExecutor : ITestExecutor {
     auto processEvents() {
       LifeCycleListeners.instance.update;
 
-      auto status = ThreadProxy.instance.getStatus;
+      auto status = proxy.getStatus;
 
       foreach(beginKey; status.begin) {
         addTestResult(beginKey);
@@ -350,20 +346,20 @@ class ParallelExecutor : ITestExecutor {
     testCount++;
 
     task({
-      testThreadSetup(key);
+      testThreadSetup(key, proxy);
 
       try {
         testCase.func();
       } catch(Throwable t) {
-        ThreadProxy.instance.setFailure(key, cast(shared)t);
+        proxy.setFailure(key, cast(shared)t);
       }
     }).executeInNewThread();
 
-    auto runningTests = testCount - ThreadProxy.instance.getTestCount;
+    auto runningTests = testCount - proxy.getTestCount;
 
     while(maxTestCount <= runningTests && runningTests > 0) {
       processEvents;
-      runningTests = testCount - ThreadProxy.instance.getTestCount;
+      runningTests = testCount - proxy.getTestCount;
     }
 
     return result;
@@ -379,7 +375,7 @@ class ParallelExecutor : ITestExecutor {
       suiteStats[suite].result.tests ~= new TestResult(test.name);
     }
 
-    ThreadProxy.instance.reset();
+    proxy.reset();
     return [];
   }
 
