@@ -12,8 +12,8 @@ public import trial.interfaces;
 import std.datetime;
 import std.exception;
 import std.algorithm;
-import std.array;
 import core.thread;
+import std.parallelism;
 
 version(unittest) {
   version(Have_fluent_asserts) {
@@ -24,15 +24,34 @@ version(unittest) {
 /// the main thread
 class ThreadLifeCycleListener : LifeCycleListeners {
   static string currentTest;
+
+  // Unshared on purpose: a `shared` static is one process-wide global, so a nested
+  // executor's worker would overwrite the outer test's proxy. Unshared keeps it per thread.
   static ThreadProxy currentProxy;
+
+  /// The proxy of the executor that runs the current thread's test
+  static shared(ThreadProxy) proxy() {
+    return cast(shared) currentProxy;
+  }
+
+  /// proxy returns the proxy stored for the current thread
+  unittest {
+    auto old = currentProxy;
+    scope(exit) currentProxy = old;
+
+    auto expected = new shared ThreadProxy;
+    currentProxy = cast() expected;
+
+    (proxy is expected).should.equal(true);
+  }
 
   override {
     void begin(string suite, string test, ref StepResult step) {
-      (cast(shared) currentProxy).beginStep(currentTest, step.name, step.begin);
+      proxy.beginStep(currentTest, step.name, step.begin);
     }
 
     void end(string suite, string test, ref StepResult step) {
-      (cast(shared) currentProxy).endStep(currentTest, step.name, step.end);
+      proxy.endStep(currentTest, step.name, step.end);
     }
 
     void end(string, ref TestResult test) {
@@ -77,14 +96,13 @@ class ThreadLifeCycleListener : LifeCycleListeners {
   }
 }
 
-static ~this() {
-  if(ThreadLifeCycleListener.currentTest != "") {
-    (cast(shared) ThreadLifeCycleListener.currentProxy).end(ThreadLifeCycleListener.currentTest);
-  }
-}
-
 private {
   import core.atomic;
+
+  struct TestBegin {
+    string test;
+    SysTime time;
+  }
 
   struct StepAction {
     enum Type {
@@ -101,7 +119,7 @@ private {
   synchronized class ThreadProxy {
     shared {
       private {
-        string[] beginTests;
+        TestBegin[] beginTests;
         string[] endTests;
         StepAction[] steps;
         Throwable[string] failures;
@@ -119,16 +137,12 @@ private {
       }
 
       void begin(string name) {
-        beginTests ~= name;
+        beginTests ~= TestBegin(name, Clock.currTime);
       }
 
       void end(string name) {
         core.atomic.atomicOp!"+="(this.testCount, 1);
         endTests ~= name;
-      }
-
-      auto getTestCount() {
-        return testCount;
       }
 
       void beginStep(shared(string) testName, string stepName, SysTime begin) {
@@ -145,7 +159,7 @@ private {
 
       auto getStatus() {
         struct Status {
-          string[] begin;
+          TestBegin[] begin;
           StepAction[] steps;
           string[] end;
           Throwable[string] failures;
@@ -169,6 +183,55 @@ private void testThreadSetup(string testName, shared(ThreadProxy) proxy) {
   ThreadLifeCycleListener.currentProxy = cast() proxy;
   LifeCycleListeners.instance = new ThreadLifeCycleListener;
   proxy.begin(testName);
+}
+
+/// Runs a test on the current worker thread and reports its begin, failure and end to the proxy
+void runTestOnWorker(string key, TestCaseDelegate func, shared(ThreadProxy) proxy) {
+  testThreadSetup(key, proxy);
+
+  scope(exit) {
+    proxy.end(key);
+    ThreadLifeCycleListener.currentTest = "";
+  }
+
+  try {
+    func();
+  } catch(Throwable t) {
+    proxy.setFailure(key, cast(shared) t);
+  }
+}
+
+/// runTestOnWorker reports one begin, one end and the failure of a throwing test
+unittest {
+  auto oldListeners = LifeCycleListeners.instance;
+  auto oldProxy = ThreadLifeCycleListener.currentProxy;
+  scope(exit) {
+    LifeCycleListeners.instance = oldListeners;
+    ThreadLifeCycleListener.currentProxy = oldProxy;
+  }
+
+  auto proxy = new shared ThreadProxy;
+  runTestOnWorker("suite1|test1", delegate() @system { throw new Exception("failed"); }, proxy);
+
+  auto status = proxy.getStatus;
+
+  status.begin.length.should.equal(1);
+  (cast(string[]) status.end).should.equal(["suite1|test1"]);
+  (cast(Throwable[string]) status.failures).keys.should.equal(["suite1|test1"]);
+  ThreadLifeCycleListener.currentTest.should.equal("");
+}
+
+/// The result of the test with the given name inside a suite
+TestResult testNamed(ref SuiteResult suite, string name) {
+  return suite.tests.filter!(a => a.name == name).front;
+}
+
+/// testNamed returns the suite test with the matching name
+unittest {
+  auto suite = SuiteResult("suite1");
+  suite.tests = [ new TestResult("test1"), new TestResult("test2") ];
+
+  suite.testNamed("test2").should.equal(suite.tests[1]);
 }
 
 /// The parallel executors runs tests in a sepparate thread
@@ -197,6 +260,7 @@ class ParallelExecutor : ITestExecutor {
 
   private {
     shared ThreadProxy proxy;
+    TaskPool pool;
     ulong testCount;
     uint maxTestCount;
     string currentSuite = "";
@@ -206,8 +270,8 @@ class ParallelExecutor : ITestExecutor {
 
     StepResult[][string] stepStack;
 
-    void addSuiteResult(string name) {
-      suiteStats[name].result.begin = Clock.currTime;
+    void addSuiteResult(string name, SysTime time) {
+      suiteStats[name].result.begin = time;
       suiteStats[name].result.end = Clock.currTime;
 
       LifeCycleListeners.instance.begin(suiteStats[name].result);
@@ -220,22 +284,18 @@ class ParallelExecutor : ITestExecutor {
       LifeCycleListeners.instance.end(suiteStats[name].result);
     }
 
-    void addTestResult(string key) {
+    void addTestResult(string key, SysTime time = Clock.currTime) {
       auto testCase = testCases[key];
 
       if(currentSuite != testCase.suiteName) {
-        addSuiteResult(testCase.suiteName);
+        addSuiteResult(testCase.suiteName, time);
         currentSuite = testCase.suiteName;
       }
 
-      auto testResult = suiteStats[testCase.suiteName]
-        .result
-        .tests
-        .filter!(a => a.name == testCase.name)
-          .front;
+      auto testResult = suiteStats[testCase.suiteName].result.testNamed(testCase.name);
 
-      testResult.begin = Clock.currTime;
-      testResult.end = Clock.currTime;
+      testResult.begin = time;
+      testResult.end = time;
       testResult.status = TestResult.Status.started;
 
       LifeCycleListeners.instance.begin(testCase.suiteName, testResult);
@@ -245,11 +305,7 @@ class ParallelExecutor : ITestExecutor {
     void endTestResult(string key, Throwable t) {
       auto testCase = testCases[key];
 
-      auto testResult = suiteStats[testCase.suiteName]
-        .result
-        .tests
-        .filter!(a => a.name == testCase.name)
-          .front;
+      auto testResult = suiteStats[testCase.suiteName].result.testNamed(testCase.name);
 
       testResult.end = Clock.currTime;
       testResult.status = t.toStatus;
@@ -258,9 +314,9 @@ class ParallelExecutor : ITestExecutor {
         testResult.throwable = t;
       }
 
-      suiteStats[testCases[key].suiteName].testsFinished++;
+      suiteStats[testCase.suiteName].testsFinished++;
 
-      LifeCycleListeners.instance.end(testCases[key].suiteName, testResult);
+      LifeCycleListeners.instance.end(testCase.suiteName, testResult);
       stepStack.remove(key);
     }
 
@@ -291,17 +347,19 @@ class ParallelExecutor : ITestExecutor {
 
       auto status = proxy.getStatus;
 
-      foreach(beginKey; status.begin) {
-        addTestResult(beginKey);
+      foreach(testBegin; status.begin) {
+        addTestResult(testBegin.test, testBegin.time);
       }
 
       foreach(step; status.steps) {
-        if(step.type == StepAction.Type.begin) {
-          addStep(step.test, step.name, step.time);
-        }
+        final switch(step.type) {
+          case StepAction.Type.begin:
+            addStep(step.test, step.name, step.time);
+            break;
 
-        if(step.type == StepAction.Type.end) {
-          endStep(step.test, step.name, step.time);
+          case StepAction.Type.end:
+            endStep(step.test, step.name, step.time);
+            break;
         }
       }
 
@@ -315,7 +373,7 @@ class ParallelExecutor : ITestExecutor {
         endTestResult(endKey, failure);
       }
 
-      foreach(ref index, ref stat; suiteStats.values) {
+      foreach(stat; suiteStats.values) {
         if(!stat.isDone && stat.result.tests.length == stat.testsFinished) {
           endSuiteResult(stat.result.name);
         }
@@ -336,33 +394,19 @@ class ParallelExecutor : ITestExecutor {
   }
 
   SuiteResult[] execute(ref const(TestCase) testCase) {
-    import std.parallelism;
-
-    SuiteResult[] result;
-
     auto key = testCase.suiteName ~ "|" ~ testCase.name;
     testCases[key] = TestCase(testCase);
 
     testCount++;
 
-    task({
-      testThreadSetup(key, proxy);
-
-      try {
-        testCase.func();
-      } catch(Throwable t) {
-        proxy.setFailure(key, cast(shared)t);
-      }
-    }).executeInNewThread();
-
-    auto runningTests = testCount - proxy.getTestCount;
-
-    while(maxTestCount <= runningTests && runningTests > 0) {
-      processEvents;
-      runningTests = testCount - proxy.getTestCount;
+    if(pool is null) {
+      pool = new TaskPool(maxTestCount);
+      pool.isDaemon = true;
     }
 
-    return result;
+    pool.put(task!runTestOnWorker(key, testCase.func, proxy));
+
+    return [];
   }
 
   SuiteResult[] beginExecution(ref const(TestCase)[] tests) {
@@ -381,6 +425,11 @@ class ParallelExecutor : ITestExecutor {
 
   SuiteResult[] endExecution() {
     wait;
+
+    if(pool !is null) {
+      pool.finish(true);
+      pool = null;
+    }
 
     foreach(stat; suiteStats.values) {
       if(!stat.isDone) {

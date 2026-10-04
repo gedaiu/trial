@@ -28,7 +28,7 @@ This is the default test discovery. It will search inside your modules for `unit
 to your tests by adding a comment before the `unittest` keyword or you annotate
 the test with a string [UDA](http://dlang.org/spec/attribute.html#uda) that string will be used as the test name.
 
-[Project example](https://github.com/gedaiu/trial/tree/master/examples/unittest)
+[Project example](https://gitlab.com/szabobogdan3/trial/-/tree/master/examples/unittest)
 
 ```d
 /// This is my awesome test
@@ -55,7 +55,7 @@ is a name or title for a spec suite - usually what is being tested. The `functio
 
 Specs are defined by calling the global function `it`, which, like `describe` takes a `string` and a `function`. The `string` is the title of the spec and the function is the spec, or test. A spec contains one or more expectations that test the state of the code. An expectation is an assertion that is either `true` or `false`. A spec with all true expectations is a passing spec. A spec with one or more false expectations is a failing spec.
 
-[Project example](https://github.com/gedaiu/trial/tree/master/examples/spec)
+[Project example](https://gitlab.com/szabobogdan3/trial/-/tree/master/examples/spec)
 
 Example:
 ```d

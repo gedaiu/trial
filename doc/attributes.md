@@ -35,7 +35,7 @@ unittest {
 To link a test to an issue, you can use @Issue annotation. Simply specify the issue key as shown below:
 
 ```d
-@Issue("https://github.com/gedaiu/trial/issues/2")
+@Issue("https://gitlab.com/szabobogdan3/trial/-/issues/2")
 unittest {
     ...
 }

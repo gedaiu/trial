@@ -76,7 +76,6 @@ unittest
   result[0].name.should.equal("suite1");
 
   result[0].tests.length.should.equal(1);
-  result[0].tests.length.should.equal(1);
   result[0].tests[0].status.should.equal(TestResult.Status.success);
   (result[0].tests[0].throwable is null).should.equal(true);
 }
@@ -97,7 +96,6 @@ unittest
   result.length.should.equal(1);
   result[0].name.should.equal("suite1");
 
-  result[0].tests.length.should.equal(1);
   result[0].tests.length.should.equal(1);
   result[0].tests[0].status.should.equal(TestResult.Status.failure);
   (result[0].tests[0].throwable !is null).should.equal(true);
@@ -142,8 +140,8 @@ unittest
 
   updated.should.be.greaterThan(50);
 }
-/*
-@("it should run the tests in parallel")
+
+@("A parallel executor with three threads runs three 100ms tests in under 200ms")
 unittest
 {
   TestCase[] tests = [ TestCase("suite2", "test1", &stepMock1), TestCase("suite2", "test3", &stepMock1), TestCase("suite2", "test2", &stepMock1) ];
@@ -151,15 +149,15 @@ unittest
   auto old = LifeCycleListeners.instance;
   scope(exit) LifeCycleListeners.instance = old;
   LifeCycleListeners.instance = new LifeCycleListeners;
-  LifeCycleListeners.instance.add(new ParallelExecutor);
+  LifeCycleListeners.instance.add(new ParallelExecutor(3));
 
   auto results = tests.runTests;
 
   results.length.should.equal(1);
   results[0].tests.length.should.equal(3);
 
-  (results[0].end - results[0].begin).should.be.between(90.msecs, 120.msecs);
-}*/
+  (results[0].end - results[0].begin).should.be.between(90.msecs, 200.msecs);
+}
 
 @("it should be able to limit the parallel tests number")
 unittest
@@ -231,6 +229,7 @@ unittest
 
   steps.should.contain(["begin suite1", "suite1.testBegin test1", "begin suite2", "suite2.testBegin test2", "suite1.test1.stepBegin some step", "suite1.test1.stepEnd some step", "suite2.test2.stepBegin some step", "suite2.test2.stepEnd some step", "suite1.testEnd test1", "suite2.testEnd test2", "end suite2", "end suite1"]);
 }
+
 @("A parallel executor completes a test that runs its own parallel executor")
 unittest
 {
@@ -244,4 +243,40 @@ unittest
   auto result = tests.runTests;
 
   result[0].tests[0].status.should.equal(TestResult.Status.success);
+}
+
+__gshared ThreadID[] threadIds;
+__gshared Object threadIdsLock;
+
+shared static this() {
+  threadIdsLock = new Object;
+}
+
+void recordThreadMock() @system {
+  synchronized(threadIdsLock) {
+    threadIds ~= Thread.getThis.id;
+  }
+}
+
+@("A parallel executor with one thread runs every test on the same worker thread")
+unittest
+{
+  import std.algorithm : sort, uniq;
+  import std.array : array;
+
+  threadIds = [];
+
+  TestCase[] tests = [
+    TestCase("suite3", "test1", &recordThreadMock),
+    TestCase("suite3", "test2", &recordThreadMock),
+    TestCase("suite3", "test3", &recordThreadMock) ];
+
+  auto old = LifeCycleListeners.instance;
+  scope(exit) LifeCycleListeners.instance = old;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  LifeCycleListeners.instance.add(new ParallelExecutor(1));
+
+  tests.runTests;
+
+  threadIds.sort.uniq.array.length.should.equal(1);
 }

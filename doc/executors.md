@@ -28,9 +28,12 @@ The parallel executor run the tests in parallel. In order to use this executor, 
   "executor": "parallel"
 ```
 or pass `-e parallel` on the [command line](command-line.md).
-The `maxThreads` will set determine how many threads will be used in the same time. Any value that's equal or less than `0` will set the number of threads equal to the number of the threads that your CPU supports.
+The tests run on a pool of `maxThreads` worker threads that are reused from one test to the next. `0`, the default,
+uses as many threads as your CPU can run at once.
 
-This executor is experimental and it does not work with all reporters.
+This executor is experimental. Keep in mind that D module variables are thread local, so a test that reads state set up
+by another thread sees its own empty copy. Tests that rely on that kind of shared state can fail here while they pass
+with the default executor.
 
 ## Process executor
 
