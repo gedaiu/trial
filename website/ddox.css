@@ -30,8 +30,8 @@ th {
 
 col.caption { min-width: 150pt; }
 
-p.faint { color: #ccc; }
-span.decoration { color: #888; }
+p.faint { color: var(--fg-3); }
+span.decoration { color: var(--fg-3); }
 
 #main-nav, #main-contents, #symbolSearchResults, #symbolSearch {
   -webkit-box-sizing: border-box;
@@ -82,7 +82,7 @@ span.decoration { color: #888; }
 .searchResults.symbolList li { background-position: 0 5pt; }
 .searchResults h2 { margin-bottom: 0; margin-top: 1em; }
 
-.symbolList .deprecated a { color: gray; }
+.symbolList .deprecated a { color: var(--fg-3); }
 .symbolList .module { background-image: url(../images/ddox/module.png); }
 .symbolList .functiondeclaration { background-image: url(../images/ddox/function.png); }
 .symbolList .classdeclaration { background-image: url(../images/ddox/class.png); }
@@ -181,27 +181,27 @@ div.prototype, pre.code {
 }
 
 .typ {
-  color: #159957 !important;
+  color: #6f42c1 !important;
 }
 
 .pun {
-  color: #041e11 !important;
+  color: #24292e !important;
 }
 
 .str {
-  color: #999915 !important;
+  color: #032f62 !important;
 }
 
 .lit {
-  color: #991599 !important;
+  color: #005cc5 !important;
 }
 
 .pln {
-  color: #159999 !important;
+  color: #24292e !important;
 }
 
 .kwd {
-  color: #dc7d1e !important;
+  color: #cf222e !important;
 }
 
 @media (max-width: 500pt) {

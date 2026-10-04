@@ -1,5 +1,5 @@
 import { defineConfig } from "astro/config";
-import { rewriteMarkdownLinks } from "./src/lib/rewrite-markdown-links.mjs";
+import { adaptRepoMarkdown } from "./src/lib/adapt-repo-markdown.mjs";
 
 export default defineConfig({
   site: "https://trial.szabobogdan.com",
@@ -7,6 +7,9 @@ export default defineConfig({
     format: "file",
   },
   markdown: {
-    remarkPlugins: [rewriteMarkdownLinks],
+    remarkPlugins: [adaptRepoMarkdown],
+    shikiConfig: {
+      theme: "github-light",
+    },
   },
 });

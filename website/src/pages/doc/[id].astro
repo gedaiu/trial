@@ -1,7 +1,7 @@
 ---
 import { render } from "astro:content";
-import Page from "../../layouts/Page.astro";
-import { allDocs, docTitle } from "../../lib/docs";
+import Docs from "../../layouts/Docs.astro";
+import { allDocs, docTitle, outline } from "../../lib/docs";
 
 export async function getStaticPaths() {
   return (await allDocs()).map((entry) => ({ params: { id: entry.id }, props: { entry } }));
@@ -10,10 +10,6 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 ---
-<Page title={`Trial - ${docTitle(entry)}`}>
-  <main class="band band-grey">
-    <article class="container prose">
-      <Content />
-    </article>
-  </main>
-</Page>
+<Docs title={docTitle(entry)} current={entry.id} headings={outline(entry)}>
+  <Content />
+</Docs>

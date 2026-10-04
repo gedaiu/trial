@@ -1,0 +1,39 @@
+---
+import type { MarkdownHeading } from "astro";
+import Page from "./Page.astro";
+import { allDocs, docTitle } from "../lib/docs";
+
+interface Props {
+  title: string;
+  current: string;
+  headings?: MarkdownHeading[];
+}
+
+const { title, current, headings = [] } = Astro.props;
+const docs = await allDocs();
+const pages = [
+  { href: "/about.html", id: "about", title: "About" },
+  ...docs.map((entry) => ({ href: `/doc/${entry.id}.html`, id: entry.id, title: docTitle(entry) })),
+];
+---
+<Page title={`Trial - ${title}`}>
+  <div class="docs container">
+    <nav class="docs-sidebar" aria-label="Documentation">
+      <a class="docs-sidebar-heading" href="/doc.html">Documentation</a>
+      {pages.map((page) => (
+        <a class:list={["docs-sidebar-link", { active: page.id === current }]} href={page.href}>{page.title}</a>
+      ))}
+    </nav>
+
+    <article class="prose">
+      <slot />
+    </article>
+
+    {headings.length > 0 && (
+      <nav class="docs-outline" aria-label="On this page">
+        <span class="docs-outline-heading">On this page</span>
+        {headings.map((heading) => <a href={`#${heading.slug}`}>{heading.text}</a>)}
+      </nav>
+    )}
+  </div>
+</Page>
