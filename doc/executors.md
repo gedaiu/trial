@@ -34,8 +34,9 @@ This executor is experimental and it does not work with all reporters.
 
 ## Process executor
 
-This executor will run each test in a sepparate process. Right now it does not support parallization, and this feature will be adedd
-in the future.
+This executor runs each test in a separate process, by starting the test executable again with exact filters
+(`-s "=<suite>" -t "=<test>"`) so that each child runs exactly one test. A crash, like a segmentation fault, then fails only
+that test instead of stopping the whole run. It does not run the processes in parallel.
 
 To use this executor, add in yout `trial.json`:
 ```

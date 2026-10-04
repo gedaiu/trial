@@ -18,16 +18,16 @@ import std.datetime;
 import std.conv;
 import std.stdio;
 
+version (unittest) {
+  version (Have_fluent_asserts) {
+    import fluent.asserts;
+  }
+}
+
 void testProcessRuner(string suiteName, string testName, VisualTrialReporterParser parser) {
   TestResult testResult;
 
-  auto command = [ thisExePath, 
-    "-s", suiteName,
-    "-t", testName,
-    "-r", "visualtrial",
-    "-e", "default" ];
-
-  auto pipes = pipeProcess(command, Redirect.stdout | Redirect.stderrToStdout);
+  auto pipes = pipeProcess(childCommand(thisExePath, suiteName, testName), Redirect.stdout | Redirect.stderrToStdout);
 
   foreach(line; pipes.stdout.byLine) {
     parser.add(line.to!string);
@@ -43,6 +43,25 @@ void testProcessRuner(string suiteName, string testName, VisualTrialReporterPars
     testResult.throwable = new Exception("The process exited with code `" ~ code.to!string ~ "`", testResult.fileName, testResult.line);
     testResult.status = TestResult.Status.failure;
   }
+}
+
+/// Builds the command that runs exactly one test in a child process
+string[] childCommand(string executable, string suiteName, string testName) {
+  return [ executable,
+    "-s", "=" ~ suiteName,
+    "-t", "=" ~ testName,
+    "-r", "visualtrial",
+    "-e", "default" ];
+}
+
+/// childCommand returns exact suite and test filters for "a.b" and "some test"
+unittest {
+  childCommand("./runner", "a.b", "some test").should.equal([
+    "./runner",
+    "-s", "=a.b",
+    "-t", "=some test",
+    "-r", "visualtrial",
+    "-e", "default" ]);
 }
 
 /// An executor that will run every test in a separate
