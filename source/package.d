@@ -1,6 +1,7 @@
 module trial;
 
 
+public import trial.arguments;
 public import trial.attributes;
 public import trial.runner;
 public import trial.discovery.code;

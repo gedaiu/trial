@@ -21,6 +21,7 @@ import std.file;
 import std.path;
 import std.exception;
 
+import trial.arguments;
 import trial.settings;
 import trial.executor.single;
 import trial.executor.parallel;
@@ -47,8 +48,10 @@ void setupLifecycle(Settings settings) {
   addExecutor(settings.executor, settings);
 }
 
+/// Adds the executor named `name` to the LifeCycle listeners collection
 void addExecutor(string name, Settings settings) {
   switch (name) {
+  case "":
   case "default":
     LifeCycleListeners.instance.add(new DefaultExecutor);
     break;
@@ -60,12 +63,17 @@ void addExecutor(string name, Settings settings) {
     break;
 
   default:
-    if (name != "") {
-      writeln("There is no `" ~ name ~ "` executor. Using the default.");
-    }
-
-    LifeCycleListeners.instance.add(new DefaultExecutor);
+    throw new Exception("There is no `" ~ name ~ "` executor");
   }
+}
+
+/// addExecutor throws for the unknown executor "nope"
+unittest {
+  auto old = LifeCycleListeners.instance;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  scope (exit) LifeCycleListeners.instance = old;
+
+  ({ addExecutor("nope", Settings()); }).should.throwException!Exception.withMessage("There is no `nope` executor");
 }
 
 /// Adds an embeded reporter listener to the LifeCycle listeners collection
@@ -152,8 +160,17 @@ void addReporter(string name, Settings settings) {
     break;
 
   default:
-    writeln("There is no `" ~ name ~ "` reporter");
+    throw new Exception("There is no `" ~ name ~ "` reporter");
   }
+}
+
+/// addReporter throws for the unknown reporter "nope"
+unittest {
+  auto old = LifeCycleListeners.instance;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  scope (exit) LifeCycleListeners.instance = old;
+
+  ({ addReporter("nope", Settings()); }).should.throwException!Exception.withMessage("There is no `nope` reporter");
 }
 
 /// The reporters that print for a human reading a terminal
@@ -169,6 +186,57 @@ string[] withAgentReporter(string[] reporters) {
 /// withAgentReporter returns ["stats", "xunit", "agent"] for ["spec", "result", "stats", "xunit"]
 unittest {
   ["spec", "result", "stats", "xunit"].withAgentReporter.should.equal(["stats", "xunit", "agent"]);
+}
+
+/// Returns the settings overridden by the command line arguments and the agent harness reporter
+Settings withArguments(Settings settings, RunArguments arguments, bool isAgentHarness = false) {
+  if (isAgentHarness) {
+    settings.reporters = settings.reporters.withAgentReporter;
+  }
+
+  if (arguments.reporters.length > 0) {
+    settings.reporters = arguments.reporters;
+  }
+
+  if (arguments.executor.length > 0) {
+    settings.executor = arguments.executor;
+  }
+
+  return settings;
+}
+
+/// withArguments returns the settings unchanged for empty arguments
+unittest {
+  Settings().withArguments(RunArguments()).should.equal(Settings());
+}
+
+/// withArguments returns the reporters ["tap"] when the arguments have the reporters ["tap"]
+unittest {
+  RunArguments arguments;
+  arguments.reporters = ["tap"];
+
+  Settings().withArguments(arguments).reporters.should.equal(["tap"]);
+}
+
+/// withArguments returns the executor "parallel" when the arguments have the executor "parallel"
+unittest {
+  RunArguments arguments;
+  arguments.executor = "parallel";
+
+  Settings().withArguments(arguments).executor.should.equal("parallel");
+}
+
+/// withArguments returns the file reporters and agent for an agent harness without reporter arguments
+unittest {
+  Settings().withArguments(RunArguments(), true).reporters.should.equal(["stats", "html", "allure", "xunit", "agent"]);
+}
+
+/// withArguments returns the reporters ["visualtrial"] for an agent harness with the reporters ["visualtrial"]
+unittest {
+  RunArguments arguments;
+  arguments.reporters = ["visualtrial"];
+
+  Settings().withArguments(arguments, true).reporters.should.equal(["visualtrial"]);
 }
 
 /// Returns an associative array of the detected tests,
@@ -555,7 +623,7 @@ auto getModules(allModules...)() {
 
 void unittestRuntimeSetup(allModules...)() {
   import core.runtime : Runtime, UnitTestResult;
-  import std.getopt : getopt;
+  import std.getopt : getopt, arraySep;
   import core.stdc.stdlib;
   import trial.discovery.unit;
   import trial.discovery.spec;
@@ -563,29 +631,20 @@ void unittestRuntimeSetup(allModules...)() {
   import std.process : environment;
 
   Runtime.extendedModuleUnitTester = function() {
-    string testName;
-    string suiteName;
-    string fullName;
-    string executor;
-    string reporters;
+    RunArguments arguments;
 
+    arraySep = ",";
     auto args = Runtime.args;
     args.getopt(
-      "testName|t", &testName,
-      "suiteName|s", &suiteName,
-      "filter|f", &fullName,
-      "executor|e", &executor,
-      "reporters|r", &reporters
+      "testName|t", &arguments.testName,
+      "suiteName|s", &arguments.suiteName,
+      "filter|f", &arguments.fullName,
+      "executor|e", &arguments.executor,
+      "reporters|r", &arguments.reporters
     );
 
-    auto settings = Settings();
-    settings.reporters = ["spec", "result", "stats", "html", "allure", "xunit"];
-    settings.artifactsLocation = ".trial";
-    settings.maxThreads = 1;
-
-    if (environment.toAA.isAgentHarness) {
-      settings.reporters = settings.reporters.withAgentReporter;
-    }
+    auto fileSettings = "trial.json".exists ? "trial.json".readText.toSettings : Settings();
+    auto settings = fileSettings.withArguments(arguments, environment.toAA.isAgentHarness);
 
     auto unittestDiscovery = new UnitTestDiscovery();
     auto specTestDiscovery = new SpecTestDiscovery();
@@ -602,8 +661,8 @@ void unittestRuntimeSetup(allModules...)() {
 
     setupLifecycle(settings);
 
-    auto tests = LifeCycleListeners.instance.getTestCases.filterByFullName(fullName);
-    auto results = runTests(tests, testName, suiteName);
+    auto tests = LifeCycleListeners.instance.getTestCases.filterByFullName(arguments.fullName);
+    auto results = runTests(tests, arguments.testName, arguments.suiteName);
 
     if (results.isSuccess) {
       return UnitTestResult.pass;

@@ -21,6 +21,7 @@ Here are informations about the supported reporters and how you can create your 
   - [XUnit](#xunit)
   - [Stats](#stats)
   - [Spec Progress](#spec-progress)
+  - [Agent](#agent)
   - [Extending](#extending)
 
 ## About
@@ -47,6 +48,8 @@ reporters": [
 
 ...
 ```
+
+You can also replace the list for one run with `-r`, for example `dub test -- -r spec,result`. See [Command line](command-line.md).
 
 ## Spec
 
@@ -157,6 +160,26 @@ This is an experimental reporter that extends the Spec reporter. It will display
 of time, like ui tests written with `selenium` or `appium`.
 
 To use it, add `spec-progress` to the reporters list inisde `trial.json`.
+
+## Agent
+
+A plain text reporter for AI coding agents. It prints nothing for the tests that pass. For each failed test it prints the
+test name, where the test and the failure are, the failure message, and the `-f` filter that runs that test again. The
+run ends with one summary line:
+
+```
+FAIL my.module returns 404 when the map is private
+  test: source/my/module.d:30
+  at: source/my/module.d:42
+  Expected: 404
+  Actual: 200
+  rerun: -f "my.module returns 404 when the map is private"
+
+RESULT failed=1 passed=216 pending=0 skipped=0
+```
+
+It is enabled automatically when an agent runs the tests. See [Agent mode](command-line.md#agent-mode). You can also use it
+directly with `-r agent`.
 
 ## Extending
 
