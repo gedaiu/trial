@@ -1,0 +1,16 @@
+---
+import Page from "../../layouts/Page.astro";
+import { allDocs, docTitle } from "../../lib/docs";
+
+const docs = await allDocs();
+---
+<Page title="Trial - Documentation">
+  <main class="band band-grey">
+    <article class="container prose">
+      <h1>Documentation</h1>
+      <ul>
+        {docs.map((entry) => <li><a href={`/doc/${entry.id}.html`}>{docTitle(entry)}</a></li>)}
+      </ul>
+    </article>
+  </main>
+</Page>

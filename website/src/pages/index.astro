@@ -1,0 +1,50 @@
+---
+import Page from "../layouts/Page.astro";
+import { version } from "../lib/version";
+
+const features = [
+  { icon: "books.svg", title: "Extensibility", text: "Trial provides a clean interface that allows you to extend the runner with any feature you want." },
+  { icon: "wait.svg", title: "No setup needed", text: "If you already use the dub test command adopting trial should be easy." },
+  { icon: "heart.svg", title: "Write tests as you want", text: "You can execute tests written in unittest blocks, using spec format and test classes." },
+  { icon: "report.svg", title: "A good reporter selection", text: "Everyone cares how they get the test results. Trial provides console, xunit, html and 3rd party reporters." },
+];
+---
+<Page title="Trial - The extensible test runner for DLang">
+  <header class="hero" slot="hero">
+    <img class="hero-logo" src="/assets/logo.svg" alt="Trial">
+    <h1 class="hero-claim">The extensible test runner for DLang.</h1>
+    <p class="muted">Another thing from <a href="http://szabobogdan.com">Szabo Bogdan</a>.</p>
+    <a class="button" href="/download.html">Download v{version}</a>
+  </header>
+
+  <main>
+    <section class="band band-grey">
+      <div class="container split">
+        <div>
+          <h2>Create readable and maintainable tests</h2>
+          <p class="lead">Trial was designed to deliver an awesome experience writing DLang tests. If you have a big
+            collection of unit tests, now it is easy to maintain and debug them. When you need a feature, you don't need
+            to wait for someone to add it. You can add it yourself.</p>
+        </div>
+        <img src="/assets/presentation.svg" alt="">
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="container">
+        <h2>What sets Trial apart?</h2>
+        <div class="features">
+          {features.map(({ icon, title, text }) => (
+            <div class="feature">
+              <img src={`/assets/${icon}`} alt="">
+              <div>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+</Page>

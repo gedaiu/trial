@@ -1,15 +1,16 @@
 {
   "name": "trial-website",
-  "version": "1.0.0",
-  "description": "The trial website static generator",
-  "main": "app.js",
+  "private": true,
+  "type": "module",
+  "description": "The trial website, built with Astro from the markdown docs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:api": "node scripts/theme-api-docs.mjs ../docs dist/api",
+    "preview": "astro preview"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "fs-extra": "^6.0.1",
-    "markdown-it": "^8.4.1"
+    "@astrojs/markdown-remark": "^7.3.1",
+    "astro": "^7.3.5"
   }
 }

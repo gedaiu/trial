@@ -39,4 +39,5 @@ some_image.png
 trial-root-cov
 trial-test-unittest
 node_modules
-website/web
+website/dist
+website/.astro

@@ -16,7 +16,7 @@
       ],
       "targetType": "sourceLibrary",
       "dependencies": {
-        "fluent-asserts": "~>2.0.1",
+        "fluent-asserts": "~>2.1.0",
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true
@@ -38,7 +38,7 @@
         "tests"
       ],
       "dependencies": {
-        "fluent-asserts": "~>2.0.1",
+        "fluent-asserts": "~>2.1.0",
         "libdparse": {
           "version": ">=0.20.0",
           "optional": true

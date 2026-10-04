@@ -70,31 +70,22 @@ pages:
   only:
     - tags
   image:
-    name: fedora:36
+    name: fedora:44
   tags:
     - docker-trial
   dependencies:
     - trial-dmd-2.100.0
   before_script:
-    - dnf update -y
-    - dnf install -y npm wget gcc glibc-devel libcurl libgcc
+    - dnf install -y nodejs npm git ldc dub gcc openssl-devel java-21-openjdk-headless
     - npm install -g allure-commandline@1.4.23
-    - wget http://downloads.dlang.org/releases/2.x/2.100.0/dmd-2.100.0-0.fedora.x86_64.rpm
-    - dnf install -y rsync openssl-devel dmd-2.100.0-0.fedora.x86_64.rpm java-1.8.0-openjdk.x86_64
   script:
-    - dub build -b ddox
+    - dub build -b ddox --compiler=ldc2
     - cd website
-    - npm install
-    - node app.js
-    - node docs.js
-    - mv web ../public
+    - npm ci
+    - npm run build
+    - npm run build:api
+    - mv dist ../public
     - cd ..
-    - mkdir public/files
-    - cp tmp/*.deb public/files
-    - cp tmp/*.rpm public/files
-    - mv docs public/api
-    - rm public/api/styles/ddox.css
-    - mv website/ddox.css public/api/styles/ddox.css
     - mv .trial public/artifacts
     - mv public/artifacts/allure public/artifacts/allure-raw
     - allure -v generate --output public/artifacts/allure public/artifacts/allure-raw

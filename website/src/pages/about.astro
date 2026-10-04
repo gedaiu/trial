@@ -1,0 +1,14 @@
+---
+import { getEntry, render } from "astro:content";
+import Page from "../layouts/Page.astro";
+
+const readme = await getEntry("readme", "readme");
+const { Content } = await render(readme!);
+---
+<Page title="Trial - About">
+  <main class="band band-grey">
+    <article class="container prose">
+      <Content />
+    </article>
+  </main>
+</Page>
