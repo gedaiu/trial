@@ -1,4 +1,4 @@
-# Attachments
+# Plugins
 
 [up](../README.md)
 

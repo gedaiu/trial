@@ -285,7 +285,7 @@ class ParallelExecutor : ITestExecutor {
 
       enforce(step.name == name, "unexpected step name");
       step.end = time;
-      stepStack[key] ~= stepStack[key][0..$-1];
+      stepStack[key] = stepStack[key][0..$-1];
 
       LifeCycleListeners.instance.end(testCases[key].suiteName, testCases[key].name, step);
     }
@@ -400,4 +400,24 @@ class ParallelExecutor : ITestExecutor {
 
     return results;
   }
+}
+
+/// endStep leaves only the test result on the step stack after one step ends
+unittest {
+  auto old = LifeCycleListeners.instance;
+  LifeCycleListeners.instance = new LifeCycleListeners;
+  scope (exit) LifeCycleListeners.instance = old;
+
+  auto executor = new ParallelExecutor;
+  const(TestCase)[] tests = [TestCase("suite1", "test1", delegate() {})];
+  executor.beginExecution(tests);
+
+  auto key = "suite1|test1";
+  executor.testCases[key] = TestCase(tests[0]);
+
+  executor.addTestResult(key);
+  executor.addStep(key, "some step", Clock.currTime);
+  executor.endStep(key, "some step", Clock.currTime);
+
+  executor.stepStack[key].length.should.equal(1);
 }
