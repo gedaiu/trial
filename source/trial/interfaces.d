@@ -618,6 +618,34 @@ class PendingTestException : Exception {
   }
 }
 
+/// The status of a test that ended by throwing `throwable`, or `null` when it did not throw
+TestResult.Status toStatus(Throwable throwable) {
+  if(throwable is null) {
+    return TestResult.Status.success;
+  }
+
+  if(cast(PendingTestException) throwable !is null) {
+    return TestResult.Status.pending;
+  }
+
+  return TestResult.Status.failure;
+}
+
+/// toStatus returns success when nothing was thrown
+unittest {
+  toStatus(null).should.equal(TestResult.Status.success);
+}
+
+/// toStatus returns pending for a PendingTestException
+unittest {
+  toStatus(new PendingTestException).should.equal(TestResult.Status.pending);
+}
+
+/// toStatus returns failure for an Exception
+unittest {
+  toStatus(new Exception("boom")).should.equal(TestResult.Status.failure);
+}
+
 /// The lifecycle listeners collections. You must use this instance in order
 /// to extend the runner. You can have as many listeners as you want. The only restriction
 /// is for ITestExecutor, which has no sense to have more than one instance for a run

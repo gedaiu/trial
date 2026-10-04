@@ -256,8 +256,11 @@ class ParallelExecutor : ITestExecutor {
           .front;
 
       testResult.end = Clock.currTime;
-      testResult.status = t is null ? TestResult.Status.success : TestResult.Status.failure;
-      testResult.throwable = t;
+      testResult.status = t.toStatus;
+
+      if (testResult.status == TestResult.Status.failure) {
+        testResult.throwable = t;
+      }
 
       suiteStats[testCases[key].suiteName].testsFinished++;
 

@@ -80,19 +80,22 @@ class DefaultExecutor : ITestExecutor, IStepLifecycleListener, IAttachmentListen
   {
     /// Run a test case
     void runTest(ref const(TestCase) testCase, TestResult testResult) {
+      Throwable thrown;
+
       try
       {
         testCase.func();
-        testResult.status = TestResult.Status.success;
-      }
-      catch (PendingTestException)
-      {
-        testResult.status = TestResult.Status.pending;
       }
       catch (Throwable t)
       {
-        testResult.status = TestResult.Status.failure;
-        testResult.throwable = t.toTestException;
+        thrown = t;
+      }
+
+      testResult.status = thrown.toStatus;
+
+      if (testResult.status == TestResult.Status.failure)
+      {
+        testResult.throwable = thrown.toTestException;
       }
     }
 
