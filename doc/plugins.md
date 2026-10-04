@@ -1,54 +1,58 @@
-# Plugins
+# Extending
 
 [up](../README.md)
 
-Here are informations about how you can write plugins.
+Here is how you can add your own reporters, executors and test discoveries to a test run.
 
 ## Summary
 
   - [About](#about)
-  - [Example plugin](#example-plugin)
-  - [Module names](#module-names)
+  - [Example](#example)
+  - [Sharing an extension](#sharing-an-extension)
 
 ## About
 
-When you want to extend the runner, but you don't want to add a dependency to your `dub.json` file, you
-can write a plugin. This is a way of extending the test run with external libraries that are published on
-[code.dlang.org](http://code.dlang.org).
+Everything that happens during a run is an event sent to the listeners registered in `LifeCycleListeners.instance`.
+The reporters, the executors and the test discoveries that come with trial are listeners too. To extend a run, write a
+class that implements the interfaces you need and register it from a module constructor. Trial runs your constructor
+before the tests start, because the module is part of your test build.
 
-To attach a plugin to your run, run:
+If you want to see a complete list of the listeners that you can implement, check the
+[interfaces api page](http://trial.szabobogdan.com/api/trial/interfaces.html).
 
-```
-trial -p plugin1,plugin2,plugin3...
-```
-
-## Example plugin
+## Example
 
 ```d
-module trialcustom.plugin;
+module myproject.testreporter;
+
+version (unittest):
 
 import trial.interfaces;
 
 /// Add your listeners to the Trial lifecycle
 static this() {
-  LifeCycleListeners.instance.add(new TrialCustomPlugin());
+  LifeCycleListeners.instance.add(new SlowTestReporter);
 }
 
-/// Implement your listeners
-class RazerReporter : ITestCaseLifecycleListener, ILifecycleListener {
-    ... 
+/// Prints the tests that take longer than one second
+class SlowTestReporter : ITestCaseLifecycleListener {
+  void begin(string suite, ref TestResult test) {
+  }
+
+  void end(string suite, ref TestResult test) {
+    import std.datetime : seconds;
+    import std.stdio : writeln;
+
+    if (test.end - test.begin > 1.seconds) {
+      writeln("slow: ", suite, " ", test.name);
+    }
+  }
 }
 ```
 
-If you want to see a complete list of the listeners that you can implement, check the [interfaces api page](http://trial.szabobogdan.com/api/trial/interfaces.html).
+Adding an executor replaces the current one, because a run has only one executor.
 
-## Module names
+## Sharing an extension
 
-Your plugin can have `-` and `:` in the name. The `:` will add as a dependency a subpackage. In order to have your module
-initialized, Trial will import your module in the generated main file. For example:
-
-```
-trial -p my-plugin:core
-``` 
-
-will download the `core` subpackage from `my-plugin` package, and it will import `myplugin.core` in the main file.
+To use the same extension in several projects, publish it as a dub package and add it to the `unittest` configuration
+of each project next to `trial`. Its module constructor registers the listeners in every project that depends on it.

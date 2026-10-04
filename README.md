@@ -21,15 +21,25 @@ interface that allows you to add what you want, when you want.
 
 ## How it works
 
-The `trial` executable creates a custom main that will be embedded with your code. The build is created
-using `dub` embeded as a library, so you don't need to install dub to use this runner. All the parameters that you
-provide to trial will be passed directly to `dub`. Right now trial provides only the `--test` or `-t` option that will
-filter the discovered tests. For example `trial -t "The user should see a nice message when one test is run"` will run
-only the tests that contain that string in the name.
+Trial is a dub package. Add it to the `unittest` configuration of your project and run `dub test`: it replaces the
+default D test runner, discovers your `unittest` blocks and `Spec` suites, runs them and reports the results. There is
+no separate executable to install.
+
+```json
+"configurations": [
+  { "name": "library" },
+  { "name": "unittest", "dependencies": { "trial": "~>1.0.1" } }
+]
+```
+
+Arguments after `--` go to trial. For example `dub test -- -t "=parses an empty list"` runs exactly that test, and
+`dub test -- -r spec,xunit` picks the reporters. The [getting started](doc/getting-started.md) guide walks through a
+first project, and [Command line](doc/command-line.md) lists every flag.
 
 ## Features
 
 This library intends to provide a rich set of features that helps you to customize your test runs:
+  - [Getting started](doc/getting-started.md)
   - [Command line](doc/command-line.md)
   - [Test discoveries](doc/test-discovery.md)
   - [Executors](doc/executors.md)
@@ -37,44 +47,19 @@ This library intends to provide a rich set of features that helps you to customi
   - [Steps](doc/steps.md)
   - [Attributes](doc/attributes.md)
   - [Attachments](doc/attachments.md)
-  - [Plugins](doc/plugins.md)
+  - [Extending](doc/plugins.md)
 
 ## Configurable
 
-The trial command can be configured through the `trial.json` file. This file will be created when you run `trial`
-For the first time. All the root properties are optional. For more details about this file look at the
-[Settings](http://trial.szabobogdan.com/api/trial/settings/Settings.html) structure.
-
-By default `trial` will use the `unittest` configuration. If you need to use test dependencies or other special
-setup for the test build, you can add a `trial` configuration inside your package file:
-
-```json
-  ...
-  "configurations": [ {
-      "name": "trial",
-      "dependencies": {
-        "trial:lifecycle": "~>0.7.11",
-        "fluent-asserts": "0.14.0-alpha.11"
-      }
-    }
-  ]
-  ...
-```
-
-Read [more](https://code.dlang.org/package-format?lang=json#configurations) about dub configurations.
+A `trial.json` file in the project folder sets the reporters, the executor, the thread count and where the reports are
+written. It is optional, all its keys are optional, and the command line flags override it. See
+[Settings precedence](doc/command-line.md#settings-precedence).
 
 ## Hacking
 
-Please have a look at [trial.interfaces](http://trial.szabobogdan.com/api/trial/interfaces.html)
+Please have a look at [trial.interfaces](http://trial.szabobogdan.com/api/trial/interfaces.html).
 
-## Building
-
-Clone the repository and run `dub build :runner` to create the app.
-
-## Structure
-
-There are two packages inside this project. The `runner` packages contains the command line interface
-to run your tests. `lifecycle` provides the functionality like test discovery and reporters.
+To work on trial itself, clone the repository and run `dub test`. The library tests itself with its own runner.
 
 ## Fluent Asserts
 

@@ -91,9 +91,10 @@ pre {
   border-radius: 14px;
   padding: 16px 20px;
   overflow-x: auto;
+  background-color: var(--bg-soft);
 }
 
-pre, pre.astro-code {
+pre.astro-code.github-light {
   background-color: var(--bg-soft) !important;
 }
 
