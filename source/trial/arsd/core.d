@@ -2391,6 +2391,9 @@ class ArsdExceptionBase : object.Exception {
 
 		Params:
 			operation = the specific operation that failed, throwing the exception
+			file = the source file that threw
+			line = the source line that threw
+			next = the exception that caused this one, if any
 	+/
 	package this(string operation, string file = __FILE__, size_t line = __LINE__, Throwable next = null) {
 		super(operation, file, line, next);

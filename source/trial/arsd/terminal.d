@@ -5740,7 +5740,7 @@ class LineGetter {
 	HistoryRecallFilterMethod historyRecallFilterMethod = HistoryRecallFilterMethod.chronological;
 
 	/++
-		Enables automatic closing of brackets like (, {, and [ when the user types.
+		Enables automatic closing of brackets like $(LPAREN), {, and [ when the user types.
 		Specifically, you subclass and return a string of the completions you want to
 		do, so for that set, return `"()[]{}"`
 

@@ -2,84 +2,47 @@ stages:
   - test
   - web
 
-.test_template: &test_definition
-  image: ubuntu:22.04
-  stage: test
+default:
   tags:
-    - docker-trial
-  variables:
-    TZ: "Europe/Moscow"
-    DEBIAN_FRONTEND: "noninteractive"
+    - ogm
   before_script:
-    - mkdir -p vendor/apt
-    - mv vendor/dub /root/.dub || true
-    - apt-get update || true
-    - apt-get -o dir::cache::archives="vendor/apt" install -y build-essential libssl-dev libevent-dev libcurl4 gcc wget libc6-dev git libmagickwand-dev rsync xz-utils libz-dev libsqlite3-dev
-  after_script:
-    - mv /root/.dub vendor/dub || true
-  script:
-    - dub test
-  artifacts:
-    paths:
-      - .trial
-  cache:
-    key: "$CI_JOB_NAME"
-    paths:
-      - vendor/apt
-      - vendor/dub
+    - dmd --version | head -1
+    - ldc2 --version | head -1
+    - dub --version
 
-trial-ldc-1.30.0:
-  <<: *test_definition
-  script:
-    - mkdir -p vendor/ldc
-    - cd vendor/ldc
-    - wget https://github.com/ldc-developers/ldc/releases/download/v1.30.0/ldc2-1.30.0-linux-x86_64.tar.xz
-    - tar -xf ldc2-1.30.0-linux-x86_64.tar.xz
-    - rsync -vau ldc2-1.30.0-linux-x86_64/ /usr/local/
-    - cd ../../
-    - dub test
+.test:
+  stage: test
   artifacts:
+    when: always
     paths:
       - .trial
     reports:
       junit: .trial/xunit/*.xml
 
-trial-dmd-2.100.0:
-  <<: *test_definition
+test-dmd:
+  extends: .test
   script:
-    - wget http://downloads.dlang.org/releases/2.x/2.100.0/dmd_2.100.0-0_amd64.deb
-    - dpkg -i dmd_2.100.0-0_amd64.deb
-    - dub test
+    - dub test --compiler=dmd
+
+test-ldc:
+  extends: .test
+  script:
+    - dub test --compiler=ldc2
 
 examples:
-  <<: *test_definition
+  stage: test
   script:
-    - wget http://downloads.dlang.org/releases/2.x/2.100.0/dmd_2.100.0-0_amd64.deb
-    - dpkg -i dmd_2.100.0-0_amd64.deb
-    - dub test
-    - cd examples/spec
-    - dub test
-    - cd ../unittest
-    - dub test
-    - cd ../test-class
-    - dub test
-    - cd ../..
+    - (cd examples/spec && dub test --compiler=dmd)
+    - (cd examples/unittest && dub test --compiler=dmd)
 
 pages:
   stage: web
-  only:
-    - tags
-  image:
-    name: fedora:44
-  tags:
-    - docker-trial
-  dependencies:
-    - trial-dmd-2.100.0
-  before_script:
-    - dnf install -y nodejs npm git ldc dub gcc openssl-devel java-21-openjdk-headless
-    - npm install -g allure-commandline@1.4.23
+  rules:
+    - if: $CI_COMMIT_TAG
+  needs:
+    - test-dmd
   script:
-    - dub build -b ddox --compiler=ldc2
+    - dub build -b ddox --compiler=dmd
     - cd website
     - npm ci
     - npm run build
@@ -88,7 +51,7 @@ pages:
     - cd ..
     - mv .trial public/artifacts
     - mv public/artifacts/allure public/artifacts/allure-raw
-    - allure -v generate --output public/artifacts/allure public/artifacts/allure-raw
+    - npx --yes allure-commandline@1.4.23 generate --output public/artifacts/allure public/artifacts/allure-raw
   artifacts:
     paths:
       - public

@@ -24,15 +24,15 @@ version(unittest) {
 /// the main thread
 class ThreadLifeCycleListener : LifeCycleListeners {
   static string currentTest;
-  static shared(ThreadProxy) currentProxy;
+  static ThreadProxy currentProxy;
 
   override {
     void begin(string suite, string test, ref StepResult step) {
-      currentProxy.beginStep(currentTest, step.name, step.begin);
+      (cast(shared) currentProxy).beginStep(currentTest, step.name, step.begin);
     }
 
     void end(string suite, string test, ref StepResult step) {
-      currentProxy.endStep(currentTest, step.name, step.end);
+      (cast(shared) currentProxy).endStep(currentTest, step.name, step.end);
     }
 
     void end(string, ref TestResult test) {
@@ -79,7 +79,7 @@ class ThreadLifeCycleListener : LifeCycleListeners {
 
 static ~this() {
   if(ThreadLifeCycleListener.currentTest != "") {
-    ThreadLifeCycleListener.currentProxy.end(ThreadLifeCycleListener.currentTest);
+    (cast(shared) ThreadLifeCycleListener.currentProxy).end(ThreadLifeCycleListener.currentTest);
   }
 }
 
@@ -166,7 +166,7 @@ private {
 
 private void testThreadSetup(string testName, shared(ThreadProxy) proxy) {
   ThreadLifeCycleListener.currentTest = testName;
-  ThreadLifeCycleListener.currentProxy = proxy;
+  ThreadLifeCycleListener.currentProxy = cast() proxy;
   LifeCycleListeners.instance = new ThreadLifeCycleListener;
   proxy.begin(testName);
 }
