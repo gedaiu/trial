@@ -22,6 +22,7 @@ import std.path;
 import std.exception;
 
 import trial.arguments;
+import trial.filter;
 import trial.settings;
 import trial.executor.single;
 import trial.executor.parallel;
@@ -400,59 +401,15 @@ unittest {
   result["a.c"].length.should.equal(1);
 }
 
-/// Returns the tests whose suite name followed by the test name contains the filter
-const(TestCase)[] filterByFullName(const(TestCase)[] tests, string filter) {
-  return tests.filter!(a => (a.suiteName ~ " " ~ a.name).indexOf(filter) != -1).array;
-}
-
-/// filterByFullName returns only "a.b some test" when the filter is "a.b some"
-unittest {
-  void TestMock() @system {
-  }
-
-  auto tests = [
-    TestCase("a.b", "some test", &TestMock),
-    TestCase("a.c", "some test", &TestMock),
-    TestCase("a.b", "other test", &TestMock)
-  ];
-
-  auto result = tests.filterByFullName("a.b some");
-
-  result.map!(a => a.suiteName ~ " " ~ a.name).array.should.equal(["a.b some test"]);
-}
-
-/// filterByFullName returns all 2 tests when the filter is empty
-unittest {
-  void TestMock() @system {
-  }
-
-  auto tests = [
-    TestCase("a.b", "some test", &TestMock),
-    TestCase("a.c", "other test", &TestMock)
-  ];
-
-  tests.filterByFullName("").length.should.equal(2);
-}
-
 /// Runs the tests and returns the results
-auto runTests(const(TestCase)[] tests, string testName = "", string suiteName = "") {
+auto runTests(const(TestCase)[] tests) {
   setupSegmentationHandler!true();
 
-  const(TestCase)[] filteredTests = tests;
+  LifeCycleListeners.instance.begin(tests.length);
 
-  if (testName != "") {
-    filteredTests = tests.filter!(a => a.name.indexOf(testName) != -1).array;
-  }
+  SuiteResult[] results = LifeCycleListeners.instance.beginExecution(tests);
 
-  if (suiteName != "") {
-    filteredTests = filteredTests.filter!(a => a.suiteName.indexOf(suiteName) != -1).array;
-  }
-
-  LifeCycleListeners.instance.begin(filteredTests.length);
-
-  SuiteResult[] results = LifeCycleListeners.instance.beginExecution(filteredTests);
-
-  foreach (test; filteredTests) {
+  foreach (test; tests) {
     results ~= LifeCycleListeners.instance.execute(test);
   }
 
@@ -639,6 +596,7 @@ void unittestRuntimeSetup(allModules...)() {
       "testName|t", &arguments.testName,
       "suiteName|s", &arguments.suiteName,
       "filter|f", &arguments.fullName,
+      "at", &arguments.at,
       "executor|e", &arguments.executor,
       "reporters|r", &arguments.reporters
     );
@@ -661,8 +619,8 @@ void unittestRuntimeSetup(allModules...)() {
 
     setupLifecycle(settings);
 
-    auto tests = LifeCycleListeners.instance.getTestCases.filterByFullName(arguments.fullName);
-    auto results = runTests(tests, arguments.testName, arguments.suiteName);
+    auto tests = LifeCycleListeners.instance.getTestCases.selectTests(arguments);
+    auto results = runTests(tests);
 
     if (results.isSuccess) {
       return UnitTestResult.pass;

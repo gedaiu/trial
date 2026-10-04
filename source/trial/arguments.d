@@ -18,6 +18,9 @@ struct RunArguments {
   /// The full test name filter, filled by `-f`
   string fullName;
 
+  /// The source location filter `file:line`, filled by `--at`
+  string at;
+
   /// The reporters to use, filled by `-r`
   string[] reporters;
 

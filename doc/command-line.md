@@ -25,15 +25,33 @@ You can also call the built test executable directly, for example `./my-project-
 
 | Flag | Value | What it does |
 |------|-------|--------------|
-| `-t`, `--testName` | text | Runs only the tests whose name contains the text |
-| `-s`, `--suiteName` | text | Runs only the tests whose suite name contains the text |
-| `-f`, `--filter` | text | Runs only the tests whose `<suite> <test name>` contains the text, so one value can select both the suite and the test |
+| `-t`, `--testName` | filter | Runs only the tests whose name matches the filter |
+| `-s`, `--suiteName` | filter | Runs only the tests whose suite name matches the filter |
+| `-f`, `--filter` | filter | Runs only the tests whose `<suite> <test name>` matches the filter, so one value can select both the suite and the test |
+| `--at` | `file:line` | Runs the test that contains that line, for example `--at source/my/module.d:42` |
 | `-r`, `--reporters` | names | Replaces the reporter list. Separate names with commas: `-r spec,result,xunit` |
 | `-e`, `--executor` | name | Replaces the executor: `default`, `parallel` or `process` |
 
 When several filters are given, a test must match all of them.
 
 An unknown reporter or executor name stops the run with an error like ``There is no `nope` reporter``.
+
+### Filter values
+
+| Value | Matches | Example |
+|-------|---------|---------|
+| plain text | names containing the text | `-t "returns 404"` |
+| `=text` | the exact name only | `-t "=returns 404"` |
+| `/regex/` | names matching the regular expression | `-t "/^returns (404\|403)$/"` |
+
+A plain filter can select more than you expect: `-t "returns 404"` also runs `returns 404 when the map is private`.
+Use the `=` form to run exactly one test.
+
+### Selecting a test by line
+
+`--at file:line` runs the test whose body contains that line, which is handy when a stack trace or your editor points at a
+line. The file only needs to end with the given path, so `--at my/module.d:42` is enough. Trial knows only the line
+where each test starts, so it picks the test in that file that starts closest before the line.
 
 ## Settings precedence
 

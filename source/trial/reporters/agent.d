@@ -84,12 +84,12 @@ string toAgentFailure(string suite, TestResult test) {
 
   auto lines = ["FAIL " ~ fullName, "  test: " ~ test.fileName ~ ":" ~ test.line.to!string] ~
     test.throwable.toAgentLines ~
-    (`  rerun: -f "` ~ fullName.replace(`"`, `\"`) ~ `"`);
+    (`  rerun: -f "=` ~ fullName.replace(`"`, `\"`) ~ `"`);
 
   return lines.join("\n");
 }
 
-/// toAgentFailure returns the name, both locations, the message and the rerun filter
+/// toAgentFailure returns the name, both locations, the message and an exact "=" rerun filter
 unittest {
   auto test = new TestResult(`returns "404"`);
   test.fileName = "tests/api.d";
@@ -101,7 +101,7 @@ unittest {
       "  test: tests/api.d:30\n" ~
       "  at: tests/api.d:42\n" ~
       "  Expected: 404\n" ~
-      "  rerun: -f \"ogm.maps returns \\\"404\\\"\"");
+      "  rerun: -f \"=ogm.maps returns \\\"404\\\"\"");
 }
 
 /// Counts the tests that ended with a status
@@ -213,7 +213,7 @@ unittest {
 
   writer.buffer.should.equal("FAIL some suite some test\n" ~
       "  test: file.d:10\n" ~
-      "  rerun: -f \"some suite some test\"\n\n");
+      "  rerun: -f \"=some suite some test\"\n\n");
 }
 
 /// AgentReporter prints the summary when the run ends
