@@ -34,6 +34,14 @@ You can also call the built test executable directly, for example `./my-project-
 
 When several filters are given, a test must match all of them.
 
+When the filters match no test, the run fails instead of passing with nothing executed, so a typo can't turn CI green:
+
+```
+No tests matched the filters: -s "my.module" -t "retruns 404"
+```
+
+A run without filters still passes when the project has no tests.
+
 An unknown reporter or executor name stops the run with an error like ``There is no `nope` reporter``.
 
 ### Filter values

@@ -197,3 +197,48 @@ const(TestCase)[] selectAt(const(TestCase)[] tests, string at) {
 
   return candidates.filter!(a => a.location.line == enclosingLine).array;
 }
+
+/// Lists the filters given in the run arguments as command line flags
+string[] usedFilters(RunArguments arguments) {
+  import std.algorithm : filter, map;
+  import std.array : array;
+  import std.typecons : Tuple;
+
+  alias Flag = Tuple!(string, "value", string, "text");
+
+  auto flags = [
+    Flag(arguments.suiteName, `-s "` ~ arguments.suiteName ~ `"`),
+    Flag(arguments.testName, `-t "` ~ arguments.testName ~ `"`),
+    Flag(arguments.fullName, `-f "` ~ arguments.fullName ~ `"`),
+    Flag(arguments.at, `--at ` ~ arguments.at),
+  ];
+
+  return flags
+    .filter!(flag => flag.value != "")
+    .map!(flag => flag.text)
+    .array;
+}
+
+/// usedFilters returns no filters for empty arguments
+unittest {
+  usedFilters(RunArguments()).length.should.equal(0);
+}
+
+/// usedFilters returns -t "=some test" for the test name filter "=some test"
+unittest {
+  RunArguments arguments;
+  arguments.testName = "=some test";
+
+  usedFilters(arguments).should.equal([`-t "=some test"`]);
+}
+
+/// usedFilters returns the suite, test name, full name and location filters in flag order
+unittest {
+  RunArguments arguments;
+  arguments.suiteName = "a.b";
+  arguments.testName = "=some test";
+  arguments.fullName = "a.b some";
+  arguments.at = "a/b.d:15";
+
+  usedFilters(arguments).should.equal([`-s "a.b"`, `-t "=some test"`, `-f "a.b some"`, `--at a/b.d:15`]);
+}

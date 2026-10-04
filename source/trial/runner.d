@@ -620,6 +620,13 @@ void unittestRuntimeSetup(allModules...)() {
     setupLifecycle(settings);
 
     auto tests = LifeCycleListeners.instance.getTestCases.selectTests(arguments);
+    auto filters = arguments.usedFilters;
+
+    if (tests.length == 0 && filters.length > 0) {
+      stderr.writeln("No tests matched the filters: " ~ filters.join(" "));
+      return UnitTestResult.fail;
+    }
+
     auto results = runTests(tests);
 
     if (results.isSuccess) {
