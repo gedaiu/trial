@@ -19,6 +19,9 @@ module of your project with two discoveries, which are always enabled:
   - `UnitTestDiscovery` for `unittest` blocks
   - `SpecTestDiscovery` for `Spec` suites
 
+Only the tests from your own project's modules are run. Tests and `Spec` suites that live in your dependencies, including
+trial itself, are not part of your test run.
+
 ## Unit Test Discovery
 
 This is the default test discovery. It will search inside your modules for `unittest` blocks. You can add custom names

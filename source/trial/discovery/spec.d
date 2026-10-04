@@ -162,18 +162,42 @@ template Spec(alias definition)
   }
 }
 
+/// Checks if a suite name belongs to the given module
+bool isInModule(string suiteName, string moduleName)
+{
+  return suiteName == moduleName || suiteName.startsWith(moduleName ~ ".");
+}
+
+/// isInModule returns true for the suite "a.b.Algorithm" in the module "a.b"
+unittest
+{
+  isInModule("a.b.Algorithm", "a.b").should.equal(true);
+}
+
+/// isInModule returns false for the suite "a.bc.Algorithm" in the module "a.b"
+unittest
+{
+  isInModule("a.bc.Algorithm", "a.b").should.equal(false);
+}
+
 /// The default test discovery looks for unit test sections and groups them by module
 class SpecTestDiscovery : ITestDiscovery
 {
-  /// Returns all the Specs as TestCase structure
+  /// The modules added with addModule, whose Specs getTestCases returns
+  string[] moduleNames;
+
+  /// Returns the Specs of the added modules as TestCase structure
   TestCase[] getTestCases()
   {
-    return testCases;
+    return testCases
+      .filter!(testCase => moduleNames.any!(name => testCase.suiteName.isInModule(name)))
+      .array;
   }
 
-  /// It does nothing...
+  /// Records the module whose Specs will be returned
   void addModule(string file, string moduleName)()
   {
+    moduleNames ~= moduleName;
   }
 
   private void noTest()
@@ -246,6 +270,15 @@ version (unittest)
   import fluent.asserts;
 
   private static string trace;
+
+  /// A SpecTestDiscovery that has this module added
+  SpecTestDiscovery thisModuleSpecDiscovery()
+  {
+    auto specDiscovery = new SpecTestDiscovery;
+    specDiscovery.addModule!(__FILE__, "trial.discovery.spec");
+
+    return specDiscovery;
+  }
 
   private alias suite = Spec /* some comment*/ ! /* some comment*/ ( /* some comment*/ {
     describe("Algorithm", {
@@ -337,18 +370,7 @@ version (unittest)
 /// getTestCases should find the spec suite
 unittest
 {
-  auto specDiscovery = new SpecTestDiscovery;
-  auto tests = specDiscovery.getTestCases.filter!(
-      a => a.suiteName == "trial.discovery.spec.Algorithm").array;
-
-  tests.length.should.equal(1).because("the Spec suite defined is in this file");
-  tests[0].name.should.equal("should return false when the value is not present");
-}
-
-/// getTestCases should find the spec suite
-unittest
-{
-  auto specDiscovery = new SpecTestDiscovery;
+  auto specDiscovery = thisModuleSpecDiscovery;
   auto tests = specDiscovery.getTestCases.filter!(
       a => a.suiteName == "trial.discovery.spec.Algorithm").array;
 
@@ -359,7 +381,7 @@ unittest
 /// getTestCases should find nested spec suites
 unittest
 {
-  auto specDiscovery = new SpecTestDiscovery;
+  auto specDiscovery = thisModuleSpecDiscovery;
   auto suites = specDiscovery.getTestCases.map!(a => a.suiteName).array;
 
   suites.should.contain(["trial.discovery.spec.Nested describes.level 1.level 2",
@@ -370,7 +392,7 @@ unittest
 /// It should execute the spec before all hooks
 unittest
 {
-  auto specDiscovery = new SpecTestDiscovery;
+  auto specDiscovery = thisModuleSpecDiscovery;
   auto tests = specDiscovery.getTestCases.filter!(
       a => a.suiteName.startsWith("trial.discovery.spec.Before all")).array;
 
@@ -389,7 +411,7 @@ unittest
 /// It should execute the spec after all hooks
 unittest
 {
-  auto specDiscovery = new SpecTestDiscovery;
+  auto specDiscovery = thisModuleSpecDiscovery;
   auto tests = specDiscovery.getTestCases.filter!(
       a => a.suiteName.startsWith("trial.discovery.spec.After all")).array;
 
@@ -408,7 +430,7 @@ unittest
 /// It should execute the spec before hooks
 unittest
 {
-  auto specDiscovery = new SpecTestDiscovery;
+  auto specDiscovery = thisModuleSpecDiscovery;
   auto tests = specDiscovery.getTestCases.filter!(
       a => a.suiteName.startsWith("trial.discovery.spec.Before each")).array;
 
@@ -427,7 +449,7 @@ unittest
 /// It should execute the spec after hooks
 unittest
 {
-  auto specDiscovery = new SpecTestDiscovery;
+  auto specDiscovery = thisModuleSpecDiscovery;
   auto tests = specDiscovery.getTestCases.filter!(
       a => a.suiteName.startsWith("trial.discovery.spec.After each")).array;
 
@@ -441,4 +463,14 @@ unittest
   tests[2].func();
 
   trace.should.equal("test3 after2-bis after1");
+}
+
+/// getTestCases returns no spec tests when no module was added
+unittest
+{
+  auto specDiscovery = new SpecTestDiscovery;
+  auto tests = specDiscovery.getTestCases.filter!(
+      a => a.suiteName.startsWith("trial.discovery.spec")).array;
+
+  tests.length.should.equal(0);
 }
