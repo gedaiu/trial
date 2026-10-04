@@ -8,25 +8,16 @@ Here are informations about how this runner searces for tests inside your projec
 
   - [About](#about)
   - [Unit Test discovery](#unit-test-discovery)
-  - [Test Class discovery](#test-class-discovery)
   - [Spec](#spec)
   - [Extending](#extending)
 
 ## About
 
-The test discovery happens at `compile-time`. In order to generate the appropiate code, the
-runner has to know about all the test discovery classes that you want to use. You can specify the test discoveries
-in the `trial.json` file. The `testDiscovery` list should contain all the test discoveries classes that you need.
+The test discovery happens at `compile-time`. When you run `dub test`, the runner looks inside every
+module of your project with two discoveries, which are always enabled:
 
-The default value is:
-
-```json
-"testDiscovery": [
-    "trial.discovery.unit.UnitTestDiscovery"
-]
-```
-
-which will use the `UnitTestDiscovery` class from the `trial.discovery.unit` module.
+  - `UnitTestDiscovery` for `unittest` blocks
+  - `SpecTestDiscovery` for `Spec` suites
 
 ## Unit Test Discovery
 
@@ -49,52 +40,6 @@ or
 @("This is my awesome test")
 unittest {
 
-}
-```
-
-## Test Class discovery
-
-Test class discovery search for classes annotated with `@Test()`. This discovery method is inspired from the `xUnit` frameworks, that usualy uses oop concepts to write the tests. In order to use this discovery, you need to add the `trial:lifecycle` dependency.
-
-In order to use this discovery method, you need to add `"trial.discovery.testclass.TestClassDiscovery"` to the `trial.json` file.
-
-[Project example](https://github.com/gedaiu/trial/tree/master/examples/test-class)
-
-```json
-"testDiscovery": [
-    "trial.discovery.testclass.TestClassDiscovery"
-]
-```
-
-There are a bunch of other [annotations](http://trial.szabobogdan.com/api/trial/attributes.html) that are useful.
-
-```d
-class OtherTestSuite {
-    @BeforeEach()
-    void beforeEach() {
-        ...
-    }
-
-    @AfterEach()
-    void afterEach() {
-        ...
-    }
-
-    @BeforeAll()
-    void beforeAll() {
-        ...
-    }
-
-    @AfterAll()
-    void afterAll() {
-        ...
-    }
-
-    @Test()
-    @("Some other name")
-    void aCustomTest() {
-        ...
-    }
 }
 ```
 
@@ -170,34 +115,14 @@ Example:
   });
 ```
 
-In order to use this discovery method, you need to add `"trial.discovery.spec.SpecTestDiscovery"` to the `trial.json` file.
-
-```json
-"testDiscovery": [
-    "trial.discovery.spec.SpecTestDiscovery"
-]
-```
-
 ## Extending
 
 If you want to write your custom TestDiscovery, your class must implement
-the [ITestDiscovery](http://trial.szabobogdan.com/api/trial/interfaces/ITestDiscovery.html) interface and
-the `void addModule(string file, string name)()` method which will be called by the runner to help you to search inside modules.
-
-At the compile time, the runner will generate a code similar to this:
+the [ITestDiscovery](http://trial.szabobogdan.com/api/trial/interfaces/ITestDiscovery.html) interface, whose
+`getTestCases` method returns the tests that will be run. Register it from a module constructor:
 
 ```d
-void main() {
-    ...
-
-    auto testDiscovery0 = new UnitTestDiscovery;
-
-    testDiscovery0.addModule!("/Users/doe/project/some/module.d", "some.module");
-    testDiscovery0.addModule!("/Users/doe/project/other/module.d", "other.module");
-
-    LifeCycleListeners.instance.add(testDiscovery0);
-
-    ...
+static this() {
+    LifeCycleListeners.instance.add(new MyTestDiscovery);
 }
-
 ```

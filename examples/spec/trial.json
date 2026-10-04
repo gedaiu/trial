@@ -2,8 +2,5 @@
 	"reporters": [
 		"spec",
 		"result"
-	],
-	"testDiscovery": [
-		"trial.discovery.testclass.SpecTestDiscovery"
 	]
 }

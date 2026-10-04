@@ -31,11 +31,6 @@ struct ProgressGlyphs {
   }
 }
 
-///
-string progressGlyphsToCode(ProgressGlyphs glyphs) {
-  return "ProgressGlyphs(`" ~ glyphs.empty ~ "`,`" ~ glyphs.fill ~ "`)";
-}
-
 /// The “progress” reporter implements a simple progress-bar
 class ProgressReporter : ITestCaseLifecycleListener, ILifecycleListener
 {

@@ -28,11 +28,6 @@ struct DotMatrixGlyphs {
   string pending = "-";
 }
 
-///
-string dotMatrixGlyphsToCode(DotMatrixGlyphs glyphs) {
-  return "DotMatrixGlyphs(`"~ glyphs.success ~"`,`"~ glyphs.failure ~"`,`"~ glyphs.unknown ~"`)";
-}
-
 /// The dot matrix reporter is simply a series of characters which represent test cases.
 /// Failures highlight in red exclamation marks (!).
 /// Good if you prefer minimal output.

@@ -27,11 +27,6 @@ struct LandingGlyphs {
   string lane = "⋅";
 }
 
-///
-string landingGlyphsToCode(LandingGlyphs glyphs) {
-  return "LandingGlyphs(`"~ glyphs.plane ~"`,`"~ glyphs.margin ~"`,`"~ glyphs.lane ~"`)";
-}
-
 /// The Landing Strip (landing) reporter is a gimmicky test reporter simulating a plane landing unicode ftw
 class LandingReporter : ITestCaseLifecycleListener, ILifecycleListener
 {

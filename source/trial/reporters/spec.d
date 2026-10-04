@@ -34,11 +34,6 @@ struct SpecGlyphs {
   string pending = "-";
 }
 
-///
-string specGlyphsToCode(SpecGlyphs glyphs) {
-  return "SpecGlyphs(`" ~ glyphs.ok ~ "`)";
-}
-
 /// This is the default reporter. The "spec" reporter outputs a hierarchical view nested just as the test cases are.
 class SpecReporter : ITestCaseLifecycleListener
 {

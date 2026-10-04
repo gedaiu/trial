@@ -41,11 +41,6 @@ struct SpecStepsGlyphs {
   }
 }
 
-///
-string specStepsGlyphsToCode(SpecStepsGlyphs glyphs) {
-  return "SpecStepsGlyphs(`" ~ glyphs.testBegin ~ "`, `" ~ glyphs.testEnd ~ "`, `" ~ glyphs.step ~ "`)";
-}
-
 /// A flavour of the "spec" reporter that show the tests and the steps of your tests.
 class SpecStepsReporter : SpecReporter, ISuiteLifecycleListener, IStepLifecycleListener
 {
