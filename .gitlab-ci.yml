@@ -51,7 +51,7 @@ pages:
     - cd ..
     - mv .trial public/artifacts
     - mv public/artifacts/allure public/artifacts/allure-raw
-    - npx --yes allure-commandline@1.4.23 generate --output public/artifacts/allure public/artifacts/allure-raw
+    - npx --yes allure-commandline@2.46.1 generate public/artifacts/allure-raw -o public/artifacts/allure --clean
   artifacts:
     paths:
       - public
