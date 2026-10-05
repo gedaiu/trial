@@ -6,8 +6,8 @@ default:
   tags:
     - ogm
   before_script:
-    - dmd --version | head -1
-    - ldc2 --version | head -1
+    - dmd --version | sed -n 1p
+    - ldc2 --version | sed -n 1p
     - dub --version
 
 .test:
